@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Personal portfolio focused on reinforcement learning, automated trading, research systems, and market intelligence projects."
+    />
+    <title>FFFire RL Trading Lab | Portfolio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="market-canvas" aria-hidden="true"></canvas>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="RL Auto Trading Portfolio home">
+        <span class="brand-mark">RL</span>
+        <span class="brand-text">FFFire Lab</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a href="#portfolio">Portfolio</a>
+        <a href="#projects">Projects</a>
+        <a href="#research">Research Lab</a>
+        <a href="#timeline">Timeline</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero-section" aria-labelledby="hero-title">
+        <div class="hero-shell">
+          <div class="hero-copy reveal">
+            <p class="eyebrow">Reinforcement Learning / Auto Trading / Portfolio Systems</p>
+            <h1 id="hero-title">FFFire RL Trading Lab</h1>
+            <p class="hero-lede">
+              Adaptive agents for markets that never sit still. This portfolio tracks experiments
+              in policy optimization, market simulation, risk-aware execution, and automated
+              trading infrastructure.
+            </p>
+            <div class="hero-actions" aria-label="Primary actions">
+              <a class="button primary" href="#projects">View Projects</a>
+              <a class="button secondary" href="#research">Open Lab</a>
+            </div>
+          </div>
+
+          <aside class="mission-panel reveal" aria-label="Current research stack">
+            <div class="panel-topline">
+              <span>Agent Status</span>
+              <span class="live-dot">Online</span>
+            </div>
+            <div class="agent-grid">
+              <div>
+                <span class="metric-label">Policy</span>
+                <strong>PPO / SAC / DQN</strong>
+              </div>
+              <div>
+                <span class="metric-label">Market Loop</span>
+                <strong>Replay + Walk-forward</strong>
+              </div>
+              <div>
+                <span class="metric-label">Risk Layer</span>
+                <strong>Drawdown guard</strong>
+              </div>
+              <div>
+                <span class="metric-label">Output</span>
+                <strong>Signals + Reports</strong>
+              </div>
+            </div>
+            <div class="signal-bars" aria-hidden="true">
+              <span style="--h: 36%"></span>
+              <span style="--h: 62%"></span>
+              <span style="--h: 48%"></span>
+              <span style="--h: 78%"></span>
+              <span style="--h: 54%"></span>
+              <span style="--h: 84%"></span>
+              <span style="--h: 43%"></span>
+              <span style="--h: 71%"></span>
+              <span style="--h: 58%"></span>
+            </div>
+          </aside>
+        </div>
+
+        <div class="hero-projects reveal" aria-label="Featured portfolio projects">
+          <article class="mini-project" data-tilt>
+            <span class="project-index">01</span>
+            <h2>RL Market Gym</h2>
+            <p>Custom environment for position sizing, transaction costs, and regime shifts.</p>
+          </article>
+          <article class="mini-project" data-tilt>
+            <span class="project-index">02</span>
+            <h2>Execution Engine</h2>
+            <p>Signal routing, risk checks, paper trading, and post-trade telemetry.</p>
+          </article>
+          <article class="mini-project" data-tilt>
+            <span class="project-index">03</span>
+            <h2>Research Ledger</h2>
+            <p>Experiment tracking for features, rewards, baselines, and walk-forward runs.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section" id="portfolio" aria-labelledby="portfolio-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Portfolio</p>
+          <h2 id="portfolio-title">Systems built around evidence, risk, and iteration.</h2>
+        </div>
+        <div class="metrics-grid">
+          <article class="metric-card reveal">
+            <span class="metric-value" data-count="12">0</span>
+            <span class="metric-name">Agent prototypes</span>
+          </article>
+          <article class="metric-card reveal">
+            <span class="metric-value" data-count="8">0</span>
+            <span class="metric-name">Market data pipelines</span>
+          </article>
+          <article class="metric-card reveal">
+            <span class="metric-value" data-count="24">0</span>
+            <span class="metric-name">Backtest scenarios</span>
+          </article>
+          <article class="metric-card reveal">
+            <span class="metric-value" data-count="5">0</span>
+            <span class="metric-name">Risk modules</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section" id="projects" aria-labelledby="projects-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Projects</p>
+          <h2 id="projects-title">Selected builds for automated research and trading.</h2>
+        </div>
+        <div class="project-grid">
+          <article class="project-card reveal" data-tilt>
+            <div class="card-head">
+              <span class="tag green">RL</span>
+              <span class="tag amber">Simulation</span>
+            </div>
+            <h3>Policy Optimization Workbench</h3>
+            <p>
+              A compact lab for comparing reward designs, exploration schedules, and action
+              spaces across market regimes.
+            </p>
+            <ul>
+              <li>Episode replay with slippage and fees</li>
+              <li>Reward shaping for return, risk, and turnover</li>
+              <li>Baseline comparison against rule-based strategies</li>
+            </ul>
+          </article>
+
+          <article class="project-card reveal" data-tilt>
+            <div class="card-head">
+              <span class="tag cyan">Auto Trading</span>
+              <span class="tag red">Risk</span>
+            </div>
+            <h3>Event-driven Trading Core</h3>
+            <p>
+              Signal ingestion, portfolio state, order intent generation, and safety gates for
+              automated execution workflows.
+            </p>
+            <ul>
+              <li>Composable signal processors</li>
+              <li>Position exposure and drawdown limits</li>
+              <li>Audit-ready decision trace</li>
+            </ul>
+          </article>
+
+          <article class="project-card reveal" data-tilt>
+            <div class="card-head">
+              <span class="tag pink">Research</span>
+              <span class="tag blue">Analytics</span>
+            </div>
+            <h3>Portfolio Observatory</h3>
+            <p>
+              A visual reporting layer for equity curves, risk decomposition, experiment notes,
+              and walk-forward summaries.
+            </p>
+            <ul>
+              <li>Metric snapshots for each strategy revision</li>
+              <li>Timeline of experiments and market conditions</li>
+              <li>Deployment checklist for production candidates</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="content-section lab-section" id="research" aria-labelledby="research-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Research Lab</p>
+          <h2 id="research-title">From hypothesis to monitored strategy.</h2>
+        </div>
+
+        <div class="lab-layout reveal">
+          <div class="lab-tabs" role="tablist" aria-label="Research modules">
+            <button class="lab-tab active" type="button" data-lab="policy" role="tab" aria-selected="true">
+              Policy
+            </button>
+            <button class="lab-tab" type="button" data-lab="market" role="tab" aria-selected="false">
+              Market
+            </button>
+            <button class="lab-tab" type="button" data-lab="risk" role="tab" aria-selected="false">
+              Risk
+            </button>
+          </div>
+          <div class="lab-display" role="tabpanel" aria-live="polite">
+            <div>
+              <span class="display-label" id="lab-label">Policy Stack</span>
+              <h3 id="lab-title">Train agents against market friction, not clean charts.</h3>
+              <p id="lab-body">
+                The policy loop combines feature windows, transaction-cost modeling, reward
+                constraints, and out-of-sample validation before a strategy reaches paper trading.
+              </p>
+            </div>
+            <div class="lab-readout" aria-label="Module readout">
+              <span class="readout-line"></span>
+              <span class="readout-line short"></span>
+              <span class="readout-line"></span>
+              <span class="readout-line tiny"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-section" id="timeline" aria-labelledby="timeline-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Roadmap</p>
+          <h2 id="timeline-title">A build path for research that can survive real markets.</h2>
+        </div>
+        <div class="timeline" aria-label="Project roadmap">
+          <article class="timeline-item reveal">
+            <span class="timeline-node"></span>
+            <div>
+              <h3>Data Integrity</h3>
+              <p>Normalize feeds, detect gaps, control survivorship bias, and preserve raw inputs.</p>
+            </div>
+          </article>
+          <article class="timeline-item reveal">
+            <span class="timeline-node"></span>
+            <div>
+              <h3>Agent Research</h3>
+              <p>Iterate on features, rewards, baselines, and regime-specific policy behavior.</p>
+            </div>
+          </article>
+          <article class="timeline-item reveal">
+            <span class="timeline-node"></span>
+            <div>
+              <h3>Trading Safety</h3>
+              <p>Route signals through exposure limits, kill switches, logs, and paper execution.</p>
+            </div>
+          </article>
+          <article class="timeline-item reveal">
+            <span class="timeline-node"></span>
+            <div>
+              <h3>Portfolio Review</h3>
+              <p>Promote only strategies with stable risk, interpretable failures, and clean reports.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>FFFire RL Trading Lab / Reinforcement learning, automated trading, and research systems.</p>
+      <a href="https://github.com/fffire-oss" target="_blank" rel="noreferrer">GitHub</a>
+      <a href="#top">Back to top</a>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
