@@ -149,6 +149,12 @@
     nodes.forEach(function (node) {
       observer.observe(node);
     });
+
+    window.setTimeout(function () {
+      nodes.forEach(function (node) {
+        node.classList.add("visible");
+      });
+    }, 900);
   }
 
   function setupCounters() {

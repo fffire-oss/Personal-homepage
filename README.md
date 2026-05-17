@@ -1,6 +1,6 @@
-# RL Auto Trading Portfolio
+# FFFire Personal Portfolio
 
-Static personal homepage for a reinforcement learning and automated trading portfolio.
+Static personal homepage for projects, research notes, and engineering work, with current focus areas in reinforcement learning and automated trading.
 
 ## Local Preview
 
