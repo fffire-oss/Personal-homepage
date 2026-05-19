@@ -287,6 +287,359 @@
     window.addEventListener("scroll", update, { passive: true });
   }
 
+  function setupSplendorDemo() {
+    var board = document.getElementById("splendor-board");
+    if (!board) return;
+
+    var gemColors = {
+      white: "#e6dfcf",
+      blue: "#7ba7ff",
+      green: "#37e89b",
+      red: "#ff6b5d",
+      black: "#77808e",
+      gold: "#ffbf45"
+    };
+
+    var gemLabels = {
+      white: "W",
+      blue: "U",
+      green: "G",
+      red: "R",
+      black: "B",
+      gold: "*"
+    };
+
+    var splendorCards = [
+      { id: "sp-c1", tier: 1, gem: "green", points: 0, cost: ["white", "blue", "red"] },
+      { id: "sp-c2", tier: 1, gem: "blue", points: 0, cost: ["green", "green", "black"] },
+      { id: "sp-c3", tier: 1, gem: "red", points: 1, cost: ["white", "black", "black"] },
+      { id: "sp-c4", tier: 1, gem: "white", points: 0, cost: ["blue", "red", "green"] },
+      { id: "sp-c5", tier: 2, gem: "black", points: 2, cost: ["red", "red", "green", "blue"] },
+      { id: "sp-c6", tier: 2, gem: "green", points: 1, cost: ["white", "white", "blue", "black"] },
+      { id: "sp-c7", tier: 2, gem: "blue", points: 2, cost: ["green", "red", "red", "black"] },
+      { id: "sp-c8", tier: 2, gem: "red", points: 1, cost: ["white", "blue", "green", "black"] },
+      { id: "sp-c9", tier: 3, gem: "white", points: 4, cost: ["blue", "blue", "green", "green", "black"] },
+      { id: "sp-c10", tier: 3, gem: "red", points: 3, cost: ["white", "white", "green", "black", "black"] },
+      { id: "sp-c11", tier: 3, gem: "green", points: 5, cost: ["red", "red", "red", "blue", "black"] },
+      { id: "sp-c12", tier: 3, gem: "black", points: 4, cost: ["white", "blue", "blue", "green", "red"] }
+    ];
+
+    var moves = [
+      {
+        type: "coins",
+        title: "Take three colors",
+        gems: ["white", "green", "red"],
+        value: "+0.31",
+        entropy: "1.12",
+        policy: [["Take gems", 0.48], ["Reserve card", 0.22], ["Buy tier I", 0.19], ["Wait", 0.11]],
+        state: [0.2, 0.38, 0.74, 0.46, 0.57, 0.18, 0.82, 0.62, 0.34, 0.66, 0.28, 0.72],
+        coach: "The rollout opens by collecting three colors because it keeps two low-tier buys and one tier-II route alive."
+      },
+      {
+        type: "reserve",
+        title: "Reserve engine card",
+        card: "sp-c6",
+        gems: ["gold"],
+        value: "+0.44",
+        entropy: "1.04",
+        policy: [["Reserve card", 0.41], ["Take gems", 0.27], ["Buy tier I", 0.2], ["Buy tier II", 0.12]],
+        state: [0.32, 0.45, 0.64, 0.51, 0.49, 0.7, 0.36, 0.8, 0.29, 0.55, 0.48, 0.68],
+        coach: "The reserved green card protects a useful engine piece while the gold token raises short-term purchase flexibility."
+      },
+      {
+        type: "buy",
+        title: "Buy red discount",
+        card: "sp-c3",
+        value: "+0.57",
+        entropy: "0.92",
+        policy: [["Buy card", 0.57], ["Take gems", 0.22], ["Reserve", 0.13], ["Buy tier II", 0.08]],
+        state: [0.48, 0.53, 0.4, 0.72, 0.68, 0.26, 0.59, 0.62, 0.33, 0.43, 0.77, 0.41],
+        coach: "Turning tokens into a permanent red discount improves later tier-II and tier-III affordability."
+      },
+      {
+        type: "coins",
+        title: "Prepare tier-II cost",
+        gems: ["blue", "blue"],
+        value: "+0.62",
+        entropy: "0.88",
+        policy: [["Take two blue", 0.46], ["Buy tier I", 0.23], ["Reserve", 0.18], ["Take mixed", 0.13]],
+        state: [0.22, 0.66, 0.63, 0.45, 0.39, 0.71, 0.51, 0.52, 0.63, 0.33, 0.59, 0.27],
+        coach: "Taking two blue maximizes the probability of converting into the reserved tier-II card next turn."
+      },
+      {
+        type: "buy",
+        title: "Buy tier-II green",
+        card: "sp-c6",
+        value: "+0.74",
+        entropy: "0.76",
+        policy: [["Buy tier II", 0.64], ["Take gems", 0.16], ["Reserve tier III", 0.12], ["Buy tier I", 0.08]],
+        state: [0.58, 0.68, 0.73, 0.48, 0.57, 0.29, 0.62, 0.76, 0.38, 0.45, 0.8, 0.54],
+        coach: "The model now prefers conversion: one VP plus a green discount is better than extending the token hand."
+      },
+      {
+        type: "buy",
+        title: "Finish tier-III points",
+        card: "sp-c10",
+        value: "+0.91",
+        entropy: "0.61",
+        policy: [["Buy tier III", 0.71], ["Take gems", 0.12], ["Reserve", 0.1], ["Buy tier II", 0.07]],
+        state: [0.79, 0.55, 0.82, 0.91, 0.68, 0.44, 0.63, 0.77, 0.84, 0.58, 0.49, 0.69],
+        coach: "The high-value card pushes the agent toward endgame pressure, so the policy accepts a less flexible hand."
+      }
+    ];
+
+    var index = 0;
+    var timer = null;
+    var playing = false;
+    var market = document.getElementById("splendor-market");
+    var bank = document.getElementById("splendor-bank");
+    var motionLayer = document.getElementById("splendor-motion-layer");
+    var stage = document.getElementById("splendor-stage");
+    var aiEndpoint = window.DINOBOARD_AI_ENDPOINT || "";
+
+    function colorFor(gem) {
+      return gemColors[gem] || gemColors.gold;
+    }
+
+    function renderMarket() {
+      var html = "";
+      [3, 2, 1].forEach(function (tier) {
+        html += '<div class="splendor-tier-label">Tier ' + tier + "</div>";
+        splendorCards.filter(function (card) {
+          return card.tier === tier;
+        }).forEach(function (card) {
+          html += '<article class="splendor-card" id="' + card.id + '" style="--card-color:' + colorFor(card.gem) + '">';
+          html += '<span class="splendor-card-score">' + card.points + "</span>";
+          html += '<span class="splendor-card-gem">' + gemLabels[card.gem] + "</span>";
+          html += '<div class="splendor-cost">';
+          card.cost.forEach(function (gem) {
+            html += '<span class="splendor-dot" style="--gem-color:' + colorFor(gem) + '"></span>';
+          });
+          html += "</div></article>";
+        });
+      });
+      market.innerHTML = html;
+    }
+
+    function renderBank() {
+      bank.innerHTML = ["white", "blue", "green", "red", "black", "gold"].map(function (gem) {
+        return (
+          '<div class="bank-token-wrap" data-gem="' + gem + '">' +
+          '<span class="bank-token" style="--gem-color:' + colorFor(gem) + '">' + gemLabels[gem] + "</span>" +
+          "<b>4</b></div>"
+        );
+      }).join("");
+    }
+
+    function renderPolicy(move) {
+      document.getElementById("splendor-policy-list").innerHTML = move.policy.map(function (item) {
+        var width = Math.round(item[1] * 100);
+        return (
+          '<div class="splendor-policy-row">' +
+          "<span>" + item[0] + "</span>" +
+          '<div class="splendor-policy-bar"><span style="--w:' + width + '%"></span></div>' +
+          "<strong>" + width + "%</strong></div>"
+        );
+      }).join("");
+    }
+
+    function renderStateGrid(move) {
+      var cells = [];
+      for (var i = 0; i < 48; i += 1) {
+        var value = Math.max(0.05, Math.min(1, move.state[i % move.state.length] * (0.82 + ((i * 13) % 10) / 45)));
+        cells.push('<span class="state-cell" style="--v:' + value.toFixed(2) + '"></span>');
+      }
+      document.getElementById("splendor-state-grid").innerHTML = cells.join("");
+    }
+
+    function stagePoint(element) {
+      var outer = stage.getBoundingClientRect();
+      var rect = element.getBoundingClientRect();
+      return {
+        x: rect.left - outer.left + rect.width / 2,
+        y: rect.top - outer.top + rect.height / 2
+      };
+    }
+
+    function addTrail(from, to) {
+      var dx = to.x - from.x;
+      var dy = to.y - from.y;
+      var trail = document.createElement("span");
+      trail.className = "flight-trail";
+      trail.style.width = Math.sqrt(dx * dx + dy * dy) + "px";
+      trail.style.setProperty("--x", from.x + "px");
+      trail.style.setProperty("--y", from.y + "px");
+      trail.style.setProperty("--angle", Math.atan2(dy, dx) + "rad");
+      motionLayer.appendChild(trail);
+      trail.addEventListener("animationend", function () {
+        trail.remove();
+      });
+    }
+
+    function addSparks(to, color) {
+      for (var i = 0; i < 7; i += 1) {
+        var spark = document.createElement("span");
+        spark.className = "splendor-spark";
+        spark.style.background = color;
+        spark.style.setProperty("--x", to.x + "px");
+        spark.style.setProperty("--y", to.y + "px");
+        spark.style.setProperty("--dx", Math.cos(i * 1.7) * (20 + i * 3) + "px");
+        spark.style.setProperty("--dy", Math.sin(i * 1.3) * (18 + i * 2) + "px");
+        motionLayer.appendChild(spark);
+        spark.addEventListener("animationend", function () {
+          this.remove();
+        });
+      }
+    }
+
+    function flyToken(gem) {
+      var source = document.querySelector('.bank-token-wrap[data-gem="' + gem + '"]');
+      var target = document.getElementById("agent-token-strip");
+      if (!source || !target) return;
+      var from = stagePoint(source);
+      var to = stagePoint(target);
+      var token = document.createElement("span");
+      token.className = "flying-token";
+      token.style.setProperty("--gem-color", colorFor(gem));
+      token.style.setProperty("--from-x", from.x - 17 + "px");
+      token.style.setProperty("--from-y", from.y - 17 + "px");
+      token.style.setProperty("--to-x", to.x - 17 + "px");
+      token.style.setProperty("--to-y", to.y - 17 + "px");
+      motionLayer.appendChild(token);
+      addTrail(from, to);
+      addSparks(to, colorFor(gem));
+      token.addEventListener("animationend", function () {
+        token.remove();
+        var mini = document.createElement("span");
+        mini.className = "agent-token";
+        mini.style.setProperty("--gem-color", colorFor(gem));
+        target.appendChild(mini);
+        while (target.children.length > 12) target.firstElementChild.remove();
+      });
+    }
+
+    function flyCard(cardId) {
+      var source = document.getElementById(cardId);
+      var target = document.getElementById("agent-card-strip");
+      var card = splendorCards.filter(function (item) {
+        return item.id === cardId;
+      })[0];
+      if (!source || !target || !card) return;
+      var from = stagePoint(source);
+      var to = stagePoint(target);
+      var ghost = document.createElement("span");
+      ghost.className = "flying-card";
+      ghost.style.setProperty("--card-color", colorFor(card.gem));
+      ghost.style.setProperty("--from-x", from.x - 39 + "px");
+      ghost.style.setProperty("--from-y", from.y - 54 + "px");
+      ghost.style.setProperty("--to-x", to.x - 39 + "px");
+      ghost.style.setProperty("--to-y", to.y - 54 + "px");
+      motionLayer.appendChild(ghost);
+      addTrail(from, to);
+      addSparks(to, colorFor(card.gem));
+      ghost.addEventListener("animationend", function () {
+        ghost.remove();
+        var mini = document.createElement("span");
+        mini.className = "agent-card-mini";
+        mini.style.setProperty("--card-color", colorFor(card.gem));
+        target.appendChild(mini);
+        while (target.children.length > 10) target.firstElementChild.remove();
+      });
+    }
+
+    function animateMove(move) {
+      Array.prototype.slice.call(document.querySelectorAll(".splendor-card")).forEach(function (card) {
+        card.classList.remove("target");
+      });
+      if (move.card) {
+        var targetCard = document.getElementById(move.card);
+        if (targetCard) targetCard.classList.add("target");
+      }
+      if (move.gems) {
+        move.gems.forEach(function (gem, i) {
+          window.setTimeout(function () {
+            flyToken(gem);
+          }, i * 110);
+        });
+      }
+      if (move.card) {
+        window.setTimeout(function () {
+          flyCard(move.card);
+        }, move.type === "reserve" ? 180 : 80);
+      }
+    }
+
+    function localCoach(move) {
+      document.getElementById("splendor-ai-mode").textContent = aiEndpoint ? "fallback" : "demo";
+      document.getElementById("splendor-coach").textContent = move.coach;
+    }
+
+    function requestCoach(move) {
+      localCoach(move);
+      if (!aiEndpoint || !window.fetch) return;
+      window.fetch(aiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: "Personal-homepage Splendor RL",
+          attribution: "DinoBoard fork integration; retain upstream notices.",
+          move: move
+        })
+      })
+        .then(function (response) {
+          return response.ok ? response.json() : null;
+        })
+        .then(function (data) {
+          if (!data || !data.explanation) return;
+          document.getElementById("splendor-ai-mode").textContent = "DinoBoard";
+          document.getElementById("splendor-coach").textContent = data.explanation;
+        })
+        .catch(function () {
+          localCoach(move);
+        });
+    }
+
+    function updateSplendor(animate) {
+      var move = moves[index];
+      document.getElementById("splendor-action-title").textContent = move.title;
+      document.getElementById("splendor-value").textContent = move.value;
+      document.getElementById("splendor-entropy").textContent = "entropy " + move.entropy;
+      document.getElementById("splendor-step").textContent = "Move " + (index + 1) + " / " + moves.length;
+      document.getElementById("splendor-progress-fill").style.width = ((index + 1) / moves.length) * 100 + "%";
+      renderPolicy(move);
+      renderStateGrid(move);
+      requestCoach(move);
+      if (animate && !prefersReducedMotion) animateMove(move);
+    }
+
+    function step(delta) {
+      index = (index + delta + moves.length) % moves.length;
+      updateSplendor(true);
+    }
+
+    renderMarket();
+    renderBank();
+    updateSplendor(false);
+
+    document.getElementById("splendor-prev").addEventListener("click", function () {
+      step(-1);
+    });
+    document.getElementById("splendor-next").addEventListener("click", function () {
+      step(1);
+    });
+    document.getElementById("splendor-play").addEventListener("click", function () {
+      playing = !playing;
+      this.textContent = playing ? "Pause rollout" : "Play rollout";
+      if (playing) {
+        timer = window.setInterval(function () {
+          step(1);
+        }, 1850);
+      } else {
+        window.clearInterval(timer);
+      }
+    });
+  }
+
   window.addEventListener("pointermove", function (event) {
     pointer.x = event.clientX;
     pointer.y = event.clientY;
@@ -306,4 +659,5 @@
   setupTilt();
   setupLabTabs();
   setupActiveStates();
+  setupSplendorDemo();
 })();

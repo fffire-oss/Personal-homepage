@@ -21,6 +21,7 @@
       <nav class="nav-links" aria-label="Primary navigation">
         <a href="#portfolio">Portfolio</a>
         <a href="#projects">Projects</a>
+        <a href="#splendor">Splendor RL</a>
         <a href="#research">Research Lab</a>
         <a href="#timeline">Timeline</a>
       </nav>
@@ -180,6 +181,96 @@
               <li>Deployment checklist for production candidates</li>
             </ul>
           </article>
+        </div>
+      </section>
+
+      <section class="content-section splendor-section" id="splendor" aria-labelledby="splendor-title">
+        <div class="section-heading reveal">
+          <p class="eyebrow">Splendor RL</p>
+          <h2 id="splendor-title">A reinforcement-learning showcase for card and token decisions.</h2>
+        </div>
+
+        <div class="splendor-lab reveal" aria-label="Splendor reinforcement learning interactive demo">
+          <div class="splendor-board" id="splendor-board">
+            <div class="splendor-topbar">
+              <div>
+                <span class="display-label">Policy Rollout</span>
+                <h3 id="splendor-action-title">Take three colors</h3>
+              </div>
+              <div class="splendor-score">
+                <span>Value</span>
+                <strong id="splendor-value">+0.31</strong>
+              </div>
+            </div>
+
+            <div class="splendor-stage" id="splendor-stage">
+              <div class="splendor-market" id="splendor-market" aria-label="Splendor visible market"></div>
+              <div class="splendor-bank" id="splendor-bank" aria-label="Gem bank"></div>
+              <div class="splendor-agent-zone">
+                <div>
+                  <span class="display-label">Agent Board</span>
+                  <strong>Alpha Gem</strong>
+                </div>
+                <div class="agent-inventory">
+                  <div>
+                    <span>Cards</span>
+                    <div class="agent-card-strip" id="agent-card-strip"></div>
+                  </div>
+                  <div>
+                    <span>Tokens</span>
+                    <div class="agent-token-strip" id="agent-token-strip"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="splendor-motion-layer" id="splendor-motion-layer" aria-hidden="true"></div>
+            </div>
+
+            <div class="splendor-controls" aria-label="Splendor rollout controls">
+              <button class="splendor-icon-button" id="splendor-prev" type="button" aria-label="Previous rollout step">
+                ‹
+              </button>
+              <button class="button primary splendor-play" id="splendor-play" type="button">Play rollout</button>
+              <button class="splendor-icon-button" id="splendor-next" type="button" aria-label="Next rollout step">
+                ›
+              </button>
+              <div class="splendor-progress" aria-label="Rollout progress">
+                <span id="splendor-progress-fill"></span>
+              </div>
+              <span class="splendor-step" id="splendor-step">Move 1 / 6</span>
+            </div>
+          </div>
+
+          <aside class="splendor-ai">
+            <div class="ai-panel-block">
+              <div class="panel-topline">
+                <span>Policy Head</span>
+                <span id="splendor-entropy">entropy 1.12</span>
+              </div>
+              <div class="splendor-policy-list" id="splendor-policy-list"></div>
+            </div>
+
+            <div class="ai-panel-block">
+              <div class="panel-topline">
+                <span>State Encoder</span>
+                <span>86 dims</span>
+              </div>
+              <div class="splendor-state-grid" id="splendor-state-grid" aria-label="Encoded state vector"></div>
+            </div>
+
+            <div class="ai-panel-block">
+              <div class="panel-topline">
+                <span>DinoBoard AI Service</span>
+                <span id="splendor-ai-mode">demo</span>
+              </div>
+              <p id="splendor-coach">
+                The front-end presentation is wired for a DinoBoard-style AI service response and falls back to local explanations on GitHub Pages.
+              </p>
+              <p class="source-note">
+                AI service integration references the DinoBoard fork. Original upstream attribution and license notices should remain with that repository.
+                <a href="https://github.com/fffire-oss/DinoBoard" target="_blank" rel="noreferrer">View fork</a>.
+              </p>
+            </div>
+          </aside>
         </div>
       </section>
 
