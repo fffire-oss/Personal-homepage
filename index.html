@@ -5,356 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Personal portfolio focused on reinforcement learning, automated trading, research systems, and market intelligence projects."
+      content="ZephyrLabs personal homepage with projects and a quiet alpine theme."
     />
-    <title>FFFire | Personal Portfolio</title>
+    <title>ZephyrLabs</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <canvas id="market-canvas" aria-hidden="true"></canvas>
-
-    <header class="site-header">
-      <a class="brand" href="#top" aria-label="FFFire personal portfolio home">
-        <span class="brand-mark">FF</span>
-        <span class="brand-text">FFFire Portfolio</span>
-      </a>
-      <nav class="nav-links" aria-label="Primary navigation">
-        <a href="#portfolio">Portfolio</a>
-        <a href="#projects">Projects</a>
-        <a href="#splendor">Splendor RL</a>
-        <a href="#research">Research Lab</a>
-        <a href="#timeline">Timeline</a>
-      </nav>
-    </header>
-
-    <main id="top">
-      <section class="hero-section" aria-labelledby="hero-title">
-        <div class="hero-shell">
-          <div class="hero-copy">
-            <p class="eyebrow">Reinforcement Learning / Auto Trading / Portfolio Systems</p>
-            <h1 id="hero-title">FFFire Personal Portfolio</h1>
-            <p class="hero-lede">
-              A personal homepage for selected projects, research notes, and engineering work.
-              Current focus areas include reinforcement learning, market simulation, risk-aware
-              execution, and automated trading infrastructure.
-            </p>
-            <div class="hero-actions" aria-label="Primary actions">
-              <a class="button primary" href="#projects">View Projects</a>
-              <a class="button secondary" href="#research">Open Lab</a>
-            </div>
+    <div class="snow-field" aria-hidden="true"></div>
+    <main class="home-shell" aria-labelledby="site-title">
+      <section class="hero-grid">
+        <header class="home-header">
+          <p class="eyebrow">Personal projects</p>
+          <h1 id="site-title">ZephyrLabs</h1>
+          <p class="season-note">Recently learning skiing.</p>
+          <div class="identity-tags" aria-label="Current interests">
+            <span>Skiing practice</span>
+            <span>Code</span>
+            <span>Game tables</span>
           </div>
+        </header>
 
-          <aside class="mission-panel" aria-label="Current research stack">
-            <div class="panel-topline">
-              <span>Agent Status</span>
-              <span class="live-dot">Online</span>
-            </div>
-            <div class="agent-grid">
-              <div>
-                <span class="metric-label">Policy</span>
-                <strong>PPO / SAC / DQN</strong>
-              </div>
-              <div>
-                <span class="metric-label">Market Loop</span>
-                <strong>Replay + Walk-forward</strong>
-              </div>
-              <div>
-                <span class="metric-label">Risk Layer</span>
-                <strong>Drawdown guard</strong>
-              </div>
-              <div>
-                <span class="metric-label">Output</span>
-                <strong>Signals + Reports</strong>
-              </div>
-            </div>
-            <div class="signal-bars" aria-hidden="true">
-              <span style="--h: 36%"></span>
-              <span style="--h: 62%"></span>
-              <span style="--h: 48%"></span>
-              <span style="--h: 78%"></span>
-              <span style="--h: 54%"></span>
-              <span style="--h: 84%"></span>
-              <span style="--h: 43%"></span>
-              <span style="--h: 71%"></span>
-              <span style="--h: 58%"></span>
-            </div>
-          </aside>
-        </div>
-
-        <div class="hero-projects" aria-label="Featured portfolio projects">
-          <article class="mini-project" data-tilt>
-            <span class="project-index">01</span>
-            <h2>RL Market Gym</h2>
-            <p>Custom environment for position sizing, transaction costs, and regime shifts.</p>
-          </article>
-          <article class="mini-project" data-tilt>
-            <span class="project-index">02</span>
-            <h2>Execution Engine</h2>
-            <p>Signal routing, risk checks, paper trading, and post-trade telemetry.</p>
-          </article>
-          <article class="mini-project" data-tilt>
-            <span class="project-index">03</span>
-            <h2>Research Ledger</h2>
-            <p>Experiment tracking for features, rewards, baselines, and walk-forward runs.</p>
-          </article>
+        <div class="ski-scene" aria-hidden="true">
+          <span class="ridge ridge-back"></span>
+          <span class="ridge ridge-front"></span>
+          <span class="trail trail-one"></span>
+          <span class="trail trail-two"></span>
+          <span class="gate gate-one"></span>
+          <span class="gate gate-two"></span>
+          <span class="skier-dot"></span>
         </div>
       </section>
 
-      <section class="content-section" id="portfolio" aria-labelledby="portfolio-title">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Portfolio</p>
-          <h2 id="portfolio-title">Systems built around evidence, risk, and iteration.</h2>
-        </div>
-        <div class="metrics-grid">
-          <article class="metric-card reveal">
-            <span class="metric-value" data-count="12">0</span>
-            <span class="metric-name">Agent prototypes</span>
-          </article>
-          <article class="metric-card reveal">
-            <span class="metric-value" data-count="8">0</span>
-            <span class="metric-name">Market data pipelines</span>
-          </article>
-          <article class="metric-card reveal">
-            <span class="metric-value" data-count="24">0</span>
-            <span class="metric-name">Backtest scenarios</span>
-          </article>
-          <article class="metric-card reveal">
-            <span class="metric-value" data-count="5">0</span>
-            <span class="metric-name">Risk modules</span>
-          </article>
-        </div>
-      </section>
+      <section class="projects" aria-labelledby="projects-title">
+        <h2 id="projects-title">Projects</h2>
+        <div class="project-list">
+          <a class="project-card gem-card" href="splendor-table.html">
+            <span class="project-kind">Local table</span>
+            <strong>Gem Table</strong>
+            <span>Unofficial local gem table with replay import/export.</span>
+          </a>
 
-      <section class="content-section" id="projects" aria-labelledby="projects-title">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Projects</p>
-          <h2 id="projects-title">Selected builds for automated research and trading.</h2>
-        </div>
-        <div class="project-grid">
-          <article class="project-card reveal" data-tilt>
-            <div class="card-head">
-              <span class="tag green">RL</span>
-              <span class="tag amber">Simulation</span>
-            </div>
-            <h3>Policy Optimization Workbench</h3>
-            <p>
-              A compact lab for comparing reward designs, exploration schedules, and action
-              spaces across market regimes.
-            </p>
-            <ul>
-              <li>Episode replay with slippage and fees</li>
-              <li>Reward shaping for return, risk, and turnover</li>
-              <li>Baseline comparison against rule-based strategies</li>
-            </ul>
-          </article>
+          <a
+            class="project-card github-card"
+            href="https://github.com/fffire-oss"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="project-kind">Profile</span>
+            <strong>GitHub</strong>
+            <span>fffire-oss on GitHub.</span>
+          </a>
 
-          <article class="project-card reveal" data-tilt>
-            <div class="card-head">
-              <span class="tag cyan">Auto Trading</span>
-              <span class="tag red">Risk</span>
-            </div>
-            <h3>Event-driven Trading Core</h3>
-            <p>
-              Signal ingestion, portfolio state, order intent generation, and safety gates for
-              automated execution workflows.
-            </p>
-            <ul>
-              <li>Composable signal processors</li>
-              <li>Position exposure and drawdown limits</li>
-              <li>Audit-ready decision trace</li>
-            </ul>
-          </article>
-
-          <article class="project-card reveal" data-tilt>
-            <div class="card-head">
-              <span class="tag pink">Research</span>
-              <span class="tag blue">Analytics</span>
-            </div>
-            <h3>Portfolio Observatory</h3>
-            <p>
-              A visual reporting layer for equity curves, risk decomposition, experiment notes,
-              and walk-forward summaries.
-            </p>
-            <ul>
-              <li>Metric snapshots for each strategy revision</li>
-              <li>Timeline of experiments and market conditions</li>
-              <li>Deployment checklist for production candidates</li>
-            </ul>
-          </article>
+          <a
+            class="project-card dino-card"
+            href="https://github.com/fffire-oss/DinoBoard"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="project-kind">Fork</span>
+            <strong>DinoBoard</strong>
+            <span>Repository fork.</span>
+          </a>
         </div>
       </section>
 
-      <section class="content-section splendor-section" id="splendor" aria-labelledby="splendor-title">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Splendor RL</p>
-          <h2 id="splendor-title">A reinforcement-learning showcase for card and token decisions.</h2>
-        </div>
-
-        <div class="splendor-lab reveal" aria-label="Splendor reinforcement learning interactive demo">
-          <div class="splendor-board" id="splendor-board">
-            <div class="splendor-topbar">
-              <div>
-                <span class="display-label">Policy Rollout</span>
-                <h3 id="splendor-action-title">Take three colors</h3>
-              </div>
-              <div class="splendor-score">
-                <span>Value</span>
-                <strong id="splendor-value">+0.31</strong>
-              </div>
-            </div>
-
-            <div class="splendor-stage" id="splendor-stage">
-              <div class="splendor-market" id="splendor-market" aria-label="Splendor visible market"></div>
-              <div class="splendor-bank" id="splendor-bank" aria-label="Gem bank"></div>
-              <div class="splendor-agent-zone">
-                <div>
-                  <span class="display-label">Agent Board</span>
-                  <strong>Alpha Gem</strong>
-                </div>
-                <div class="agent-inventory">
-                  <div>
-                    <span>Cards</span>
-                    <div class="agent-card-strip" id="agent-card-strip"></div>
-                  </div>
-                  <div>
-                    <span>Tokens</span>
-                    <div class="agent-token-strip" id="agent-token-strip"></div>
-                  </div>
-                </div>
-              </div>
-              <div class="splendor-motion-layer" id="splendor-motion-layer" aria-hidden="true"></div>
-            </div>
-
-            <div class="splendor-controls" aria-label="Splendor rollout controls">
-              <button class="splendor-icon-button" id="splendor-prev" type="button" aria-label="Previous rollout step">
-                ‹
-              </button>
-              <button class="button primary splendor-play" id="splendor-play" type="button">Play rollout</button>
-              <button class="splendor-icon-button" id="splendor-next" type="button" aria-label="Next rollout step">
-                ›
-              </button>
-              <div class="splendor-progress" aria-label="Rollout progress">
-                <span id="splendor-progress-fill"></span>
-              </div>
-              <span class="splendor-step" id="splendor-step">Move 1 / 6</span>
-            </div>
+      <section class="life-visuals" aria-label="Time and place visuals">
+        <article class="life-panel time-panel">
+          <span class="panel-label">Time</span>
+          <h2>Current rhythm</h2>
+          <div class="time-bars" aria-label="Relative time spent">
+            <span class="time-bar" style="--h: 34%; --tone: #a98cff">
+              <b>Explore</b>
+            </span>
+            <span class="time-bar" style="--h: 48%; --tone: #ffbd6b">
+              <b>Ski</b>
+            </span>
+            <span class="time-bar" style="--h: 66%; --tone: #5fe0a7">
+              <b>Build</b>
+            </span>
+            <span class="time-bar" style="--h: 84%; --tone: #aef4ff">
+              <b>Learn</b>
+            </span>
           </div>
+        </article>
 
-          <aside class="splendor-ai">
-            <div class="ai-panel-block">
-              <div class="panel-topline">
-                <span>Policy Head</span>
-                <span id="splendor-entropy">entropy 1.12</span>
-              </div>
-              <div class="splendor-policy-list" id="splendor-policy-list"></div>
-            </div>
-
-            <div class="ai-panel-block">
-              <div class="panel-topline">
-                <span>State Encoder</span>
-                <span>86 dims</span>
-              </div>
-              <div class="splendor-state-grid" id="splendor-state-grid" aria-label="Encoded state vector"></div>
-            </div>
-
-            <div class="ai-panel-block">
-              <div class="panel-topline">
-                <span>DinoBoard AI Service</span>
-                <span id="splendor-ai-mode">demo</span>
-              </div>
-              <p id="splendor-coach">
-                The front-end presentation is wired for a DinoBoard-style AI service response and falls back to local explanations on GitHub Pages.
-              </p>
-              <p class="source-note">
-                AI service integration references the DinoBoard fork. Original upstream attribution and license notices should remain with that repository.
-                <a href="https://github.com/fffire-oss/DinoBoard" target="_blank" rel="noreferrer">View fork</a>.
-              </p>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <section class="content-section lab-section" id="research" aria-labelledby="research-title">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Research Lab</p>
-          <h2 id="research-title">From hypothesis to monitored strategy.</h2>
-        </div>
-
-        <div class="lab-layout reveal">
-          <div class="lab-tabs" role="tablist" aria-label="Research modules">
-            <button class="lab-tab active" type="button" data-lab="policy" role="tab" aria-selected="true">
-              Policy
-            </button>
-            <button class="lab-tab" type="button" data-lab="market" role="tab" aria-selected="false">
-              Market
-            </button>
-            <button class="lab-tab" type="button" data-lab="risk" role="tab" aria-selected="false">
-              Risk
-            </button>
+        <article class="life-panel space-panel">
+          <span class="panel-label">Space</span>
+          <h2>Footprints</h2>
+          <div class="route-map" aria-label="Personal footprint route">
+            <span class="route-line"></span>
+            <span class="place-node node-one">
+              <strong>Base</strong>
+              <em>now</em>
+            </span>
+            <span class="place-node node-two">
+              <strong>Slope</strong>
+              <em>practice</em>
+            </span>
+            <span class="place-node node-three">
+              <strong>Next</strong>
+              <em>pin later</em>
+            </span>
           </div>
-          <div class="lab-display" role="tabpanel" aria-live="polite">
-            <div>
-              <span class="display-label" id="lab-label">Policy Stack</span>
-              <h3 id="lab-title">Train agents against market friction, not clean charts.</h3>
-              <p id="lab-body">
-                The policy loop combines feature windows, transaction-cost modeling, reward
-                constraints, and out-of-sample validation before a strategy reaches paper trading.
-              </p>
-            </div>
-            <div class="lab-readout" aria-label="Module readout">
-              <span class="readout-line"></span>
-              <span class="readout-line short"></span>
-              <span class="readout-line"></span>
-              <span class="readout-line tiny"></span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="content-section" id="timeline" aria-labelledby="timeline-title">
-        <div class="section-heading reveal">
-          <p class="eyebrow">Roadmap</p>
-          <h2 id="timeline-title">A build path for research that can survive real markets.</h2>
-        </div>
-        <div class="timeline" aria-label="Project roadmap">
-          <article class="timeline-item reveal">
-            <span class="timeline-node"></span>
-            <div>
-              <h3>Data Integrity</h3>
-              <p>Normalize feeds, detect gaps, control survivorship bias, and preserve raw inputs.</p>
-            </div>
-          </article>
-          <article class="timeline-item reveal">
-            <span class="timeline-node"></span>
-            <div>
-              <h3>Agent Research</h3>
-              <p>Iterate on features, rewards, baselines, and regime-specific policy behavior.</p>
-            </div>
-          </article>
-          <article class="timeline-item reveal">
-            <span class="timeline-node"></span>
-            <div>
-              <h3>Trading Safety</h3>
-              <p>Route signals through exposure limits, kill switches, logs, and paper execution.</p>
-            </div>
-          </article>
-          <article class="timeline-item reveal">
-            <span class="timeline-node"></span>
-            <div>
-              <h3>Portfolio Review</h3>
-              <p>Promote only strategies with stable risk, interpretable failures, and clean reports.</p>
-            </div>
-          </article>
-        </div>
+        </article>
       </section>
     </main>
-
-    <footer class="site-footer">
-      <p>FFFire Personal Portfolio / Projects, research notes, and engineering experiments.</p>
-      <a href="https://github.com/fffire-oss" target="_blank" rel="noreferrer">GitHub</a>
-      <a href="#top">Back to top</a>
-    </footer>
-
-    <script src="script.js"></script>
   </body>
 </html>

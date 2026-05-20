@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
+    />
+    <title>Gem Table | ZephyrLabs</title>
+    <link rel="stylesheet" href="splendor-table.css" />
+  </head>
+  <body>
+    <div class="ambient-grid" aria-hidden="true"></div>
+
+    <header class="table-header">
+      <a href="index.html" class="back-link">ZephyrLabs</a>
+      <div>
+        <p class="eyebrow">Unofficial local table</p>
+        <h1>Gem Table</h1>
+      </div>
+      <div class="header-actions">
+        <button id="save-game" type="button">Save</button>
+        <button id="reset-game" type="button">Reset</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="start-panel" class="start-panel" aria-labelledby="start-title">
+        <div class="start-copy">
+          <p class="eyebrow">Hot-seat setup</p>
+          <h2 id="start-title">Start a local game</h2>
+          <p class="muted">
+            Generic, rules-compatible cards and tiles are used. No official artwork,
+            logos, card scans, or Board Game Arena assets are included.
+          </p>
+          <p id="start-message" class="message compact" role="status"></p>
+        </div>
+
+        <form id="start-form" class="start-form" novalidate>
+          <label>
+            Players
+            <select id="player-count" name="player-count">
+              <option value="2">2 players</option>
+              <option value="3">3 players</option>
+              <option value="4" selected>4 players</option>
+            </select>
+          </label>
+
+          <div id="player-name-fields" class="name-fields"></div>
+
+          <div class="form-actions">
+            <button id="start-game" type="submit" class="primary">Start game</button>
+            <button id="resume-game" type="button" hidden>Resume save</button>
+            <button id="clear-save" type="button">Clear save</button>
+          </div>
+
+          <div class="quick-starts" aria-label="Quick starts">
+            <button type="button" data-quick-start="2">Start 2P</button>
+            <button type="button" data-quick-start="3">Start 3P</button>
+            <button type="button" data-quick-start="4">Start 4P</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="game-panel" class="game-panel" hidden>
+        <div class="status-bar">
+          <div>
+            <span class="label">Current player</span>
+            <strong id="current-player">-</strong>
+          </div>
+          <div>
+            <span class="label">Round</span>
+            <strong id="round-label">1</strong>
+          </div>
+          <div>
+            <span class="label">State</span>
+            <strong id="game-state-label">In progress</strong>
+          </div>
+          <div>
+            <span class="label">Move</span>
+            <strong id="move-label">0</strong>
+          </div>
+        </div>
+
+        <p id="message" class="message" role="status"></p>
+
+        <section id="discard-panel" class="step-panel" hidden>
+          <div>
+            <h2>Return tokens</h2>
+            <p class="muted">The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.</p>
+          </div>
+          <div id="discard-tokens" class="token-row"></div>
+        </section>
+
+        <section id="noble-choice-panel" class="step-panel" hidden>
+          <div>
+            <h2>Choose one noble</h2>
+            <p class="muted">If several nobles are eligible, the active player receives exactly one.</p>
+          </div>
+          <div id="noble-choice-list" class="noble-row"></div>
+        </section>
+
+        <div class="table-layout">
+          <section class="bank-panel" aria-labelledby="bank-title">
+            <div class="panel-heading">
+              <div>
+                <h2 id="bank-title">Bank</h2>
+                <p id="take-summary" class="muted compact">No take selected.</p>
+              </div>
+              <div class="action-buttons">
+                <button id="confirm-take" type="button" class="primary">Confirm take</button>
+                <button id="clear-take" type="button">Clear</button>
+              </div>
+            </div>
+            <div id="bank-tokens" class="bank-tokens"></div>
+          </section>
+
+          <section class="nobles-panel" aria-labelledby="nobles-title">
+            <div class="panel-heading">
+              <h2 id="nobles-title">Nobles</h2>
+              <span class="muted compact">Permanent bonuses only. No replenishment.</span>
+            </div>
+            <div id="nobles" class="noble-row"></div>
+          </section>
+
+          <section class="market-panel" aria-labelledby="market-title">
+            <div class="panel-heading">
+              <h2 id="market-title">Market</h2>
+              <span class="muted compact">Buy, reserve, or reserve blind from a deck.</span>
+            </div>
+            <div id="market" class="market"></div>
+          </section>
+
+          <aside class="side-panel">
+            <section aria-labelledby="players-title">
+              <h2 id="players-title">Players</h2>
+              <div id="players" class="players"></div>
+            </section>
+
+            <section aria-labelledby="log-title">
+              <h2 id="log-title">Action log</h2>
+              <ol id="action-log" class="action-log"></ol>
+            </section>
+
+            <section aria-labelledby="rules-title" class="help-panel">
+              <h2 id="rules-title">Rule guardrails</h2>
+              <p>
+                One action per turn: take exactly 3 different non-gold tokens,
+                take exactly 2 matching non-gold tokens from a stack that had at
+                least 4, reserve one card with gold if available, or buy one
+                market/reserved card. The first player to 15 prestige triggers
+                the final round so all players get equal turns. Ties use fewer
+                purchased cards only; remaining ties are shared.
+              </p>
+            </section>
+          </aside>
+        </div>
+
+        <section class="bga-panel" aria-labelledby="bga-title">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">BGA-style tools</p>
+              <h2 id="bga-title">Export, import, and replay</h2>
+            </div>
+            <span id="replay-status" class="muted compact">Live table</span>
+          </div>
+          <p class="muted">
+            This uses a stable ZephyrLabs schema inspired by public BGA Studio
+            concepts: a <code>gamedatas</code> object, notification-like move log,
+            and <code>next_move_id</code>. The exact private BGA Splendor protocol
+            is not public, so this is BGA-style compatibility, not official BGA
+            protocol parity.
+          </p>
+          <div class="bga-actions">
+            <button id="export-state" type="button">Export state</button>
+            <button id="import-state" type="button">Import state</button>
+            <button id="export-replay" type="button">Export replay</button>
+            <button id="load-replay" type="button">Load replay</button>
+            <button id="prev-move" type="button">Prev move</button>
+            <button id="next-move" type="button">Next move</button>
+            <button id="exit-replay" type="button">Exit replay</button>
+          </div>
+          <textarea id="bga-json" spellcheck="false" placeholder="Exported JSON appears here. Paste state or replay JSON here before importing/loading."></textarea>
+        </section>
+      </section>
+    </main>
+
+    <script src="splendor-table.js"></script>
+  </body>
+</html>

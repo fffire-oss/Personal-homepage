@@ -1,6 +1,11 @@
-# FFFire Personal Portfolio
+# ZephyrLabs Personal Homepage
 
-Static personal homepage for projects, research notes, and engineering work, with current focus areas in reinforcement learning and automated trading.
+Static personal homepage for projects, skiing notes, and small web experiments.
+
+## Planning Docs
+
+- `docs/content-workbook.md`: editable workbook for filling in homepage copy, skiing notes, places, time/space visuals, project descriptions, AI chat personality, and comment fields.
+- `docs/site-roadmap.md`: phased roadmap for growing the static page into a content-driven site with AI chat, comments, and an admin system.
 
 ## Local Preview
 
