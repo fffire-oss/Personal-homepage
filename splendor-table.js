@@ -3127,7 +3127,7 @@ Object.assign(I18N.de, {
     reservedCard.reserved_public = type !== "reserveDeck";
     player.reserved.push(reservedCard);
     var tookGold = false;
-    if (state.bank.gold > 0 && totalTokens(player) < 10) {
+    if (state.bank.gold > 0) {
       state.bank.gold -= 1;
       player.tokens.gold += 1;
       tookGold = true;
