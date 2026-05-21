@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css?v=20260522-mobile-reserve-preview2" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260522-mobile-market-compact1" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -79,28 +79,59 @@
         <nav id="board-progress" class="board-progress" aria-label="Board sections">
           <a href="#market-panel" data-progress-target="market-panel"><span data-i18n="market">Market</span></a>
           <a href="#players-panel" data-progress-target="players-panel"><span data-i18n="players">Players</span></a>
-          <a href="#bank-panel" data-progress-target="bank-panel"><span data-i18n="bank">Bank</span></a>
-          <a href="#active-hand-panel" data-progress-target="active-hand-panel"><span data-i18n="reservedCards">Reserved cards</span></a>
-          <a href="#nobles-panel" data-progress-target="nobles-panel"><span data-i18n="nobles">Nobles</span></a>
+          <a href="#log-panel" data-progress-target="log-panel"><span data-i18n="actionLog">Action log</span></a>
           <a href="#bga-panel" data-progress-target="bga-panel"><span data-i18n="bgaTools">BGA-style tools</span></a>
         </nav>
 
-        <div class="status-bar">
-          <div>
-            <span class="label" data-i18n="currentPlayer">Current player</span>
-            <strong id="current-player">-</strong>
+        <section id="table-top-panel" class="table-top-panel">
+          <div class="status-bar">
+            <div>
+              <span class="label" data-i18n="currentPlayer">Current player</span>
+              <strong id="current-player">-</strong>
+            </div>
+            <div>
+              <span class="label" data-i18n="round">Round</span>
+              <strong id="round-label">1</strong>
+            </div>
+            <div>
+              <span class="label" data-i18n="state">State</span>
+              <strong id="game-state-label">In progress</strong>
+            </div>
+            <div>
+              <span class="label" data-i18n="move">Move</span>
+              <strong id="move-label">0</strong>
+            </div>
+            <div class="status-actions">
+              <button id="restart-game" type="button" data-i18n="restartGame">Restart</button>
+            </div>
           </div>
-          <div>
-            <span class="label" data-i18n="round">Round</span>
-            <strong id="round-label">1</strong>
-          </div>
-          <div>
-            <span class="label" data-i18n="state">State</span>
-            <strong id="game-state-label">In progress</strong>
-          </div>
-          <div>
-            <span class="label" data-i18n="move">Move</span>
-            <strong id="move-label">0</strong>
+
+          <details id="bank-panel" class="bank-panel table-bank-panel" open>
+            <summary class="bank-summary">
+              <div>
+                <h3 id="bank-title" data-i18n="bank">Bank</h3>
+                <p id="take-summary" class="muted compact">No take selected.</p>
+              </div>
+              <span class="bank-toggle" data-i18n="showHide">Show / hide</span>
+            </summary>
+            <div class="bank-body">
+              <div id="bank-tokens" class="bank-tokens"></div>
+              <div class="action-buttons">
+                <button id="confirm-take" type="button" class="primary" data-i18n="confirmTake">Confirm take</button>
+                <button id="clear-take" type="button" data-i18n="clear">Clear</button>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <div id="handoff-overlay" class="handoff-overlay" hidden aria-live="polite" aria-atomic="true">
+          <div class="handoff-card">
+            <span class="handoff-spinner" aria-hidden="true"></span>
+            <div>
+              <strong id="handoff-title">Turn handoff</strong>
+              <p id="handoff-body" class="muted compact"></p>
+            </div>
+            <span id="handoff-countdown" class="handoff-countdown">3</span>
           </div>
         </div>
 
@@ -133,25 +164,6 @@
           <div id="noble-choice-list" class="noble-row"></div>
         </section>
 
-        <section id="payment-panel" class="step-panel payment-panel" hidden>
-          <div>
-            <h2 data-i18n="choosePayment">Choose payment</h2>
-            <p class="muted" data-i18n="choosePaymentBody">Select the exact tokens to spend. Gold can replace any needed color.</p>
-          </div>
-          <div class="payment-workspace">
-            <div id="payment-card" class="payment-card"></div>
-            <div>
-              <p id="payment-summary" class="muted compact"></p>
-              <div id="payment-options" class="payment-options"></div>
-            </div>
-            <div class="payment-actions action-buttons">
-              <button id="confirm-payment" type="button" class="primary" data-i18n="confirmPurchase">Confirm purchase</button>
-              <button id="clear-payment" type="button" data-i18n="clearPayment">Clear payment</button>
-              <button id="cancel-payment" type="button" data-i18n="cancelPayment">Cancel</button>
-            </div>
-          </div>
-        </section>
-
         <div class="table-layout">
           <div class="table-main">
             <section id="market-panel" class="market-panel" aria-labelledby="market-title">
@@ -159,48 +171,16 @@
                 <h2 id="market-title" data-i18n="market">Market</h2>
                 <span class="muted compact" data-i18n="marketHint">Buy, reserve, or reserve blind from a deck.</span>
               </div>
+
+              <section id="nobles-panel" class="market-subpanel market-nobles" aria-labelledby="nobles-title">
+                <div class="market-subheading">
+                  <h3 id="nobles-title" data-i18n="nobles">Nobles</h3>
+                  <span class="muted compact" data-i18n="noblesHint">Permanent bonuses only. No replenishment.</span>
+                </div>
+                <div id="nobles" class="noble-row"></div>
+              </section>
+
               <div id="market" class="market"></div>
-            </section>
-
-            <section id="bank-panel" class="bank-panel" aria-labelledby="bank-title">
-              <div class="panel-heading">
-                <div>
-                  <h2 id="bank-title" data-i18n="bank">Bank</h2>
-                  <p id="take-summary" class="muted compact">No take selected.</p>
-                </div>
-                <div class="action-buttons">
-                  <button id="confirm-take" type="button" class="primary" data-i18n="confirmTake">Confirm take</button>
-                  <button id="clear-take" type="button" data-i18n="clear">Clear</button>
-                </div>
-              </div>
-              <div id="bank-tokens" class="bank-tokens"></div>
-            </section>
-
-            <section id="active-hand-panel" class="active-hand-panel" aria-labelledby="active-hand-title">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow" data-i18n="privateHand">Private hand</p>
-                  <h2 id="active-hand-title" data-i18n="reservedCards">Reserved cards</h2>
-                </div>
-                <span id="active-hand-meta" class="muted compact"></span>
-              </div>
-              <div class="active-player-dock">
-                <div class="active-token-panel">
-                  <span class="label" data-i18n="tokens">Tokens</span>
-                  <div id="active-token-row" class="token-row"></div>
-                  <span class="label" data-i18n="bonuses">Bonuses</span>
-                  <div id="active-bonus-row" class="bonus-row"></div>
-                </div>
-                <div id="active-reserved" class="active-reserved"></div>
-              </div>
-            </section>
-
-            <section id="nobles-panel" class="nobles-panel" aria-labelledby="nobles-title">
-              <div class="panel-heading">
-                <h2 id="nobles-title" data-i18n="nobles">Nobles</h2>
-                <span class="muted compact" data-i18n="noblesHint">Permanent bonuses only. No replenishment.</span>
-              </div>
-              <div id="nobles" class="noble-row"></div>
             </section>
           </div>
 
@@ -210,11 +190,15 @@
               <div id="players" class="players"></div>
             </section>
 
-            <details class="log-panel">
+            <details id="log-panel" class="log-panel">
               <summary>
                 <span data-i18n="actionLog">Action log</span>
                 <span class="muted compact" data-i18n="showHide">Show / hide</span>
               </summary>
+              <div class="log-controls" role="group" aria-label="Action log visibility">
+                <button id="log-safe-mode" type="button" data-log-mode="safe" data-i18n="logSafeMode">Masked</button>
+                <button id="log-full-mode" type="button" data-log-mode="full" data-i18n="logFullMode">Full</button>
+              </div>
               <ol id="action-log" class="action-log"></ol>
             </details>
 
@@ -231,6 +215,44 @@
             </section>
           </aside>
         </div>
+
+        <details id="active-hand-panel" class="active-hand-panel active-hand-dock">
+          <summary class="active-hand-summary">
+            <span>
+              <span class="eyebrow" data-i18n="privateHand">Private hand</span>
+              <strong id="active-hand-title" data-i18n="reservedCards">Reserved cards</strong>
+            </span>
+            <span id="active-hand-meta" class="muted compact"></span>
+            <span class="active-hand-toggle" data-i18n="showHide">Show / hide</span>
+          </summary>
+          <div class="active-player-dock">
+            <div class="active-token-panel">
+              <span class="label" data-i18n="tokens">Tokens</span>
+              <div id="active-token-row" class="token-row"></div>
+              <span class="label" data-i18n="bonuses">Bonuses</span>
+              <div id="active-bonus-row" class="bonus-row"></div>
+            </div>
+            <section id="payment-panel" class="payment-panel active-payment-panel" hidden>
+              <div class="active-payment-head">
+                <div>
+                  <h2 data-i18n="choosePayment">Choose payment</h2>
+                  <p class="muted compact" data-i18n="choosePaymentBody">Select the exact tokens to spend. Gold can replace any needed color.</p>
+                </div>
+                <p id="payment-summary" class="muted compact"></p>
+              </div>
+              <div class="payment-workspace">
+                <div id="payment-card" class="payment-card"></div>
+                <div id="payment-options" class="payment-options"></div>
+                <div class="payment-actions action-buttons">
+                  <button id="confirm-payment" type="button" class="primary" data-i18n="confirmPurchase">Confirm purchase</button>
+                  <button id="clear-payment" type="button" data-i18n="clearPayment">Clear payment</button>
+                  <button id="cancel-payment" type="button" data-i18n="cancelPayment">Cancel</button>
+                </div>
+              </div>
+            </section>
+            <div id="active-reserved" class="active-reserved"></div>
+          </div>
+        </details>
 
         <section id="bga-panel" class="bga-panel" aria-labelledby="bga-title">
           <div class="panel-heading">
@@ -261,6 +283,6 @@
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260522-mobile-reserve-preview2"></script>
+    <script src="splendor-table.js?v=20260522-mobile-market-compact1"></script>
   </body>
 </html>
