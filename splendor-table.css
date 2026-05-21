@@ -2091,6 +2091,31 @@ body.market-sticky-active .market-panel {
     padding-bottom: 108px;
   }
 
+  main {
+    width: min(100% - 12px, 760px);
+  }
+
+  .start-panel,
+  .start-copy,
+  .start-form,
+  .game-panel,
+  .table-layout,
+  .table-main,
+  .market-panel,
+  .table-top-panel,
+  .players-panel {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  button,
+  select,
+  input,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .status-bar {
     position: static;
   }
