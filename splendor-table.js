@@ -1597,12 +1597,16 @@ Object.assign(I18N.de, {
     return copy;
   }
 
-  function generateDeck(tier, size) {
+  function randomSeed() {
+    return (Date.now() ^ Math.floor(Math.random() * 4294967295)) >>> 0;
+  }
+
+  function generateDeck(tier, size, seed) {
     var deck = (DEVELOPMENT_CARDS[tier] || []).map(clone);
     if (deck.length !== size && window.console && window.console.warn) {
       window.console.warn("Unexpected development deck size", tier, deck.length, size);
     }
-    return shuffle(deck, 7000 + tier * 101);
+    return shuffle(deck, (seed || 7000) + tier * 101);
   }
 
   function tokenCountForPlayers(playerCount) {
@@ -1622,16 +1626,18 @@ Object.assign(I18N.de, {
   function createGame(playerCount, names, aiSettings) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
+    var tableSeed = randomSeed();
     var decks = {
-      1: generateDeck(1, TIER_SIZES[1]),
-      2: generateDeck(2, TIER_SIZES[2]),
-      3: generateDeck(3, TIER_SIZES[3])
+      1: generateDeck(1, TIER_SIZES[1], tableSeed),
+      2: generateDeck(2, TIER_SIZES[2], tableSeed + 1009),
+      3: generateDeck(3, TIER_SIZES[3], tableSeed + 2003)
     };
     var game = {
       schema: SCHEMA,
       created_at: new Date().toISOString(),
       mode: "live",
       playerCount: playerCount,
+      table_seed: tableSeed,
       next_move_id: 1,
       players: Array.from({ length: playerCount }, function (_, index) {
         var aiLevel = normalizeAiLevel(aiConfig[index] && (aiConfig[index].level || aiConfig[index].mode));
@@ -1654,7 +1660,7 @@ Object.assign(I18N.de, {
       bank: emptyCounts(true),
       decks: decks,
       market: { 1: [], 2: [], 3: [] },
-      nobles: shuffle(NOBLE_POOL, 9111).slice(0, playerCount + 1),
+      nobles: shuffle(NOBLE_POOL, tableSeed + 9111).slice(0, playerCount + 1),
       current: 0,
       round: 1,
       log: [],
@@ -3864,13 +3870,14 @@ Object.assign(I18N.de, {
         return;
       }
       if (!canAct()) return;
-      var actions = legalRandomAiBuyActions(player).concat(legalRandomAiTakeActions());
-      if (!actions.length) {
+      var buyActions = legalRandomAiBuyActions(player);
+      var takeActions = legalRandomAiTakeActions();
+      if (!buyActions.length && !takeActions.length) {
         saveState();
         render();
         return;
       }
-      var action = randomChoice(actions);
+      var action = buyActions.length ? randomChoice(buyActions) : randomChoice(takeActions);
       if (action.type === "buy") {
         completePurchase(action.context, action.payment, null, { ai: true });
       } else if (action.type === "take") {
