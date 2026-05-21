@@ -118,7 +118,9 @@
       affordable: "Affordable",
       needTokens: "Need tokens",
       buy: "Buy",
+      buyShort: "Buy",
       reserve: "Reserve",
+      reserveShort: "Res",
       choose: "Choose",
       tier: "Tier",
       deckCards: "Cards left",
@@ -1340,6 +1342,36 @@ Object.assign(I18N.de, {
     logFaceUpReserve: "\u660e\u724c\u9810\u7d04"
   });
 
+  Object.assign(I18N["zh-Hans"], {
+    buyShort: "\u4e70",
+    reserveShort: "\u7ea6"
+  });
+
+  Object.assign(I18N["zh-Hant"], {
+    buyShort: "\u8cb7",
+    reserveShort: "\u7d04"
+  });
+
+  Object.assign(I18N.ja, {
+    buyShort: "\u8cb7",
+    reserveShort: "\u4e88"
+  });
+
+  Object.assign(I18N.fr, {
+    buyShort: "Ach.",
+    reserveShort: "Res."
+  });
+
+  Object.assign(I18N.de, {
+    buyShort: "Kauf",
+    reserveShort: "Res."
+  });
+
+  Object.assign(I18N.es, {
+    buyShort: "Com.",
+    reserveShort: "Res."
+  });
+
   var NOBLE_POOL = [
     { id: "noble-01", req: { white: 4, blue: 4 } },
     { id: "noble-02", req: { blue: 4, green: 4 } },
@@ -2149,10 +2181,10 @@ Object.assign(I18N.de, {
     var affordText = afford && afford.ok ? t("affordable") : t("needTokens");
     var actions = [];
     if (controls.buy) {
-      actions.push('<button type="button" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
     }
     if (controls.reserve) {
-      actions.push('<button type="button" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
     }
     return [
       '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" style="' + gemStyle(card.color) + '">',
@@ -2213,7 +2245,7 @@ Object.assign(I18N.de, {
         '<span class="label">' + t("tier") + " " + tier + "</span>",
         "<strong>" + state.decks[tier].length + "</strong>",
         '<span class="muted compact">' + t("deckCards") + "</span>",
-        '<button type="button" data-reserve-deck="' + tier + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
+        '<button type="button" data-reserve-deck="' + tier + '" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
         "</div>",
         '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
         "</section>"
@@ -2639,6 +2671,10 @@ Object.assign(I18N.de, {
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
+  function compactViewport() {
+    return window.matchMedia && window.matchMedia("(max-width: 760px), (pointer: coarse)").matches;
+  }
+
   function stickyFrameRect() {
     var market = byId("market-panel");
     if (!market) return null;
@@ -2685,6 +2721,9 @@ Object.assign(I18N.de, {
   function marketStickyThreshold() {
     var rect = stickyFrameRect();
     if (!rect) return 320;
+    if (compactViewport()) {
+      return Math.max(110, Math.min(window.innerHeight * 0.34, rect.height * 0.34));
+    }
     return Math.max(260, rect.height * 0.8);
   }
 
