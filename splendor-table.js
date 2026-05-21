@@ -72,7 +72,7 @@
       choosePaymentBody: "Select the exact tokens to spend. Gold can replace any needed color.",
       bank: "Bank",
       noTakeSelected: "No take selected.",
-      selectedTokens: "Selected: {tokens}. Legal take requires 3 different or 2 matching from a stack with 4+.",
+      selectedTokens: "Selected: {tokens}. Legal take requires 3 different, every available color if fewer than 3 remain, or 2 matching from a stack with 4+.",
       confirmTake: "Confirm take",
       clear: "Clear",
       nobles: "Nobles",
@@ -159,7 +159,7 @@
       msgTwoSameOnly: "You can take only two matching tokens.",
       msgTwoSameNeedFour: "Two matching tokens require at least 4 in that bank stack before taking.",
       msgThreeDifferent: "Three-token takes must use different colors.",
-      msgSelectLegalTake: "Select exactly 3 different non-gold tokens, or exactly 2 matching tokens from a stack with 4+.",
+      msgSelectLegalTake: "Select 3 different non-gold tokens, every available color if fewer than 3 remain, or exactly 2 matching tokens from a stack with 4+.",
       msgReserveLimit: "A player can reserve at most 3 cards.",
       msgMarketGone: "That market card is no longer available.",
       msgDeckEmpty: "That deck is empty.",
@@ -941,6 +941,7 @@
     gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
     msgSwitchingPlayer: "\u672c\u56de\u5408\u7ed3\u675f\uff0c{seconds} \u79d2\u540e\u5207\u6362\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
     msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
+    msgSelectLegalTake: "\u8bf7\u9009\u62e9 3 \u79cd\u4e0d\u540c\u7684\u975e\u91d1\u5e01\u5b9d\u77f3\uff1b\u5982\u679c\u94f6\u884c\u53ea\u5269\u5c11\u4e8e 3 \u79cd\u989c\u8272\uff0c\u5219\u9009\u5b8c\u6240\u6709\u53ef\u7528\u989c\u8272\uff1b\u6216\u4ece\u6570\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u91cc\u9009 2 \u679a\u3002",
     msgRandomAiEnabled: "\u667a\u80fd AI \u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u5df2\u4f7f\u7528\u968f\u673a AI \u4ee3\u66ff\uff1a\u5b83\u4f1a\u6267\u884c\u5408\u6cd5\u7684\u975e\u9884\u7ea6\u64cd\u4f5c\u3002",
     msgNoValidSavedTable: "没有找到有效存档。",
     msgSavedResumed: "已恢复存档桌面。",
@@ -992,6 +993,7 @@
     gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
     msgSwitchingPlayer: "\u672c\u56de\u5408\u7d50\u675f\uff0c{seconds} \u79d2\u5f8c\u5207\u63db\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
     msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
+    msgSelectLegalTake: "\u8acb\u9078\u64c7 3 \u7a2e\u4e0d\u540c\u7684\u975e\u91d1\u5e63\u5bf6\u77f3\uff1b\u5982\u679c\u9280\u884c\u53ea\u5269\u5c11\u65bc 3 \u7a2e\u984f\u8272\uff0c\u5247\u9078\u5b8c\u6240\u6709\u53ef\u7528\u984f\u8272\uff1b\u6216\u5f9e\u6578\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u88e1\u9078 2 \u679a\u3002",
     msgRandomAiEnabled: "\u667a\u6167 AI \u66ab\u6642\u4e0d\u53ef\u7528\uff0c\u5df2\u4f7f\u7528\u96a8\u6a5f AI \u4ee3\u66ff\uff1a\u5b83\u6703\u57f7\u884c\u5408\u6cd5\u7684\u975e\u9810\u7d04\u64cd\u4f5c\u3002",
     returnTokens: "歸還寶石",
     returnTokensBody: "當前玩家必須把寶石歸還到 10 枚或更少，之後才會結算貴族或進入下一回合。",
@@ -2985,10 +2987,22 @@ Object.assign(I18N.de, {
     ].join("");
   }
 
+  function availableTakeColors() {
+    if (!state) return [];
+    return COLORS.filter(function (color) {
+      return state.bank[color] > 0;
+    });
+  }
+
+  function differentTakeTargetCount() {
+    return Math.min(3, availableTakeColors().length);
+  }
+
   function pendingTakeIsLegal() {
-    if (pendingTake.length === 3) {
+    if (!state || pendingTake.length === 0) return false;
+    if (pendingTake.length === differentTakeTargetCount()) {
       var unique = new Set(pendingTake);
-      return unique.size === 3;
+      return unique.size === pendingTake.length;
     }
     if (pendingTake.length === 2 && pendingTake[0] === pendingTake[1]) {
       return state.bank[pendingTake[0]] >= 4;
@@ -3113,7 +3127,7 @@ Object.assign(I18N.de, {
     reservedCard.reserved_public = type !== "reserveDeck";
     player.reserved.push(reservedCard);
     var tookGold = false;
-    if (state.bank.gold > 0) {
+    if (state.bank.gold > 0 && totalTokens(player) < 10) {
       state.bank.gold -= 1;
       player.tokens.gold += 1;
       tookGold = true;
@@ -3828,13 +3842,15 @@ Object.assign(I18N.de, {
 
   function legalRandomAiTakeActions() {
     var actions = [];
-    var available = COLORS.filter(function (color) {
-      return state.bank[color] > 0;
-    });
-    for (var a = 0; a < available.length; a += 1) {
-      for (var b = a + 1; b < available.length; b += 1) {
-        for (var c = b + 1; c < available.length; c += 1) {
-          actions.push({ type: "take", colors: [available[a], available[b], available[c]] });
+    var available = availableTakeColors();
+    if (available.length > 0 && available.length < 3) {
+      actions.push({ type: "take", colors: available.slice() });
+    } else {
+      for (var a = 0; a < available.length; a += 1) {
+        for (var b = a + 1; b < available.length; b += 1) {
+          for (var c = b + 1; c < available.length; c += 1) {
+            actions.push({ type: "take", colors: [available[a], available[b], available[c]] });
+          }
         }
       }
     }
