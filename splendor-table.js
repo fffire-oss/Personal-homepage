@@ -7,12 +7,14 @@
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
+  var TURN_SWITCH_DELAY_MS = 3000;
+  var AI_MIN_THINK_MS = 2000;
   var GEM_HEX = {
     white: "#f1eadb",
     blue: "#55a7ff",
     green: "#37e89b",
     red: "#ff6b5d",
-    black: "#536070",
+    black: "#778494",
     gold: "#ffbf45"
   };
   var TOKEN_LABEL = {
@@ -21,7 +23,7 @@
     green: "G",
     red: "R",
     black: "B",
-    gold: "*"
+    gold: "Au"
   };
   var TIER_SIZES = { 1: 40, 2: 30, 3: 20 };
   var LANGUAGE_KEY = "zephyrlabs-gem-table-language-v1";
@@ -32,6 +34,7 @@
       tableEyebrow: "Unofficial local table",
       save: "Save",
       reset: "Reset",
+      restartGame: "Restart",
       setupEyebrow: "Hot-seat setup",
       startTitle: "Start a local game",
       startDescription: "Generic, rules-compatible cards and tiles are used. No official artwork, logos, card scans, or Board Game Arena assets are included.",
@@ -46,7 +49,7 @@
       aiLevelEasy: "Casual",
       aiLevelBalanced: "Balanced",
       aiLevelExpert: "Expert",
-      aiBadgeFormat: "AI takeover: {level} (temporarily unavailable)",
+      aiBadgeFormat: "Random AI: {level}",
       startGame: "Start game",
       resumeSave: "Resume save",
       clearSave: "Clear save",
@@ -60,7 +63,7 @@
       move: "Move",
       aiPlayers: "AI players",
       aiUnavailableTitle: "Smart AI is temporarily unavailable",
-      aiUnavailableBody: "AI opponents can be marked in setup, but automated decisions are still being deployed. For now, every turn remains manual hot-seat.",
+      aiUnavailableBody: "Smart decisions are still being deployed. AI takeover currently uses a random legal move and will not reserve cards.",
       returnTokens: "Return tokens",
       returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
       chooseOneNoble: "Choose one noble",
@@ -69,7 +72,7 @@
       choosePaymentBody: "Select the exact tokens to spend. Gold can replace any needed color.",
       bank: "Bank",
       noTakeSelected: "No take selected.",
-      selectedTokens: "Selected: {tokens}. Legal take requires 3 different or 2 matching from a stack with 4+.",
+      selectedTokens: "Selected: {tokens}. Legal take requires 3 different, every available color if fewer than 3 remain, or 2 matching from a stack with 4+.",
       confirmTake: "Confirm take",
       clear: "Clear",
       nobles: "Nobles",
@@ -77,6 +80,23 @@
       market: "Market",
       marketHint: "Buy, reserve, or reserve blind from a deck.",
       actionLog: "Action log",
+      logSafeMode: "Masked",
+      logFullMode: "Full",
+      logStart: "Table started",
+      logMove: "Move {move}",
+      logTakeTokensTitle: "Take tokens",
+      logReserveTitle: "Reserve card",
+      logBuyTitle: "Buy card",
+      logDiscardTitle: "Return token",
+      logNobleTitle: "Noble",
+      logGameTitle: "Game",
+      logBlindCard: "Blind tier {tier}",
+      logUnknownCard: "Unknown card",
+      logGoldTaken: "Gold taken",
+      logPayment: "Payment",
+      logRandomAi: "Random AI",
+      logBlindReserve: "Blind reserve",
+      logFaceUpReserve: "Face-up reserve",
       showHide: "Show / hide",
       ruleGuardrails: "Rule guardrails",
       ruleGuardrailsBody: "One action per turn: take exactly 3 different non-gold tokens, take exactly 2 matching non-gold tokens from a stack that had at least 4, reserve one card with gold if available, or buy one market/reserved card. The first player to 15 prestige triggers the final round so all players get equal turns. Ties use fewer purchased cards only; remaining ties are shared.",
@@ -98,7 +118,9 @@
       affordable: "Affordable",
       needTokens: "Need tokens",
       buy: "Buy",
+      buyShort: "Buy",
       reserve: "Reserve",
+      reserveShort: "Res",
       choose: "Choose",
       tier: "Tier",
       deckCards: "Cards left",
@@ -123,6 +145,8 @@
       gameDiscard: "Discard required",
       gameNoble: "Noble choice",
       gamePayment: "Payment choice",
+      gameAiThinking: "AI thinking",
+      gameTurnTransition: "Turn handoff",
       gameFinal: "Final round ({turns} turns left)",
       gameProgress: "In progress",
       msgSaveSerializeFailed: "Save failed: table state could not be serialized.",
@@ -137,7 +161,7 @@
       msgTwoSameOnly: "You can take only two matching tokens.",
       msgTwoSameNeedFour: "Two matching tokens require at least 4 in that bank stack before taking.",
       msgThreeDifferent: "Three-token takes must use different colors.",
-      msgSelectLegalTake: "Select exactly 3 different non-gold tokens, or exactly 2 matching tokens from a stack with 4+.",
+      msgSelectLegalTake: "Select 3 different non-gold tokens, every available color if fewer than 3 remain, or exactly 2 matching tokens from a stack with 4+.",
       msgReserveLimit: "A player can reserve at most 3 cards.",
       msgMarketGone: "That market card is no longer available.",
       msgDeckEmpty: "That deck is empty.",
@@ -173,6 +197,9 @@
       msgJsonParseFailed: "JSON parse failed: {message}",
       msgChoosePlayerCount: "Choose 2, 3, or 4 players.",
       msgGameStarted: "Game started.",
+      msgSwitchingPlayer: "Turn ends. Next player in {seconds}s.",
+      msgAiThinking: "{player} is thinking.",
+      msgRandomAiEnabled: "Smart AI is temporarily unavailable. Random AI will play legal non-reserve moves for this player.",
       msgNoValidSavedTable: "No valid saved table found.",
       msgSavedResumed: "Saved table resumed.",
       msgSavedCleared: "Saved data cleared.",
@@ -298,7 +325,7 @@
     clearSave: "清除存檔",
     currentPlayer: "當前玩家",
     aiUnavailableTitle: "智慧 AI 暫不可用",
-    aiUnavailableBody: "可以在設定裡標記 AI 對手，但自動決策仍在部署中。目前所有回合仍為手動熱座操作。",
+    aiUnavailableBody: "\u667a\u6167\u6c7a\u7b56\u4ecd\u5728\u90e8\u7f72\u4e2d\u3002\u76ee\u524d AI \u63a5\u7ba1\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5\u64cd\u4f5c\uff0c\u4e0d\u6703\u57f7\u884c\u9810\u7d04\u3002",
     noTakeSelected: "尚未選擇拿取。",
     selectedTokens: "已選擇：{tokens}。合法拿取為 3 個不同顏色，或從數量不少於 4 的同色堆拿 2 個。",
     confirmTake: "確認拿取",
@@ -505,9 +532,9 @@
     resumeSave: "Fortsetzen",
     clearSave: "Spielstand löschen",
     quickStarts: "Schnellstart",
-    currentPlayer: "Aktiver Spieler",
-    round: "Runde",
-    state: "Status",
+    currentPlayer: "Aktiv",
+    round: "Rd.",
+    state: "Phase",
     move: "Zug",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "Smarte KI ist nicht verfügbar",
@@ -671,6 +698,7 @@
     tableEyebrow: "\u975e\u5b98\u65b9\u672c\u5730\u684c",
     save: "\u4fdd\u5b58",
     reset: "\u91cd\u7f6e",
+    restartGame: "\u91cd\u65b0\u5f00\u59cb",
     setupEyebrow: "\u70ed\u5ea7\u8bbe\u7f6e",
     startTitle: "\u5f00\u59cb\u672c\u5730\u6e38\u620f",
     players: "\u73a9\u5bb6",
@@ -720,7 +748,9 @@
     startTitle: "\u958b\u59cb\u672c\u5730\u904a\u6232",
     smartAi: "\u667a\u6167 AI",
     currentPlayer: "\u7576\u524d\u73a9\u5bb6",
+    restartGame: "\u91cd\u65b0\u958b\u59cb",
     aiUnavailableTitle: "\u667a\u6167 AI \u66ab\u4e0d\u53ef\u7528",
+    aiUnavailableBody: "\u667a\u6167\u6c7a\u7b56\u4ecd\u5728\u90e8\u7f72\u4e2d\u3002\u76ee\u524d AI \u63a5\u7ba1\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5\u64cd\u4f5c\uff0c\u4e0d\u6703\u57f7\u884c\u9810\u7d04\u3002",
     actionLog: "\u884c\u52d5\u65e5\u8a8c",
     privateHand: "\u79c1\u4eba\u624b\u724c",
     buy: "\u8cfc\u8cb7",
@@ -774,9 +804,9 @@
     reset: "Zuruecksetzen",
     startTitle: "Lokales Spiel starten",
     players: "Spieler",
-    currentPlayer: "Aktiver Spieler",
-    round: "Runde",
-    state: "Status",
+    currentPlayer: "Aktiv",
+    round: "Rd.",
+    state: "Phase",
     move: "Zug",
     aiUnavailableTitle: "Smarte KI ist nicht verfuegbar",
     bank: "Bank",
@@ -819,9 +849,9 @@
     aiLevelEasy: "休闲",
     aiLevelBalanced: "均衡",
     aiLevelExpert: "高阶",
-    aiBadgeFormat: "AI 接管：{level}（暂时不可用）",
+    aiBadgeFormat: "\u968f\u673a AI\uff1a{level}",
     aiUnavailableTitle: "智能 AI 暂时不可用",
-    aiUnavailableBody: "可以在设置里标记 AI 对手，但自动决策仍在部署中。目前所有回合仍为手动热座操作。",
+    aiUnavailableBody: "\u667a\u80fd\u51b3\u7b56\u4ecd\u5728\u90e8\u7f72\u4e2d\u3002\u76ee\u524d AI \u63a5\u7ba1\u4f7f\u7528\u968f\u673a\u5408\u6cd5\u64cd\u4f5c\uff0c\u4e0d\u4f1a\u6267\u884c\u9884\u7ea6\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须把宝石归还到 10 枚或更少，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -909,6 +939,12 @@
     msgJsonParseFailed: "JSON 解析失败：{message}",
     msgChoosePlayerCount: "请选择 2、3 或 4 位玩家。",
     msgGameStarted: "游戏已开始。",
+    gameAiThinking: "AI \u601d\u8003\u4e2d",
+    gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
+    msgSwitchingPlayer: "\u672c\u56de\u5408\u7ed3\u675f\uff0c{seconds} \u79d2\u540e\u5207\u6362\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
+    msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
+    msgSelectLegalTake: "\u8bf7\u9009\u62e9 3 \u79cd\u4e0d\u540c\u7684\u975e\u91d1\u5e01\u5b9d\u77f3\uff1b\u5982\u679c\u94f6\u884c\u53ea\u5269\u5c11\u4e8e 3 \u79cd\u989c\u8272\uff0c\u5219\u9009\u5b8c\u6240\u6709\u53ef\u7528\u989c\u8272\uff1b\u6216\u4ece\u6570\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u91cc\u9009 2 \u679a\u3002",
+    msgRandomAiEnabled: "\u667a\u80fd AI \u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u5df2\u4f7f\u7528\u968f\u673a AI \u4ee3\u66ff\uff1a\u5b83\u4f1a\u6267\u884c\u5408\u6cd5\u7684\u975e\u9884\u7ea6\u64cd\u4f5c\u3002",
     msgNoValidSavedTable: "没有找到有效存档。",
     msgSavedResumed: "已恢复存档桌面。",
     msgSavedCleared: "存档已清除。",
@@ -948,13 +984,19 @@
     aiLevelEasy: "休閒",
     aiLevelBalanced: "均衡",
     aiLevelExpert: "高階",
-    aiBadgeFormat: "AI 接管：{level}（暫時不可用）",
+    aiBadgeFormat: "\u96a8\u6a5f AI\uff1a{level}",
     round: "回合",
     state: "狀態",
     move: "步數",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "智慧 AI 暫時不可用",
     aiUnavailableBody: "可以在設定裡標記 AI 對手，但自動決策仍在部署中。目前所有回合仍為手動熱座操作。",
+    gameAiThinking: "AI \u601d\u8003\u4e2d",
+    gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
+    msgSwitchingPlayer: "\u672c\u56de\u5408\u7d50\u675f\uff0c{seconds} \u79d2\u5f8c\u5207\u63db\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
+    msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
+    msgSelectLegalTake: "\u8acb\u9078\u64c7 3 \u7a2e\u4e0d\u540c\u7684\u975e\u91d1\u5e63\u5bf6\u77f3\uff1b\u5982\u679c\u9280\u884c\u53ea\u5269\u5c11\u65bc 3 \u7a2e\u984f\u8272\uff0c\u5247\u9078\u5b8c\u6240\u6709\u53ef\u7528\u984f\u8272\uff1b\u6216\u5f9e\u6578\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u88e1\u9078 2 \u679a\u3002",
+    msgRandomAiEnabled: "\u667a\u6167 AI \u66ab\u6642\u4e0d\u53ef\u7528\uff0c\u5df2\u4f7f\u7528\u96a8\u6a5f AI \u4ee3\u66ff\uff1a\u5b83\u6703\u57f7\u884c\u5408\u6cd5\u7684\u975e\u9810\u7d04\u64cd\u4f5c\u3002",
     returnTokens: "歸還寶石",
     returnTokensBody: "當前玩家必須把寶石歸還到 10 枚或更少，之後才會結算貴族或進入下一回合。",
     chooseOneNoble: "選擇一位貴族",
@@ -1022,6 +1064,7 @@
     playerName: "プレイヤー {n} 名",
     smartAi: "スマートAI",
     startGame: "ゲーム開始",
+    restartGame: "Restart",
     resumeSave: "保存を再開",
     clearSave: "保存を消去",
     quickStarts: "クイック開始",
@@ -1033,10 +1076,10 @@
     aiLevelEasy: "カジュアル",
     aiLevelBalanced: "バランス",
     aiLevelExpert: "上級",
-    aiBadgeFormat: "AI操作：{level}（一時的に利用不可）",
+    aiBadgeFormat: "Random AI: {level}",
     aiPlayers: "AIプレイヤー",
     aiUnavailableTitle: "スマートAIは一時的に利用できません",
-    aiUnavailableBody: "設定でAI対戦相手を指定できますが、自動判断はまだデプロイ中です。現在はすべて手動ホットシートです。",
+    aiUnavailableBody: "Smart AI is temporarily unavailable. Random AI now plays legal non-reserve moves.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは、貴族判定または次の手番に進む前にトークンを10個以下まで返します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -1093,6 +1136,7 @@
     playerName: "Nom du joueur {n}",
     smartAi: "IA intelligente",
     startGame: "Demarrer",
+    restartGame: "Redemarrer",
     resumeSave: "Reprendre",
     clearSave: "Effacer la sauvegarde",
     quickStarts: "Demarrages rapides",
@@ -1104,10 +1148,10 @@
     aiLevelEasy: "Detendu",
     aiLevelBalanced: "Equilibre",
     aiLevelExpert: "Expert",
-    aiBadgeFormat: "Relais IA : {level} (temporairement indisponible)",
+    aiBadgeFormat: "IA aleatoire : {level}",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "IA temporairement indisponible",
-    aiUnavailableBody: "Les adversaires IA peuvent etre marques, mais les decisions automatiques sont encore en deploiement. Pour l'instant, tout reste manuel.",
+    aiUnavailableBody: "L'IA intelligente est encore en deploiement. Le relais utilise une IA aleatoire qui ne reserve pas.",
     returnTokens: "Rendre des jetons",
     returnTokensBody: "Le joueur actif doit revenir a 10 jetons ou moins avant les nobles ou le prochain tour.",
     chooseOneNoble: "Choisir un noble",
@@ -1140,7 +1184,7 @@
     gameFinal: "Dernier tour ({turns} tours restants)"
   });
 
-  Object.assign(I18N.de, {
+Object.assign(I18N.de, {
     setupEyebrow: "Hot-Seat Setup",
     startDescription: "Es werden generische, regelkompatible Karten und Platten verwendet. Keine offiziellen Grafiken, Logos, Kartenscans oder Board Game Arena Assets.",
     players2: "2 Spieler",
@@ -1149,6 +1193,11 @@
     playerName: "Name Spieler {n}",
     smartAi: "Smarte KI",
     startGame: "Starten",
+    currentPlayer: "Aktiv",
+    round: "Rd.",
+    state: "Phase",
+    move: "Zug",
+    restartGame: "Neu",
     resumeSave: "Fortsetzen",
     clearSave: "Spielstand loeschen",
     quickStarts: "Schnellstart",
@@ -1160,10 +1209,10 @@
     aiLevelEasy: "Locker",
     aiLevelBalanced: "Ausgewogen",
     aiLevelExpert: "Experte",
-    aiBadgeFormat: "KI uebernimmt: {level} (voruebergehend nicht verfuegbar)",
+    aiBadgeFormat: "Zufalls-KI: {level}",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "Smarte KI voruebergehend nicht verfuegbar",
-    aiUnavailableBody: "KI-Gegner koennen markiert werden, automatische Entscheidungen werden aber noch bereitgestellt. Aktuell bleibt jeder Zug manuell.",
+    aiUnavailableBody: "Smarte KI ist noch nicht bereit. KI uebernahme nutzt eine Zufalls-KI ohne Reservieren.",
     returnTokens: "Marker zurueckgeben",
     returnTokensBody: "Der aktive Spieler muss auf 10 oder weniger Marker zurueckgeben, bevor Adlige oder der naechste Zug abgewickelt werden.",
     chooseOneNoble: "Einen Adligen waehlen",
@@ -1205,6 +1254,7 @@
     playerName: "Nombre jugador {n}",
     smartAi: "IA inteligente",
     startGame: "Iniciar",
+    restartGame: "Reiniciar",
     resumeSave: "Continuar guardado",
     clearSave: "Borrar guardado",
     quickStarts: "Inicios rapidos",
@@ -1216,10 +1266,10 @@
     aiLevelEasy: "Casual",
     aiLevelBalanced: "Equilibrado",
     aiLevelExpert: "Experto",
-    aiBadgeFormat: "IA controla: {level} (temporalmente no disponible)",
+    aiBadgeFormat: "IA aleatoria: {level}",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "IA temporalmente no disponible",
-    aiUnavailableBody: "Puedes marcar oponentes IA, pero las decisiones automaticas siguen en despliegue. Por ahora todos los turnos son manuales.",
+    aiUnavailableBody: "La IA inteligente sigue en despliegue. El control IA usa movimientos legales aleatorios sin reservar.",
     returnTokens: "Devolver fichas",
     returnTokensBody: "El jugador activo debe devolver fichas hasta tener 10 o menos antes de resolver nobles o el siguiente turno.",
     chooseOneNoble: "Elegir un noble",
@@ -1252,6 +1302,76 @@
     gameFinal: "Ronda final ({turns} turnos restantes)"
   });
 
+  Object.assign(I18N["zh-Hans"], {
+    logSafeMode: "\u8131\u654f",
+    logFullMode: "\u5b8c\u6574",
+    logStart: "\u724c\u5c40\u5f00\u59cb",
+    logMove: "\u7b2c {move} \u6b65",
+    logTakeTokensTitle: "\u62ff\u53d6\u5b9d\u77f3",
+    logReserveTitle: "\u9884\u7ea6\u5361\u724c",
+    logBuyTitle: "\u8d2d\u4e70\u5361\u724c",
+    logDiscardTitle: "\u5f52\u8fd8\u5b9d\u77f3",
+    logNobleTitle: "\u8d35\u65cf",
+    logGameTitle: "\u724c\u5c40",
+    logBlindCard: "{tier} \u7ea7\u6697\u724c",
+    logUnknownCard: "\u672a\u77e5\u5361\u724c",
+    logGoldTaken: "\u83b7\u5f97\u9ec4\u91d1",
+    logPayment: "\u652f\u4ed8",
+    logRandomAi: "\u968f\u673a AI",
+    logBlindReserve: "\u6697\u724c\u9884\u7ea6",
+    logFaceUpReserve: "\u660e\u724c\u9884\u7ea6"
+  });
+
+  Object.assign(I18N["zh-Hant"], {
+    logSafeMode: "\u812b\u654f",
+    logFullMode: "\u5b8c\u6574",
+    logStart: "\u724c\u5c40\u958b\u59cb",
+    logMove: "\u7b2c {move} \u6b65",
+    logTakeTokensTitle: "\u62ff\u53d6\u5bf6\u77f3",
+    logReserveTitle: "\u9810\u7d04\u5361\u724c",
+    logBuyTitle: "\u8cfc\u8cb7\u5361\u724c",
+    logDiscardTitle: "\u6b78\u9084\u5bf6\u77f3",
+    logNobleTitle: "\u8cb4\u65cf",
+    logGameTitle: "\u724c\u5c40",
+    logBlindCard: "{tier} \u7d1a\u6697\u724c",
+    logUnknownCard: "\u672a\u77e5\u5361\u724c",
+    logGoldTaken: "\u7372\u5f97\u9ec3\u91d1",
+    logPayment: "\u652f\u4ed8",
+    logRandomAi: "\u96a8\u6a5f AI",
+    logBlindReserve: "\u6697\u724c\u9810\u7d04",
+    logFaceUpReserve: "\u660e\u724c\u9810\u7d04"
+  });
+
+  Object.assign(I18N["zh-Hans"], {
+    buyShort: "\u4e70",
+    reserveShort: "\u7ea6"
+  });
+
+  Object.assign(I18N["zh-Hant"], {
+    buyShort: "\u8cb7",
+    reserveShort: "\u7d04"
+  });
+
+  Object.assign(I18N.ja, {
+    buyShort: "\u8cb7",
+    reserveShort: "\u4e88"
+  });
+
+  Object.assign(I18N.fr, {
+    buyShort: "Ach.",
+    reserveShort: "Res."
+  });
+
+  Object.assign(I18N.de, {
+    buyShort: "Kauf",
+    reserveShort: "Res."
+  });
+
+  Object.assign(I18N.es, {
+    buyShort: "Com.",
+    reserveShort: "Res."
+  });
+
   var NOBLE_POOL = [
     { id: "noble-01", req: { white: 4, blue: 4 } },
     { id: "noble-02", req: { blue: 4, green: 4 } },
@@ -1278,16 +1398,24 @@
   var replayIndex = -1;
   var pendingTake = [];
   var pendingPayment = null;
+  var logMode = "safe";
   var messageText = "";
   var startMessageText = "";
   var messageKind = "";
   var pendingFlight = null;
+  var aiTurnTimer = null;
+  var aiTurnInProgress = false;
+  var aiDisplayCurrentOverride = null;
+  var lastHumanPlayerIndex = 0;
+  var turnAdvanceTimer = null;
+  var overlayRefreshTimer = null;
   var marketStickyTimer = null;
   var marketElasticTimer = null;
   var marketElasticFrame = null;
   var marketStickyDelta = 0;
   var marketStickyLastInputAt = 0;
   var marketStickyReleaseUntil = 0;
+  var marketStickyDisabledUntilExit = false;
   var marketTouchPoint = null;
   var el = {};
 
@@ -1503,12 +1631,16 @@
     return copy;
   }
 
-  function generateDeck(tier, size) {
+  function randomSeed() {
+    return (Date.now() ^ Math.floor(Math.random() * 4294967295)) >>> 0;
+  }
+
+  function generateDeck(tier, size, seed) {
     var deck = (DEVELOPMENT_CARDS[tier] || []).map(clone);
     if (deck.length !== size && window.console && window.console.warn) {
       window.console.warn("Unexpected development deck size", tier, deck.length, size);
     }
-    return shuffle(deck, 7000 + tier * 101);
+    return shuffle(deck, (seed || 7000) + tier * 101);
   }
 
   function tokenCountForPlayers(playerCount) {
@@ -1528,16 +1660,18 @@
   function createGame(playerCount, names, aiSettings) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
+    var tableSeed = randomSeed();
     var decks = {
-      1: generateDeck(1, TIER_SIZES[1]),
-      2: generateDeck(2, TIER_SIZES[2]),
-      3: generateDeck(3, TIER_SIZES[3])
+      1: generateDeck(1, TIER_SIZES[1], tableSeed),
+      2: generateDeck(2, TIER_SIZES[2], tableSeed + 1009),
+      3: generateDeck(3, TIER_SIZES[3], tableSeed + 2003)
     };
     var game = {
       schema: SCHEMA,
       created_at: new Date().toISOString(),
       mode: "live",
       playerCount: playerCount,
+      table_seed: tableSeed,
       next_move_id: 1,
       players: Array.from({ length: playerCount }, function (_, index) {
         var aiLevel = normalizeAiLevel(aiConfig[index] && (aiConfig[index].level || aiConfig[index].mode));
@@ -1560,7 +1694,7 @@
       bank: emptyCounts(true),
       decks: decks,
       market: { 1: [], 2: [], 3: [] },
-      nobles: shuffle(NOBLE_POOL, 9111).slice(0, playerCount + 1),
+      nobles: shuffle(NOBLE_POOL, tableSeed + 9111).slice(0, playerCount + 1),
       current: 0,
       round: 1,
       log: [],
@@ -1601,6 +1735,32 @@
     return state && state.players[state.current];
   }
 
+  function isAiPlayer(player) {
+    return !!(player && player.ai && player.ai.enabled);
+  }
+
+  function fallbackVisiblePlayerIndex() {
+    if (!state || !state.players.length) return 0;
+    if (typeof aiDisplayCurrentOverride === "number") return aiDisplayCurrentOverride;
+    if (typeof lastHumanPlayerIndex === "number" && state.players[lastHumanPlayerIndex]) return lastHumanPlayerIndex;
+    return (state.current + state.players.length - 1) % state.players.length;
+  }
+
+  function displayCurrentIndex() {
+    if (!state) return 0;
+    if (state.aiThinking && typeof state.aiThinking.display_current === "number") {
+      return state.aiThinking.display_current;
+    }
+    if (state.turnTransition && typeof state.turnTransition.display_current === "number") {
+      return state.turnTransition.display_current;
+    }
+    return state.current;
+  }
+
+  function displayPlayer() {
+    return state && state.players[displayCurrentIndex()] || activePlayer();
+  }
+
   function scoreFor(player) {
     return player.purchased.reduce(function (sum, card) {
       return sum + card.points;
@@ -1616,7 +1776,7 @@
   }
 
   function canAct() {
-    return !!state && state.mode !== "replay" && !state.gameOver && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment;
+    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && !state.aiThinking && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment;
   }
 
   function logEntry(message) {
@@ -1785,7 +1945,11 @@
       function syncAiLevel() {
         aiControl.classList.toggle("active", checkbox.checked);
       }
-      checkbox.addEventListener("change", syncAiLevel);
+      function handleSetupAiToggle() {
+        syncAiLevel();
+        if (checkbox.checked) showStartMessage(t("msgRandomAiEnabled"), "ok");
+      }
+      checkbox.addEventListener("change", handleSetupAiToggle);
       checkbox.addEventListener("input", syncAiLevel);
       checkbox.addEventListener("click", syncAiLevel);
       syncAiLevel();
@@ -1931,7 +2095,7 @@
       var colored = Number(payment && payment.colored && payment.colored[color]) || 0;
       var gold = Number(payment && payment.gold && payment.gold[color]) || 0;
       if (colored > 0) parts.push(TOKEN_LABEL[color] + " " + colored);
-      if (gold > 0) parts.push("* " + gold + " -> " + TOKEN_LABEL[color]);
+      if (gold > 0) parts.push(TOKEN_LABEL.gold + " " + gold + " -> " + TOKEN_LABEL[color]);
     });
     return parts.length ? parts.join(", ") : "-";
   }
@@ -1975,6 +2139,17 @@
     };
   }
 
+  function autoPaymentPlan(player, card) {
+    var needs = paymentNeeds(player, card);
+    var payment = emptyPaymentPlan();
+    COLORS.forEach(function (color) {
+      var colored = Math.min(player.tokens[color] || 0, needs[color]);
+      payment.colored[color] = colored;
+      payment.gold[color] = Math.max(needs[color] - colored, 0);
+    });
+    return normalizePaymentPlan(player, card, payment);
+  }
+
   function affordability(player, card) {
     var needs = paymentNeeds(player, card);
     var pay = emptyCounts(true);
@@ -2006,10 +2181,10 @@
     var affordText = afford && afford.ok ? t("affordable") : t("needTokens");
     var actions = [];
     if (controls.buy) {
-      actions.push('<button type="button" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
     }
     if (controls.reserve) {
-      actions.push('<button type="button" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
     }
     return [
       '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" style="' + gemStyle(card.color) + '">',
@@ -2051,7 +2226,7 @@
   }
 
   function renderMarket() {
-    var active = activePlayer();
+    var active = displayPlayer();
     el.market.innerHTML = [3, 2, 1].map(function (tier) {
       var cards = state.market[tier].map(function (card, index) {
         var afford = affordability(active, card);
@@ -2070,7 +2245,7 @@
         '<span class="label">' + t("tier") + " " + tier + "</span>",
         "<strong>" + state.decks[tier].length + "</strong>",
         '<span class="muted compact">' + t("deckCards") + "</span>",
-        '<button type="button" data-reserve-deck="' + tier + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
+        '<button type="button" data-reserve-deck="' + tier + '" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
         "</div>",
         '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
         "</section>"
@@ -2082,8 +2257,8 @@
     return card && card.reserved_from === "deck" ? t("blindReserve") : t("faceUpReserve");
   }
 
-  function reservedPreviewHtml(card) {
-    if (!card || card.reserved_from === "deck") return "";
+  function cardPreviewHtml(card) {
+    if (!card) return "";
     return [
       '<span class="reserve-preview" role="tooltip" style="' + gemStyle(card.color) + '">',
       '<span class="reserve-preview-title">',
@@ -2094,6 +2269,11 @@
       '<span class="reserve-preview-cost requirement-row">' + requirementHtml(card.cost) + "</span>",
       "</span>"
     ].join("");
+  }
+
+  function reservedPreviewHtml(card) {
+    if (!card || card.reserved_from === "deck") return "";
+    return cardPreviewHtml(card);
   }
 
   function renderReservedSummary(player) {
@@ -2113,7 +2293,8 @@
   }
 
   function renderActiveReserved() {
-    var player = activePlayer();
+    var player = displayPlayer();
+    var playerIndex = displayCurrentIndex();
     if (!player) return;
     el.activeHandMeta.textContent = player.name + " (" + player.reserved.length + "/3)";
     el.activeTokenRow.innerHTML = tokensHtml(player.tokens, false);
@@ -2129,7 +2310,7 @@
         '<span class="reserve-origin ' + (card.reserved_from === "deck" ? "blind" : "face-up") + '">' + reservedSourceText(card) + "</span>",
         renderCard(card, {
           buy: "buy-reserved",
-          value: state.current + ":" + cardIndex,
+          value: playerIndex + ":" + cardIndex,
           afford: afford,
           buyDisabled: !canAct() || !afford.ok
         }),
@@ -2139,16 +2320,19 @@
   }
 
   function renderPlayers() {
+    var visibleIndex = displayCurrentIndex();
     el.players.innerHTML = state.players.map(function (player, playerIndex) {
       var reservedCards = renderReservedSummary(player);
       var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : t("none");
       var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t("aiBadgeFormat", { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
-        '<article class="player-card ' + (playerIndex === state.current ? "active" : "") + '">',
+        '<article class="player-card ' + (playerIndex === visibleIndex ? "active" : "") + '">',
         '<div class="player-top"><div><h3>' + escapeHtml(player.name) + "</h3>" + aiBadge + '</div><strong class="score-line">' + scoreFor(player) + " " + t("prestige") + "</strong></div>",
         playerAiControlsHtml(player, playerIndex),
-        '<div><span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false) + "</div></div>",
-        '<div><span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses) + "</div></div>",
+        '<div class="player-resource-panel">',
+        '<span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false) + "</div>",
+        '<span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses) + "</div>",
+        "</div>",
         '<div><span class="label">' + t("reserved") + " (" + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
         '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: nobleText })) + "</span></div>",
         "</article>"
@@ -2227,12 +2411,12 @@
         '<span class="requirement-tile" data-color="' + color + '" style="' + gemStyle(color) + '"><span>' + needs[color] + "</span></span>",
         '<div><strong>' + TOKEN_LABEL[color] + '</strong><span>' + t("paymentRemaining", { count: remaining }) + "</span></div>",
         "</div>",
-        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>* ' + gold + "</span></div>",
+        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>' + TOKEN_LABEL.gold + " " + gold + "</span></div>",
         '<div class="payment-controls">',
         '<button type="button" data-payment-add-color="' + color + '" style="' + gemStyle(color) + '" ' + (canAddColor ? "" : "disabled") + ">+ " + TOKEN_LABEL[color] + "</button>",
         '<button type="button" data-payment-remove-color="' + color + '" ' + (colored > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL[color] + "</button>",
-        '<button type="button" data-payment-add-gold="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddGold ? "" : "disabled") + ">+ *</button>",
-        '<button type="button" data-payment-remove-gold="' + color + '" ' + (gold > 0 ? "" : "disabled") + ">- *</button>",
+        '<button type="button" data-payment-add-gold="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddGold ? "" : "disabled") + ">+ " + TOKEN_LABEL.gold + "</button>",
+        '<button type="button" data-payment-remove-gold="' + color + '" ' + (gold > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL.gold + "</button>",
         "</div>",
         "</div>"
       ].join("");
@@ -2248,6 +2432,7 @@
       el.paymentSummary.textContent = "";
       return;
     }
+    if (el.activeHandPanel) el.activeHandPanel.open = true;
     var context = pendingPaymentContext();
     if (!context) {
       pendingPayment = null;
@@ -2260,10 +2445,143 @@
     el.confirmPayment.disabled = !paymentIsLegal(context.player, context.card, pendingPayment.payment);
   }
 
+  function findDevelopmentCardById(cardId) {
+    var id = String(cardId || "");
+    for (var tier = 1; tier <= 3; tier += 1) {
+      var found = (DEVELOPMENT_CARDS[tier] || []).find(function (card) {
+        return card.id === id;
+      });
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function playerNameForMove(move) {
+    var fromNotification = move && move.notification && move.notification.args && move.notification.args.player_name;
+    if (fromNotification) return fromNotification;
+    var player = state && state.players && state.players.find(function (entry) {
+      return entry.id === move.player_id;
+    });
+    return player ? player.name : t("players");
+  }
+
+  function moveTitle(move) {
+    var byType = {
+      takeTokens: "logTakeTokensTitle",
+      reserveMarket: "logReserveTitle",
+      reserveDeck: "logReserveTitle",
+      buyMarket: "logBuyTitle",
+      buyReserved: "logBuyTitle",
+      discardToken: "logDiscardTitle",
+      chooseNoble: "logNobleTitle"
+    };
+    return t(byType[move.type] || "logGameTitle");
+  }
+
+  function logTokenChip(color, count, compact) {
+    var amount = Number(count) || 0;
+    if (amount <= 0) return "";
+    return '<span class="token log-token" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + (compact ? "" : " " + amount) + "</span>";
+  }
+
+  function logTokenSet(counts, includeGoldAs) {
+    var chips = ALL_TOKENS.map(function (color) {
+      return logTokenChip(color, counts && counts[color], false);
+    }).filter(Boolean);
+    if (includeGoldAs) {
+      COLORS.forEach(function (color) {
+        var gold = Number(includeGoldAs[color]) || 0;
+        if (gold > 0) chips.push('<span class="log-payment-route" style="' + gemStyle(color) + '">' + TOKEN_LABEL.gold + " -> " + TOKEN_LABEL[color] + " " + gold + "</span>");
+      });
+    }
+    return chips.length ? '<span class="log-token-set">' + chips.join("") + "</span>" : "";
+  }
+
+  function logCardBadge(cardId, options) {
+    var card = findDevelopmentCardById(cardId);
+    var hidden = options && options.hidden;
+    var tier = options && options.tier || card && card.tier || "?";
+    if (hidden) {
+      return [
+        '<span class="log-card-badge blind" style="' + gemStyle("gold") + '">',
+        '<span class="reserve-slot" data-color="gold" style="' + gemStyle("gold") + '">?</span>',
+        escapeHtml(t("logBlindCard", { tier: tier })),
+        "</span>"
+      ].join("");
+    }
+    if (!card) {
+      return '<span class="log-card-badge blind" style="' + gemStyle("gold") + '">' + escapeHtml(t("logUnknownCard")) + "</span>";
+    }
+    return [
+      '<span class="log-card-badge" style="' + gemStyle(card.color) + '" data-log-card-preview-toggle="true" tabindex="0" role="button">',
+      '<span class="reserve-slot" data-color="' + card.color + '" style="' + gemStyle(card.color) + '">' + TOKEN_LABEL[card.color] + "</span>",
+      escapeHtml(card.id),
+      cardPreviewHtml(card),
+      "</span>"
+    ].join("");
+  }
+
+  function renderLogMoveBody(move) {
+    var args = move.args || {};
+    if (move.type === "takeTokens") {
+      return logTokenSet((args.colors || []).reduce(function (counts, color) {
+        counts[color] = (counts[color] || 0) + 1;
+        return counts;
+      }, {}));
+    }
+    if (move.type === "discardToken") {
+      return logTokenChip(args.color, 1, false);
+    }
+    if (move.type === "reserveMarket" || move.type === "reserveDeck") {
+      var hiddenReserve = logMode === "safe" && move.type === "reserveDeck";
+      return [
+        '<span class="log-source-chip">' + escapeHtml(t(move.type === "reserveDeck" ? "logBlindReserve" : "logFaceUpReserve")) + "</span>",
+        logCardBadge(args.card_id, { hidden: hiddenReserve, tier: args.tier }),
+        args.took_gold ? '<span class="log-source-chip gold">' + escapeHtml(t("logGoldTaken")) + " " + logTokenChip("gold", 1, true) + "</span>" : ""
+      ].filter(Boolean).join("");
+    }
+    if (move.type === "buyMarket" || move.type === "buyReserved") {
+      var hiddenBuy = logMode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
+      return [
+        logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier }),
+        args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
+        args.payment ? logTokenSet(args.payment.tokens, args.payment.gold_as) : ""
+      ].filter(Boolean).join("");
+    }
+    if (move.type === "chooseNoble") {
+      return '<span class="log-source-chip">' + escapeHtml(args.noble_id || t("logNobleTitle")) + "</span>";
+    }
+    return move.notification && move.notification.log ? escapeHtml(move.notification.log) : escapeHtml(t("logGameTitle"));
+  }
+
+  function renderLogMove(move) {
+    return [
+      '<li><article class="log-entry">',
+      '<div class="log-entry-head">',
+      '<span class="log-entry-title">' + escapeHtml(moveTitle(move)) + "</span>",
+      '<span class="log-entry-meta">' + escapeHtml(t("logMove", { move: move.move_id })) + "</span>",
+      "</div>",
+      '<div class="log-entry-actor">' + escapeHtml(playerNameForMove(move)) + (move.notification && move.notification.args && move.notification.args.ai ? ' · ' + escapeHtml(t("logRandomAi")) : "") + "</div>",
+      '<div class="log-entry-body">' + renderLogMoveBody(move) + "</div>",
+      "</article></li>"
+    ].join("");
+  }
+
   function renderLog() {
-    el.actionLog.innerHTML = state.log.map(function (entry) {
-      return "<li>" + escapeHtml(entry) + "</li>";
-    }).join("");
+    if (el.logSafeMode) {
+      el.logSafeMode.classList.toggle("active", logMode === "safe");
+      el.logSafeMode.setAttribute("aria-pressed", logMode === "safe" ? "true" : "false");
+    }
+    if (el.logFullMode) {
+      el.logFullMode.classList.toggle("active", logMode === "full");
+      el.logFullMode.setAttribute("aria-pressed", logMode === "full" ? "true" : "false");
+    }
+    var moves = state.moves.slice().reverse();
+    if (!moves.length) {
+      el.actionLog.innerHTML = '<li><article class="log-entry"><div class="log-entry-head"><span class="log-entry-title">' + escapeHtml(t("logStart")) + '</span><span class="log-entry-meta">0</span></div><div class="log-entry-body">' + escapeHtml(state.log[0] || t("logStart")) + "</div></article></li>";
+      return;
+    }
+    el.actionLog.innerHTML = moves.map(renderLogMove).join("");
   }
 
   function renderReplayStatus() {
@@ -2279,6 +2597,16 @@
     el.prevMove.disabled = replayIndex < 0;
     el.nextMove.disabled = !replayData || replayIndex >= total - 1;
     el.exitReplay.disabled = false;
+  }
+
+  function syncDockWidth() {
+    if (!el.activeHandPanel) return;
+    var topPanel = byId("table-top-panel");
+    if (!topPanel || topPanel.hidden || !topPanel.getBoundingClientRect) return;
+    var rect = topPanel.getBoundingClientRect();
+    if (rect.width > 0) {
+      el.activeHandPanel.style.setProperty("--table-dock-width", rect.width + "px");
+    }
   }
 
   function updateBoardProgress() {
@@ -2343,29 +2671,60 @@
     return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }
 
+  function compactViewport() {
+    return window.matchMedia && window.matchMedia("(max-width: 760px), (pointer: coarse)").matches;
+  }
+
+  function stickyFrameRect() {
+    var market = byId("market-panel");
+    if (!market) return null;
+    var marketRect = market.getBoundingClientRect();
+    var topPanel = byId("table-top-panel");
+    var topRect = topPanel ? topPanel.getBoundingClientRect() : marketRect;
+    var top = Math.min(topRect.top, marketRect.top);
+    var bottom = Math.max(topRect.bottom, marketRect.bottom);
+    return {
+      top: top,
+      bottom: bottom,
+      height: Math.max(bottom - top, marketRect.height),
+      center: top + Math.max(bottom - top, marketRect.height) / 2
+    };
+  }
+
+  function stickyViewportAnchor() {
+    return window.innerHeight * 0.43;
+  }
+
   function marketHasViewportCenter() {
     if (!state || reducedMotionPreferred()) return false;
     if (Date.now() < marketStickyReleaseUntil) return false;
-    var market = byId("market-panel");
-    if (!market) return false;
-    var rect = market.getBoundingClientRect();
-    var viewportCenter = window.innerHeight / 2;
-    var topExtraRange = rect.height * 0.1;
-    return rect.top - topExtraRange < viewportCenter && rect.bottom > viewportCenter;
+    var rect = stickyFrameRect();
+    if (!rect) return false;
+    var viewportCenter = stickyViewportAnchor();
+    var centerBand = Math.min(window.innerHeight * 0.16, Math.max(76, rect.height * 0.08));
+    var centered = Math.abs(rect.center - viewportCenter) <= centerBand;
+    if (!centered) {
+      marketStickyDisabledUntilExit = false;
+      return false;
+    }
+    return !marketStickyDisabledUntilExit;
   }
 
   function marketCenterScrollTop(market) {
-    var rect = market.getBoundingClientRect();
+    var rect = stickyFrameRect() || market.getBoundingClientRect();
     var current = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     var maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
-    var target = current + rect.top + rect.height / 2 - window.innerHeight / 2;
+    var target = current + rect.top + rect.height / 2 - stickyViewportAnchor();
     return Math.max(0, Math.min(maxScroll, target));
   }
 
   function marketStickyThreshold() {
-    var market = byId("market-panel");
-    if (!market) return 460;
-    return Math.max(360, market.getBoundingClientRect().height * 1.18);
+    var rect = stickyFrameRect();
+    if (!rect) return 320;
+    if (compactViewport()) {
+      return Math.max(110, Math.min(window.innerHeight * 0.34, rect.height * 0.34));
+    }
+    return Math.max(260, rect.height * 0.8);
   }
 
   function setMarketStickyFeedback() {
@@ -2489,6 +2848,8 @@
 
     marketStickyDelta = 0;
     marketStickyReleaseUntil = now + 640;
+    marketStickyDisabledUntilExit = true;
+    document.body.classList.remove("market-sticky-active");
     cancelMarketElasticReturn();
     animateMarketRelease(deltaY);
   }
@@ -2527,6 +2888,7 @@
 
   function clearMarketStickyFeedback() {
     marketStickyDelta = 0;
+    marketStickyDisabledUntilExit = false;
     cancelMarketElasticReturn();
     if (marketStickyTimer) {
       window.clearTimeout(marketStickyTimer);
@@ -2547,16 +2909,28 @@
     if (!state) {
       el.startPanel.hidden = false;
       el.gamePanel.hidden = true;
+      renderHandoffOverlay();
       renderReplayStatus();
       return;
     }
 
+    if (!state.turnTransition && !state.aiThinking && !isAiPlayer(activePlayer())) {
+      lastHumanPlayerIndex = state.current;
+    }
+
     el.startPanel.hidden = true;
     el.gamePanel.hidden = false;
-    el.currentPlayer.textContent = activePlayer().name;
+    el.currentPlayer.textContent = displayPlayer().name;
     el.roundLabel.textContent = String(state.round);
     el.moveLabel.textContent = String((state.next_move_id || 1) - 1);
     el.gameStateLabel.textContent = gameStateText();
+    if (state.turnTransition) {
+      messageText = t("msgSwitchingPlayer", { seconds: transitionSecondsRemaining() });
+      messageKind = "ok";
+    } else if (state.aiThinking) {
+      messageText = t("msgAiThinking", { player: activePlayer().name });
+      messageKind = "ok";
+    }
     el.message.textContent = messageText;
     el.message.classList.toggle("ok", messageKind === "ok");
 
@@ -2570,8 +2944,12 @@
     renderPaymentChoice();
     renderLog();
     renderReplayStatus();
+    renderHandoffOverlay();
+    syncDockWidth();
     flushPendingFlight();
     updateBoardProgress();
+    scheduleTurnTransitionTimer();
+    scheduleRandomAiTurn();
   }
 
   function scrollToGameTable() {
@@ -2589,6 +2967,8 @@
   function gameStateText() {
     if (state.mode === "replay") return t("gameReplay");
     if (state.gameOver) return t("gameFinished");
+    if (state.aiThinking) return t("gameAiThinking");
+    if (state.turnTransition) return t("gameTurnTransition");
     if (pendingPayment) return t("gamePayment");
     if (state.awaitingDiscard) return t("gameDiscard");
     if (state.awaitingNobleChoice) return t("gameNoble");
@@ -2600,9 +2980,8 @@
     return !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse), (max-width: 760px)").matches);
   }
 
-  function closeReservePreviews(except) {
-    if (!el.players) return;
-    Array.from(el.players.querySelectorAll(".reserve-badge.preview-open")).forEach(function (badge) {
+  function closeTapPreviews(except) {
+    Array.from(document.querySelectorAll(".reserve-badge.preview-open, .log-card-badge.preview-open")).forEach(function (badge) {
       if (badge !== except) badge.classList.remove("preview-open");
     });
   }
@@ -2647,10 +3026,22 @@
     ].join("");
   }
 
+  function availableTakeColors() {
+    if (!state) return [];
+    return COLORS.filter(function (color) {
+      return state.bank[color] > 0;
+    });
+  }
+
+  function differentTakeTargetCount() {
+    return Math.min(3, availableTakeColors().length);
+  }
+
   function pendingTakeIsLegal() {
-    if (pendingTake.length === 3) {
+    if (!state || pendingTake.length === 0) return false;
+    if (pendingTake.length === differentTakeTargetCount()) {
       var unique = new Set(pendingTake);
-      return unique.size === 3;
+      return unique.size === pendingTake.length;
     }
     if (pendingTake.length === 2 && pendingTake[0] === pendingTake[1]) {
       return state.bank[pendingTake[0]] >= 4;
@@ -2788,14 +3179,7 @@
 
   function scrollToPaymentPanel() {
     if (!el.paymentPanel || el.paymentPanel.hidden) return;
-    var schedule = window.requestAnimationFrame || function (callback) {
-      return window.setTimeout(callback, 16);
-    };
-    schedule(function () {
-      if (el.paymentPanel && !el.paymentPanel.hidden && el.paymentPanel.scrollIntoView) {
-        el.paymentPanel.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-    });
+    if (el.activeHandPanel) el.activeHandPanel.open = true;
   }
 
   function beginPaymentChoice(source, value, card) {
@@ -2869,6 +3253,32 @@
     render();
   }
 
+  function completePurchase(context, payment, sourceElement, options) {
+    var card = context.card;
+    var args = {
+      card_id: card.id,
+      payment: paymentMoveArgs(payment)
+    };
+    if (options && options.ai) args.ai = true;
+    spendForCard(context.player, paymentSpend(payment));
+    context.player.purchased.push(card);
+    context.player.bonuses[card.color] += 1;
+    logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
+    if (context.type === "buyMarket") {
+      args.tier = context.tier;
+      state.market[context.tier].splice(context.index, 1);
+      refillMarket(state, context.tier);
+    } else {
+      args.tier = card.tier;
+      args.reserved_from = card.reserved_from || "market";
+      context.player.reserved.splice(context.index, 1);
+    }
+    queueFlightFromElement(sourceElement, card.color, t("buy"), ".player-card.active .purchased-summary");
+    pendingPayment = null;
+    showMessage("");
+    afterAction(context.type, args);
+  }
+
   function confirmPayment() {
     if (!pendingPayment || !state || state.mode === "replay" || state.gameOver) return;
     var context = pendingPaymentContext();
@@ -2885,26 +3295,7 @@
       return;
     }
     var sourceElement = paymentSourceElement(pendingPayment);
-    var card = context.card;
-    var args = {
-      card_id: card.id,
-      payment: paymentMoveArgs(payment)
-    };
-    spendForCard(context.player, paymentSpend(payment));
-    context.player.purchased.push(card);
-    context.player.bonuses[card.color] += 1;
-    logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
-    if (context.type === "buyMarket") {
-      args.tier = context.tier;
-      state.market[context.tier].splice(context.index, 1);
-      refillMarket(state, context.tier);
-    } else {
-      context.player.reserved.splice(context.index, 1);
-    }
-    queueFlightFromElement(sourceElement, card.color, t("buy"), ".player-card.active .purchased-summary");
-    pendingPayment = null;
-    showMessage("");
-    afterAction(context.type, args);
+    completePurchase(context, payment, sourceElement);
   }
 
   function buyMarket(value) {
@@ -2940,6 +3331,9 @@
   function afterAction(type, args) {
     var player = activePlayer();
     var actor = { id: player.id, name: player.name };
+    if (aiTurnInProgress && args && !args.ai) {
+      args = Object.assign({}, args, { ai: true });
+    }
     if (totalTokens(player) > 10) {
       state.awaitingDiscard = true;
       showMessage(t("msgMustDiscard", { player: player.name, count: totalTokens(player) }));
@@ -2962,11 +3356,11 @@
     if (totalTokens(player) <= 10) {
       state.awaitingDiscard = false;
       showMessage("");
-      resolveNoblesOrTurn("discardToken", { color: color }, actor);
+      resolveNoblesOrTurn("discardToken", aiTurnInProgress ? { color: color, ai: true } : { color: color }, actor);
       return;
     }
     showMessage(t("msgStillMustDiscard", { player: player.name, count: totalTokens(player) }));
-    recordMove("discardToken", { color: color }, actor);
+    recordMove("discardToken", aiTurnInProgress ? { color: color, ai: true } : { color: color }, actor);
     saveState();
     render();
   }
@@ -2990,23 +3384,106 @@
     return noble;
   }
 
+  function clearTurnAdvanceTimer() {
+    if (turnAdvanceTimer) {
+      window.clearTimeout(turnAdvanceTimer);
+      turnAdvanceTimer = null;
+    }
+  }
+
+  function transitionSecondsRemaining() {
+    if (!state || !state.turnTransition) return 0;
+    return Math.max(1, Math.ceil(((state.turnTransition.until || Date.now()) - Date.now()) / 1000));
+  }
+
+  function aiThinkingSecondsRemaining() {
+    if (!state || !state.aiThinking) return 0;
+    return Math.max(1, Math.ceil(((state.aiThinking.until || Date.now()) - Date.now()) / 1000));
+  }
+
+  function clearOverlayRefreshTimer() {
+    if (overlayRefreshTimer) {
+      window.clearTimeout(overlayRefreshTimer);
+      overlayRefreshTimer = null;
+    }
+  }
+
+  function scheduleOverlayRefresh() {
+    clearOverlayRefreshTimer();
+    if (!state || (!state.turnTransition && !state.aiThinking)) return;
+    overlayRefreshTimer = window.setTimeout(function () {
+      overlayRefreshTimer = null;
+      render();
+    }, 240);
+  }
+
+  function renderHandoffOverlay() {
+    if (!el.handoffOverlay) return;
+    var mode = state && state.aiThinking ? "ai" : state && state.turnTransition ? "turn" : "";
+    if (!mode) {
+      el.handoffOverlay.hidden = true;
+      el.handoffOverlay.classList.remove("ai-thinking");
+      clearOverlayRefreshTimer();
+      return;
+    }
+    var seconds = mode === "ai" ? aiThinkingSecondsRemaining() : transitionSecondsRemaining();
+    var player = mode === "ai" && state.players[state.current] ? state.players[state.current].name : "";
+    el.handoffTitle.textContent = mode === "ai" ? t("gameAiThinking") : t("gameTurnTransition");
+    el.handoffBody.textContent = mode === "ai" ? t("msgAiThinking", { player: player }) : t("msgSwitchingPlayer", { seconds: seconds });
+    el.handoffCountdown.textContent = String(seconds);
+    el.handoffOverlay.hidden = false;
+    el.handoffOverlay.classList.toggle("ai-thinking", mode === "ai");
+    scheduleOverlayRefresh();
+  }
+
+  function scheduleTurnTransitionTimer() {
+    if (!state || state.mode === "replay" || !state.turnTransition) {
+      clearTurnAdvanceTimer();
+      return;
+    }
+    if (turnAdvanceTimer) return;
+    var remaining = Math.max(0, (state.turnTransition.until || Date.now()) - Date.now());
+    turnAdvanceTimer = window.setTimeout(completeTurnTransition, remaining);
+  }
+
+  function scheduleTurnSwitch(type, args, actor) {
+    clearTurnAdvanceTimer();
+    var now = Date.now();
+    state.turnTransition = {
+      type: type,
+      args: clone(args || {}),
+      actor: clone(actor || {}),
+      display_current: fallbackVisiblePlayerIndex(),
+      started_at: new Date(now).toISOString(),
+      until: now + TURN_SWITCH_DELAY_MS
+    };
+    showMessage(t("msgSwitchingPlayer", { seconds: Math.ceil(TURN_SWITCH_DELAY_MS / 1000) }), "ok");
+    saveState();
+    render();
+  }
+
+  function completeTurnTransition() {
+    clearTurnAdvanceTimer();
+    if (!state || !state.turnTransition || state.mode === "replay") return;
+    var transition = clone(state.turnTransition);
+    state.turnTransition = null;
+    proceedToNextTurn();
+    recordMove(transition.type, transition.args, transition.actor);
+    saveState();
+    render();
+  }
+
   function resolveNoblesOrTurn(type, args, actor) {
     var player = activePlayer();
     var eligible = eligibleNobles(player);
     if (eligible.length === 0) {
-      proceedToNextTurn();
-      recordMove(type, args, actor);
-      saveState();
-      render();
+      scheduleTurnSwitch(type, args, actor);
       return;
     }
     if (eligible.length === 1) {
       var noble = awardNoble(player, eligible[0].id);
-      proceedToNextTurn();
       var withNoble = Object.assign({}, args, { noble_id: noble.id });
-      recordMove(type, withNoble, actor);
-      saveState();
-      render();
+      scheduleTurnSwitch(type, withNoble, actor);
       return;
     }
     state.awaitingNobleChoice = eligible.map(function (noble) { return noble.id; });
@@ -3028,10 +3505,7 @@
     awardNoble(player, nobleId);
     state.awaitingNobleChoice = null;
     showMessage("");
-    proceedToNextTurn();
-    recordMove("chooseNoble", { noble_id: nobleId }, actor);
-    saveState();
-    render();
+    scheduleTurnSwitch("chooseNoble", aiTurnInProgress ? { noble_id: nobleId, ai: true } : { noble_id: nobleId }, actor);
   }
 
   function proceedToNextTurn() {
@@ -3155,6 +3629,7 @@
 
   function gameStateTextFor(game) {
     if (game.gameOver) return "Game finished";
+    if (game.turnTransition) return "Turn handoff";
     if (game.awaitingDiscard) return "Active player must discard to token cap";
     if (game.awaitingNobleChoice) return "Active player must choose one noble";
     if (game.endTriggered) return "Final round";
@@ -3246,6 +3721,7 @@
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
+    clearTurnAdvanceTimer();
     pendingTake = [];
     pendingPayment = null;
     showMessage(t("msgStateImported"), "ok");
@@ -3272,6 +3748,7 @@
     }
     replayData = clone(payload);
     replayIndex = -1;
+    clearTurnAdvanceTimer();
     state = initial;
     state.mode = "replay";
     pendingTake = [];
@@ -3341,26 +3818,151 @@
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
+    clearTurnAdvanceTimer();
     pendingTake = [];
     pendingPayment = null;
     showStartMessage("");
     showMessage(t("msgGameStarted"), "ok");
+    if (el.bankPanel) el.bankPanel.open = true;
     saveState();
     render();
     scrollToGameTable();
   }
 
   function resetToStart() {
+    if (aiTurnTimer) {
+      window.clearTimeout(aiTurnTimer);
+      aiTurnTimer = null;
+    }
+    clearTurnAdvanceTimer();
     state = null;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
+    clearTurnAdvanceTimer();
     pendingTake = [];
     pendingPayment = null;
     messageText = "";
     messageKind = "";
     clearSavedState();
     render();
+  }
+
+  function randomChoice(items) {
+    return items[Math.floor(Math.random() * items.length)];
+  }
+
+  function legalRandomAiBuyActions(player) {
+    var actions = [];
+    [1, 2, 3].forEach(function (tier) {
+      state.market[tier].forEach(function (card, index) {
+        var payment = autoPaymentPlan(player, card);
+        if (paymentIsLegal(player, card, payment)) {
+          actions.push({
+            type: "buy",
+            context: { type: "buyMarket", player: player, card: card, tier: tier, index: index },
+            payment: payment
+          });
+        }
+      });
+    });
+    player.reserved.forEach(function (card, index) {
+      var payment = autoPaymentPlan(player, card);
+      if (paymentIsLegal(player, card, payment)) {
+        actions.push({
+          type: "buy",
+          context: { type: "buyReserved", player: player, card: card, index: index },
+          payment: payment
+        });
+      }
+    });
+    return actions;
+  }
+
+  function legalRandomAiTakeActions() {
+    var actions = [];
+    var available = availableTakeColors();
+    if (available.length > 0 && available.length < 3) {
+      actions.push({ type: "take", colors: available.slice() });
+    } else {
+      for (var a = 0; a < available.length; a += 1) {
+        for (var b = a + 1; b < available.length; b += 1) {
+          for (var c = b + 1; c < available.length; c += 1) {
+            actions.push({ type: "take", colors: [available[a], available[b], available[c]] });
+          }
+        }
+      }
+    }
+    COLORS.forEach(function (color) {
+      if (state.bank[color] >= 4) {
+        actions.push({ type: "take", colors: [color, color] });
+      }
+    });
+    return actions;
+  }
+
+  function runRandomAiTurn() {
+    aiTurnTimer = null;
+    if (!state || state.mode === "replay" || state.gameOver) return;
+    var player = activePlayer();
+    if (!player || !player.ai || !player.ai.enabled) return;
+    aiDisplayCurrentOverride = state.aiThinking && typeof state.aiThinking.display_current === "number"
+      ? state.aiThinking.display_current
+      : fallbackVisiblePlayerIndex();
+    state.aiThinking = null;
+    aiTurnInProgress = true;
+    try {
+      if (state.awaitingDiscard) {
+        var discardColors = ALL_TOKENS.filter(function (color) {
+          return (player.tokens[color] || 0) > 0;
+        });
+        if (discardColors.length) discardToken(randomChoice(discardColors));
+        return;
+      }
+      if (state.awaitingNobleChoice) {
+        var choices = state.awaitingNobleChoice.slice();
+        if (choices.length) chooseNoble(randomChoice(choices));
+        return;
+      }
+      if (!canAct()) return;
+      var buyActions = legalRandomAiBuyActions(player);
+      var takeActions = legalRandomAiTakeActions();
+      if (!buyActions.length && !takeActions.length) {
+        saveState();
+        render();
+        return;
+      }
+      var action = buyActions.length ? randomChoice(buyActions) : randomChoice(takeActions);
+      if (action.type === "buy") {
+        completePurchase(action.context, action.payment, null, { ai: true });
+      } else if (action.type === "take") {
+        pendingTake = action.colors.slice();
+        confirmTake();
+      }
+    } finally {
+      aiTurnInProgress = false;
+      aiDisplayCurrentOverride = null;
+    }
+  }
+
+  function scheduleRandomAiTurn() {
+    if (aiTurnTimer) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
+    var player = activePlayer();
+    if (!player || !player.ai || !player.ai.enabled) return;
+    if (!state.aiThinking) {
+      var now = Date.now();
+      state.aiThinking = {
+        player_id: player.id,
+        display_current: fallbackVisiblePlayerIndex(),
+        started_at: new Date(now).toISOString(),
+        until: now + AI_MIN_THINK_MS
+      };
+      saveState();
+      render();
+      return;
+    }
+    aiTurnTimer = window.setTimeout(runRandomAiTurn, Math.max(0, (state.aiThinking.until || Date.now()) - Date.now()));
   }
 
   function updatePlayerAi(playerIndex, enabled, level) {
@@ -3373,6 +3975,7 @@
       level: selectedLevel,
       available: false
     };
+    if (enabled) showMessage(t("msgRandomAiEnabled"), "ok");
     saveState();
     render();
   }
@@ -3391,12 +3994,13 @@
     }
     window.addEventListener("scroll", handleWindowScroll, { passive: true });
     window.addEventListener("scroll", function () {
-      if (reservePreviewTapMode()) closeReservePreviews();
+      if (reservePreviewTapMode()) closeTapPreviews();
     }, { passive: true });
     window.addEventListener("resize", function () {
+      syncDockWidth();
       updateBoardProgress();
       clearMarketStickyFeedback();
-      closeReservePreviews();
+      closeTapPreviews();
     });
     window.addEventListener("wheel", handleMarketWheel, { passive: false });
     window.addEventListener("touchstart", handleMarketTouchStart, { passive: true });
@@ -3451,6 +4055,9 @@
       render();
     });
     el.resetGame.addEventListener("click", resetToStart);
+    if (el.restartGame) {
+      el.restartGame.addEventListener("click", resetToStart);
+    }
     el.confirmTake.addEventListener("click", confirmTake);
     el.clearTake.addEventListener("click", function () {
       pendingTake = [];
@@ -3491,7 +4098,7 @@
       var reservePreview = event.target.closest("[data-reserve-preview-toggle]");
       if (reservePreview && reservePreviewTapMode()) {
         var alreadyOpen = reservePreview.classList.contains("preview-open");
-        closeReservePreviews(reservePreview);
+        closeTapPreviews(reservePreview);
         reservePreview.classList.toggle("preview-open", !alreadyOpen);
         event.stopPropagation();
         return;
@@ -3500,7 +4107,23 @@
       if (button) buyReserved(button.dataset.buyReserved, button);
     });
     document.addEventListener("click", function () {
-      if (reservePreviewTapMode()) closeReservePreviews();
+      if (reservePreviewTapMode()) closeTapPreviews();
+    });
+    [el.logSafeMode, el.logFullMode].forEach(function (button) {
+      if (!button) return;
+      button.addEventListener("click", function () {
+        logMode = button.dataset.logMode === "full" ? "full" : "safe";
+        renderLog();
+      });
+    });
+    el.actionLog.addEventListener("click", function (event) {
+      var preview = event.target.closest("[data-log-card-preview-toggle]");
+      if (preview && reservePreviewTapMode()) {
+        var alreadyOpen = preview.classList.contains("preview-open");
+        closeTapPreviews(preview);
+        preview.classList.toggle("preview-open", !alreadyOpen);
+        event.stopPropagation();
+      }
     });
     el.players.addEventListener("change", function (event) {
       var toggle = event.target.closest("[data-player-ai-toggle]");
@@ -3552,6 +4175,11 @@
       "round-label",
       "game-state-label",
       "move-label",
+      "restart-game",
+      "handoff-overlay",
+      "handoff-title",
+      "handoff-body",
+      "handoff-countdown",
       "message",
       "discard-panel",
       "discard-tokens",
@@ -3566,6 +4194,7 @@
       "cancel-payment",
       "take-summary",
       "bank-tokens",
+      "bank-panel",
       "confirm-take",
       "clear-take",
       "nobles",
@@ -3576,6 +4205,8 @@
       "active-token-row",
       "active-bonus-row",
       "active-reserved",
+      "log-safe-mode",
+      "log-full-mode",
       "action-log",
       "save-game",
       "reset-game",
