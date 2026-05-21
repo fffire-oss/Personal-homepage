@@ -17,7 +17,7 @@
   --blue-gem: #55a7ff;
   --green-gem: #37e89b;
   --red-gem: #ff6b5d;
-  --black-gem: #536070;
+  --black-gem: #778494;
   --gold-gem: #ffbf45;
 }
 
@@ -1443,20 +1443,17 @@ body.market-sticky-active .market-panel {
 
 .player-resource-panel {
   display: grid;
-  grid-template-columns: max-content repeat(6, 34px);
+  grid-template-columns: minmax(42px, max-content) repeat(6, 30px);
   justify-content: start;
-  gap: 7px 6px;
+  gap: 6px 4px;
   align-items: center;
   min-width: 0;
   max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  padding: 7px;
+  overflow: hidden;
+  padding: 7px 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.035);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(49, 215, 255, 0.42) rgba(255, 255, 255, 0.08);
 }
 
 .player-resource-panel .label {
@@ -1477,12 +1474,20 @@ body.market-sticky-active .market-panel {
 }
 
 .player-resource-panel .token {
-  min-width: 30px;
-  min-height: 30px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 4px;
+  font-size: 0.62rem;
 }
 
 .player-resource-panel .bonus-pill {
-  width: 30px;
+  width: 28px;
+  min-height: 34px;
+  font-size: 0.64rem;
+}
+
+.player-resource-panel .bonus-label {
+  font-size: 0.46rem;
 }
 
 .reserved-list,
@@ -1671,20 +1676,17 @@ body.market-sticky-active .market-panel {
 
 .active-token-panel {
   display: grid;
-  grid-template-columns: max-content repeat(6, 42px);
+  grid-template-columns: minmax(54px, max-content) repeat(6, 34px);
   justify-content: start;
-  gap: 7px 8px;
+  gap: 7px 6px;
   align-items: center;
   min-width: 0;
   max-width: 100%;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
+  overflow: hidden;
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.045);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(49, 215, 255, 0.44) rgba(255, 255, 255, 0.08);
 }
 
 .active-token-panel .label {
@@ -1700,6 +1702,19 @@ body.market-sticky-active .market-panel {
 .active-token-panel .token,
 .active-token-panel .bonus-pill {
   justify-self: center;
+}
+
+.active-token-panel .token {
+  min-width: 31px;
+  min-height: 31px;
+  padding: 0 5px;
+  font-size: 0.66rem;
+}
+
+.active-token-panel .bonus-pill {
+  width: 31px;
+  min-height: 36px;
+  font-size: 0.68rem;
 }
 
 .active-token-panel .token-row,
