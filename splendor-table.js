@@ -1,11 +1,12 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "zephyrlabs-gem-table-save-v2";
-  var LEGACY_STORAGE_KEYS = ["zephyrlabs-gem-table-save-v1"];
+  var STORAGE_KEY = "zephyrlabs-gem-table-save-v3";
+  var LEGACY_STORAGE_KEYS = ["zephyrlabs-gem-table-save-v2", "zephyrlabs-gem-table-save-v1"];
   var SCHEMA = "zephyrlabs-gemtable-bga-v1";
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
+  var AI_LEVELS = ["easy", "balanced", "expert"];
   var GEM_HEX = {
     white: "#f1eadb",
     blue: "#55a7ff",
@@ -23,6 +24,612 @@
     gold: "*"
   };
   var TIER_SIZES = { 1: 40, 2: 30, 3: 20 };
+  var LANGUAGE_KEY = "zephyrlabs-gem-table-language-v1";
+  var currentLocale = "en";
+  var I18N = {
+    en: {
+      languageLabel: "Language",
+      tableEyebrow: "Unofficial local table",
+      save: "Save",
+      reset: "Reset",
+      setupEyebrow: "Hot-seat setup",
+      startTitle: "Start a local game",
+      startDescription: "Generic, rules-compatible cards and tiles are used. No official artwork, logos, card scans, or Board Game Arena assets are included.",
+      players: "Players",
+      players2: "2 players",
+      players3: "3 players",
+      players4: "4 players",
+      playerName: "Player {n} name",
+      smartAi: "Smart AI",
+      aiTakeover: "AI takeover",
+      aiLevel: "Intelligence level",
+      aiLevelEasy: "Casual",
+      aiLevelBalanced: "Balanced",
+      aiLevelExpert: "Expert",
+      aiBadgeFormat: "AI takeover: {level} (temporarily unavailable)",
+      startGame: "Start game",
+      resumeSave: "Resume save",
+      clearSave: "Clear save",
+      quickStarts: "Quick starts",
+      start2p: "Start 2P",
+      start3p: "Start 3P",
+      start4p: "Start 4P",
+      currentPlayer: "Current player",
+      round: "Round",
+      state: "State",
+      move: "Move",
+      aiPlayers: "AI players",
+      aiUnavailableTitle: "Smart AI is temporarily unavailable",
+      aiUnavailableBody: "AI opponents can be marked in setup, but automated decisions are still being deployed. For now, every turn remains manual hot-seat.",
+      returnTokens: "Return tokens",
+      returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
+      chooseOneNoble: "Choose one noble",
+      chooseOneNobleBody: "If several nobles are eligible, the active player receives exactly one.",
+      choosePayment: "Choose payment",
+      choosePaymentBody: "Select the exact tokens to spend. Gold can replace any needed color.",
+      bank: "Bank",
+      noTakeSelected: "No take selected.",
+      selectedTokens: "Selected: {tokens}. Legal take requires 3 different or 2 matching from a stack with 4+.",
+      confirmTake: "Confirm take",
+      clear: "Clear",
+      nobles: "Nobles",
+      noblesHint: "Permanent bonuses only. No replenishment.",
+      market: "Market",
+      marketHint: "Buy, reserve, or reserve blind from a deck.",
+      actionLog: "Action log",
+      showHide: "Show / hide",
+      ruleGuardrails: "Rule guardrails",
+      ruleGuardrailsBody: "One action per turn: take exactly 3 different non-gold tokens, take exactly 2 matching non-gold tokens from a stack that had at least 4, reserve one card with gold if available, or buy one market/reserved card. The first player to 15 prestige triggers the final round so all players get equal turns. Ties use fewer purchased cards only; remaining ties are shared.",
+      privateHand: "Private hand",
+      reservedCards: "Reserved cards",
+      bgaTools: "BGA-style tools",
+      exportImportReplay: "Export, import, and replay",
+      liveTable: "Live table",
+      replayMove: "Replay move {current} / {total}",
+      bgaDescription: "This uses a stable ZephyrLabs schema inspired by public BGA Studio concepts: a gamedatas object, notification-like move log, and next_move_id. The exact private BGA Splendor protocol is not public, so this is BGA-style compatibility, not official BGA protocol parity.",
+      exportState: "Export state",
+      importState: "Import state",
+      exportReplay: "Export replay",
+      loadReplay: "Load replay",
+      prevMove: "Prev move",
+      nextMove: "Next move",
+      exitReplay: "Exit replay",
+      jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
+      affordable: "Affordable",
+      needTokens: "Need tokens",
+      buy: "Buy",
+      reserve: "Reserve",
+      choose: "Choose",
+      tier: "Tier",
+      deckCards: "Cards left",
+      reserveDeck: "Reserve",
+      noFaceUpCards: "No face-up cards remain.",
+      noReservedCards: "No reserved cards",
+      noActiveReserved: "No reserved cards for the active player.",
+      blindReserve: "Blind reserve",
+      faceUpReserve: "Face-up reserve",
+      blind: "Blind",
+      faceUp: "Face-up",
+      aiSmartUnavailable: "Smart AI temporarily unavailable",
+      tokens: "Tokens",
+      bonuses: "Bonuses",
+      reserved: "Reserved",
+      purchasedSummary: "Purchased cards: {cards}. Nobles: {nobles}.",
+      prestige: "prestige",
+      none: "None",
+      noNoblesRemain: "No nobles remain.",
+      gameReplay: "Replay",
+      gameFinished: "Finished",
+      gameDiscard: "Discard required",
+      gameNoble: "Noble choice",
+      gamePayment: "Payment choice",
+      gameFinal: "Final round ({turns} turns left)",
+      gameProgress: "In progress",
+      msgSaveSerializeFailed: "Save failed: table state could not be serialized.",
+      msgSaveStorageFailed: "Save failed: localStorage is unavailable or full.",
+      msgSavedInvalidCleared: "Saved data was invalid and has been cleared.",
+      msgSavedParseCleared: "Saved data could not be parsed and has been cleared.",
+      msgResolveStepFirst: "Resolve the current required step before taking another action.",
+      msgGoldReserveOnly: "Gold can only be gained when reserving a card.",
+      msgTakeShape: "A take action is either exactly 3 different tokens or exactly 2 matching tokens.",
+      msgBankStackLow: "That bank stack does not have enough tokens.",
+      msgTwoSameWhole: "Two matching tokens must be the whole action.",
+      msgTwoSameOnly: "You can take only two matching tokens.",
+      msgTwoSameNeedFour: "Two matching tokens require at least 4 in that bank stack before taking.",
+      msgThreeDifferent: "Three-token takes must use different colors.",
+      msgSelectLegalTake: "Select exactly 3 different non-gold tokens, or exactly 2 matching tokens from a stack with 4+.",
+      msgReserveLimit: "A player can reserve at most 3 cards.",
+      msgMarketGone: "That market card is no longer available.",
+      msgDeckEmpty: "That deck is empty.",
+      msgNotEnoughForCard: "Not enough tokens or gold for that card.",
+      msgChoosePayment: "Choose the payment for {card}.",
+      msgPaymentInvalid: "This payment does not exactly cover the card cost.",
+      msgPaymentCleared: "Payment selection cleared.",
+      msgPaymentCancelled: "Payment cancelled.",
+      confirmPurchase: "Confirm purchase",
+      cancelPayment: "Cancel",
+      clearPayment: "Clear payment",
+      noPaymentNeeded: "No payment required.",
+      paymentNeed: "Need {count}",
+      paymentRemaining: "{count} left",
+      paymentSelected: "Selected: {selected}",
+      paymentUseColor: "Use {token}",
+      paymentUseGold: "Use gold",
+      msgMustDiscard: "{player} has {count} tokens and must return down to 10.",
+      msgStillMustDiscard: "{player} still has {count} tokens. Return down to 10.",
+      msgMultipleNobles: "{player} is eligible for multiple nobles. Choose one.",
+      msgNobleNotEligible: "That noble is not eligible.",
+      msgNoActiveTableExport: "No active table to export.",
+      msgStateExported: "Current state exported.",
+      msgReplayExported: "Replay exported.",
+      msgImportFailedSchema: "Import failed: expected a Gem Table state or gamedatas.source_state using {schema}.",
+      msgStateImported: "State imported.",
+      msgLoadReplayExpected: "Load replay failed: expected { schema, gamedatas, moves }.",
+      msgLoadReplaySource: "Load replay failed: gamedatas.source_state is required for this static viewer.",
+      msgReplayLoaded: "Replay loaded. Use Next move and Prev move to inspect snapshots.",
+      msgInitialReplayPosition: "Initial replay position.",
+      msgReplayAtMove: "Replay at move {move}: {type}.",
+      msgReturnedLiveTable: "Returned to live table.",
+      msgJsonParseFailed: "JSON parse failed: {message}",
+      msgChoosePlayerCount: "Choose 2, 3, or 4 players.",
+      msgGameStarted: "Game started.",
+      msgNoValidSavedTable: "No valid saved table found.",
+      msgSavedResumed: "Saved table resumed.",
+      msgSavedCleared: "Saved data cleared.",
+      msgNoLiveTableSave: "No live table to save.",
+      msgGameSaved: "Game saved.",
+      logTook: "{player} took {tokens}.",
+      logReserved: "{player} reserved {card}.",
+      logReservedGold: "{player} reserved {card} and took gold.",
+      logBlindTierCard: "a blind tier {tier} card",
+      logBought: "{player} bought {card} for {points} prestige.",
+      logReturned: "{player} returned {token}.",
+      logReceivedNoble: "{player} received {noble} for {points} prestige.",
+      logFinalRoundBegins: "{player} reached 15 prestige. Final round begins.",
+      logSharedWin: "Shared win: {players}.",
+      logWinner: "Winner: {player}."
+    }
+  };
+
+  /*
+  I18N["zh-Hans"] = Object.assign({}, I18N.en, {
+    languageLabel: "语言",
+    tableEyebrow: "非官方本地桌",
+    save: "保存",
+    reset: "重置",
+    setupEyebrow: "热座设置",
+    startTitle: "开始本地游戏",
+    startDescription: "使用通用且兼容规则的卡牌和板块。不包含官方美术、Logo、卡牌扫描图或 Board Game Arena 资源。",
+    players: "玩家",
+    players2: "2 人",
+    players3: "3 人",
+    players4: "4 人",
+    playerName: "玩家 {n} 名称",
+    smartAi: "智能 AI",
+    startGame: "开始游戏",
+    resumeSave: "恢复存档",
+    clearSave: "清除存档",
+    quickStarts: "快速开始",
+    start2p: "开始 2 人",
+    start3p: "开始 3 人",
+    start4p: "开始 4 人",
+    currentPlayer: "当前玩家",
+    round: "回合",
+    state: "状态",
+    move: "步数",
+    aiPlayers: "AI 玩家",
+    aiUnavailableTitle: "智能 AI 暂不可用",
+    aiUnavailableBody: "可以在设置里标记 AI 对手，但自动决策仍在部署中。目前所有回合仍为手动热座操作。",
+    returnTokens: "归还宝石",
+    returnTokensBody: "当前玩家必须归还宝石，直到持有数量不超过 10 个，之后才会结算贵族或进入下一回合。",
+    chooseOneNoble: "选择一位贵族",
+    chooseOneNobleBody: "如果同时满足多位贵族条件，当前玩家只能获得其中一位。",
+    choosePayment: "选择支付",
+    choosePaymentBody: "选择这次购买实际花费的宝石。黄金可以代替任意一种所需颜色。",
+    bank: "银行",
+    noTakeSelected: "尚未选择拿取。",
+    selectedTokens: "已选择：{tokens}。合法拿取为 3 个不同颜色，或从数量不少于 4 的同色堆拿 2 个。",
+    confirmTake: "确认拿取",
+    clear: "清除",
+    nobles: "贵族",
+    noblesHint: "只计算永久加成。贵族不会补充。",
+    market: "市场",
+    marketHint: "购买、预约，或从牌堆暗抽预约。",
+    actionLog: "行动日志",
+    showHide: "显示 / 隐藏",
+    ruleGuardrails: "规则限制",
+    ruleGuardrailsBody: "每回合一个行动：拿 3 个不同非黄金宝石；从至少有 4 个的同色堆拿 2 个；预约一张牌并在可用时拿黄金；或购买一张市场/保留牌。首位达到 15 分的玩家触发最终轮，保证每位玩家回合数相同。平局先比较购买牌更少者，仍相同则共享胜利。",
+    privateHand: "私人手牌",
+    reservedCards: "保留牌",
+    bgaTools: "BGA 风格工具",
+    exportImportReplay: "导出、导入与回放",
+    liveTable: "实时牌桌",
+    replayMove: "回放步数 {current} / {total}",
+    bgaDescription: "这里使用稳定的 ZephyrLabs schema，参考公开 BGA Studio 概念：gamedatas 对象、类似通知的行动记录和 next_move_id。BGA 的私有璀璨宝石协议并未公开，因此这是 BGA-style 兼容，不是官方协议级复刻。",
+    exportState: "导出状态",
+    importState: "导入状态",
+    exportReplay: "导出回放",
+    loadReplay: "载入回放",
+    prevMove: "上一步",
+    nextMove: "下一步",
+    exitReplay: "退出回放",
+    jsonPlaceholder: "导出的 JSON 会显示在这里。导入或载入回放前，也可以把状态/回放 JSON 粘贴到这里。",
+    affordable: "可购买",
+    needTokens: "宝石不足",
+    buy: "购买",
+    reserve: "预约",
+    choose: "选择",
+    tier: "等级",
+    deckCards: "牌堆剩余",
+    reserveDeck: "预约",
+    noFaceUpCards: "没有剩余明牌。",
+    noReservedCards: "无保留牌",
+    noActiveReserved: "当前玩家没有保留牌。",
+    blindReserve: "暗牌预约",
+    faceUpReserve: "明牌预约",
+    blind: "暗牌",
+    faceUp: "明牌",
+    aiSmartUnavailable: "智能 AI 暂不可用",
+    tokens: "宝石",
+    bonuses: "加成",
+    reserved: "保留",
+    purchasedSummary: "购买牌：{cards}。贵族：{nobles}。",
+    none: "无",
+    noNoblesRemain: "没有剩余贵族。",
+    gameReplay: "回放",
+    gameFinished: "已结束",
+    gameDiscard: "需要弃宝石",
+    gameNoble: "选择贵族",
+    gameFinal: "最终轮（剩余 {turns} 回合）",
+    gameProgress: "进行中"
+  });
+
+  I18N["zh-Hant"] = Object.assign({}, I18N["zh-Hans"], {
+    languageLabel: "語言",
+    setupEyebrow: "熱座設定",
+    startTitle: "開始本地遊戲",
+    startDescription: "使用通用且相容規則的卡牌和板塊。不包含官方美術、Logo、卡牌掃描圖或 Board Game Arena 資源。",
+    players2: "2 人",
+    players3: "3 人",
+    players4: "4 人",
+    playerName: "玩家 {n} 名稱",
+    smartAi: "智慧 AI",
+    resumeSave: "恢復存檔",
+    clearSave: "清除存檔",
+    currentPlayer: "當前玩家",
+    aiUnavailableTitle: "智慧 AI 暫不可用",
+    aiUnavailableBody: "可以在設定裡標記 AI 對手，但自動決策仍在部署中。目前所有回合仍為手動熱座操作。",
+    noTakeSelected: "尚未選擇拿取。",
+    selectedTokens: "已選擇：{tokens}。合法拿取為 3 個不同顏色，或從數量不少於 4 的同色堆拿 2 個。",
+    confirmTake: "確認拿取",
+    noblesHint: "只計算永久加成。貴族不會補充。",
+    marketHint: "購買、預約，或從牌堆暗抽預約。",
+    actionLog: "行動日誌",
+    ruleGuardrails: "規則限制",
+    ruleGuardrailsBody: "每回合一個行動：拿 3 個不同非黃金寶石；從至少有 4 個的同色堆拿 2 個；預約一張牌並在可用時拿黃金；或購買一張市場/保留牌。首位達到 15 分的玩家觸發最終輪，保證每位玩家回合數相同。平局先比較購買牌更少者，仍相同則共享勝利。",
+    privateHand: "私人手牌",
+    bgaDescription: "這裡使用穩定的 ZephyrLabs schema，參考公開 BGA Studio 概念：gamedatas 物件、類似通知的行動記錄和 next_move_id。BGA 的私有璀璨寶石協議並未公開，因此這是 BGA-style 相容，不是官方協議級復刻。",
+    loadReplay: "載入回放",
+    jsonPlaceholder: "匯出的 JSON 會顯示在這裡。匯入或載入回放前，也可以把狀態/回放 JSON 貼到這裡。",
+    affordable: "可購買",
+    needTokens: "寶石不足",
+    buy: "購買",
+    reserve: "預約",
+    reserveDeck: "預約",
+    blindReserve: "暗牌預約",
+    faceUpReserve: "明牌預約",
+    aiSmartUnavailable: "智慧 AI 暫不可用",
+    purchasedSummary: "購買牌：{cards}。貴族：{nobles}。"
+  });
+
+  I18N.ja = Object.assign({}, I18N.en, {
+    languageLabel: "言語",
+    tableEyebrow: "非公式ローカルテーブル",
+    save: "保存",
+    reset: "リセット",
+    setupEyebrow: "ホットシート設定",
+    startTitle: "ローカルゲームを開始",
+    startDescription: "ルール互換の汎用カードとタイルを使用しています。公式アート、ロゴ、カード画像、Board Game Arena の素材は含みません。",
+    players: "プレイヤー",
+    players2: "2人",
+    players3: "3人",
+    players4: "4人",
+    playerName: "プレイヤー {n} 名",
+    smartAi: "スマートAI",
+    startGame: "開始",
+    resumeSave: "セーブ再開",
+    clearSave: "セーブ削除",
+    quickStarts: "クイック開始",
+    currentPlayer: "現在のプレイヤー",
+    round: "ラウンド",
+    state: "状態",
+    move: "手番",
+    aiPlayers: "AI プレイヤー",
+    aiUnavailableTitle: "スマートAIは未対応",
+    aiUnavailableBody: "設定でAI対戦相手をマークできますが、自動判断はまだデプロイ中です。現在はすべて手動ホットシートです。",
+    returnTokens: "トークンを返す",
+    returnTokensBody: "現在のプレイヤーは所持トークンが10個以下になるまで返してから、貴族または次の手番を解決します。",
+    chooseOneNoble: "貴族を1人選ぶ",
+    chooseOneNobleBody: "複数の貴族条件を満たす場合、現在のプレイヤーは1人だけ獲得します。",
+    bank: "銀行",
+    noTakeSelected: "取得は未選択です。",
+    selectedTokens: "選択済み: {tokens}。合法な取得は異なる3色、または4個以上ある同色から2個です。",
+    confirmTake: "取得確定",
+    clear: "クリア",
+    nobles: "貴族",
+    noblesHint: "永久ボーナスのみを参照します。補充はありません。",
+    market: "市場",
+    marketHint: "購入、予約、または山札から伏せ予約できます。",
+    actionLog: "アクションログ",
+    showHide: "表示 / 非表示",
+    ruleGuardrails: "ルール制限",
+    ruleGuardrailsBody: "1手番につき1アクションです。異なる非ゴールド3個を取る、4個以上ある同色から2個を取る、カードを予約して可能ならゴールドを取る、または市場/予約カードを1枚購入します。誰かが15点に達すると最終ラウンドが始まり、全員の手番数が揃います。同点は購入カード数が少ない方を優先し、それでも同じなら同時勝利です。",
+    privateHand: "非公開ハンド",
+    reservedCards: "予約カード",
+    bgaTools: "BGA風ツール",
+    exportImportReplay: "エクスポート、インポート、リプレイ",
+    liveTable: "ライブテーブル",
+    replayMove: "リプレイ {current} / {total}",
+    exportState: "状態を出力",
+    importState: "状態を入力",
+    exportReplay: "リプレイ出力",
+    loadReplay: "リプレイ読込",
+    prevMove: "前の手",
+    nextMove: "次の手",
+    exitReplay: "リプレイ終了",
+    jsonPlaceholder: "出力JSONがここに表示されます。インポート/読込前に状態またはリプレイJSONを貼り付けできます。",
+    affordable: "購入可",
+    needTokens: "トークン不足",
+    buy: "購入",
+    reserve: "予約",
+    choose: "選択",
+    tier: "レベル",
+    deckCards: "山札残り",
+    reserveDeck: "予約",
+    noFaceUpCards: "公開カードは残っていません。",
+    noReservedCards: "予約カードなし",
+    noActiveReserved: "現在のプレイヤーに予約カードはありません。",
+    blindReserve: "伏せ予約",
+    faceUpReserve: "公開予約",
+    blind: "伏せ",
+    faceUp: "公開",
+    aiSmartUnavailable: "スマートAI未対応",
+    tokens: "トークン",
+    bonuses: "ボーナス",
+    reserved: "予約",
+    purchasedSummary: "購入カード: {cards}。貴族: {nobles}。",
+    none: "なし",
+    noNoblesRemain: "貴族は残っていません。",
+    gameReplay: "リプレイ",
+    gameFinished: "終了",
+    gameDiscard: "返却が必要",
+    gameNoble: "貴族選択",
+    gameFinal: "最終ラウンド（残り {turns} 手番）",
+    gameProgress: "進行中"
+  });
+
+  I18N.fr = Object.assign({}, I18N.en, {
+    languageLabel: "Langue",
+    tableEyebrow: "Table locale non officielle",
+    save: "Sauver",
+    reset: "Réinitialiser",
+    setupEyebrow: "Configuration hot-seat",
+    startTitle: "Démarrer une partie locale",
+    startDescription: "Cartes et tuiles génériques compatibles avec les règles. Aucun visuel officiel, logo, scan de carte ou asset Board Game Arena n'est inclus.",
+    players: "Joueurs",
+    players2: "2 joueurs",
+    players3: "3 joueurs",
+    players4: "4 joueurs",
+    playerName: "Nom du joueur {n}",
+    smartAi: "IA intelligente",
+    startGame: "Démarrer",
+    resumeSave: "Reprendre",
+    clearSave: "Effacer",
+    quickStarts: "Démarrages rapides",
+    currentPlayer: "Joueur actif",
+    round: "Tour",
+    state: "État",
+    move: "Coup",
+    aiPlayers: "Joueurs IA",
+    aiUnavailableTitle: "L'IA intelligente est indisponible",
+    aiUnavailableBody: "Les adversaires IA peuvent être marqués, mais les décisions automatiques sont encore en déploiement. Pour l'instant, tout reste manuel.",
+    returnTokens: "Rendre des jetons",
+    chooseOneNoble: "Choisir un noble",
+    bank: "Banque",
+    noTakeSelected: "Aucune prise sélectionnée.",
+    confirmTake: "Confirmer",
+    clear: "Effacer",
+    nobles: "Nobles",
+    market: "Marché",
+    actionLog: "Journal",
+    showHide: "Afficher / masquer",
+    ruleGuardrails: "Règles",
+    privateHand: "Main privée",
+    reservedCards: "Cartes réservées",
+    bgaTools: "Outils style BGA",
+    exportImportReplay: "Export, import et replay",
+    liveTable: "Table active",
+    replayMove: "Replay {current} / {total}",
+    exportState: "Exporter l'état",
+    importState: "Importer l'état",
+    exportReplay: "Exporter replay",
+    loadReplay: "Charger replay",
+    prevMove: "Coup précédent",
+    nextMove: "Coup suivant",
+    exitReplay: "Quitter replay",
+    affordable: "Achetable",
+    needTokens: "Jetons requis",
+    buy: "Acheter",
+    reserve: "Réserver",
+    choose: "Choisir",
+    tier: "Niveau",
+    deckCards: "Cartes du paquet",
+    reserveDeck: "Réserver",
+    noFaceUpCards: "Aucune carte visible restante.",
+    noReservedCards: "Aucune carte réservée",
+    noActiveReserved: "Aucune carte réservée pour le joueur actif.",
+    blindReserve: "Réservation cachée",
+    faceUpReserve: "Réservation visible",
+    blind: "Cachée",
+    faceUp: "Visible",
+    aiSmartUnavailable: "IA intelligente indisponible",
+    tokens: "Jetons",
+    bonuses: "Bonus",
+    reserved: "Réservées",
+    purchasedSummary: "Cartes achetées : {cards}. Nobles : {nobles}.",
+    none: "Aucun",
+    noNoblesRemain: "Aucun noble restant.",
+    gameReplay: "Replay",
+    gameFinished: "Terminée",
+    gameDiscard: "Défausse requise",
+    gameNoble: "Choix noble",
+    gameFinal: "Dernier tour ({turns} tours restants)",
+    gameProgress: "En cours"
+  });
+
+  I18N.de = Object.assign({}, I18N.en, {
+    languageLabel: "Sprache",
+    tableEyebrow: "Inoffizieller lokaler Tisch",
+    save: "Speichern",
+    reset: "Zurücksetzen",
+    setupEyebrow: "Hot-Seat Setup",
+    startTitle: "Lokales Spiel starten",
+    startDescription: "Es werden generische, regelkompatible Karten und Plättchen verwendet. Keine offiziellen Grafiken, Logos, Kartenscans oder Board Game Arena Assets.",
+    players: "Spieler",
+    players2: "2 Spieler",
+    players3: "3 Spieler",
+    players4: "4 Spieler",
+    playerName: "Name Spieler {n}",
+    smartAi: "Smarte KI",
+    startGame: "Starten",
+    resumeSave: "Fortsetzen",
+    clearSave: "Spielstand löschen",
+    quickStarts: "Schnellstart",
+    currentPlayer: "Aktiver Spieler",
+    round: "Runde",
+    state: "Status",
+    move: "Zug",
+    aiPlayers: "KI-Spieler",
+    aiUnavailableTitle: "Smarte KI ist nicht verfügbar",
+    aiUnavailableBody: "KI-Gegner können markiert werden, automatische Entscheidungen werden aber noch bereitgestellt. Aktuell bleibt jeder Zug manuell.",
+    returnTokens: "Marker zurückgeben",
+    chooseOneNoble: "Einen Adligen wählen",
+    bank: "Bank",
+    noTakeSelected: "Keine Auswahl.",
+    confirmTake: "Nehmen bestätigen",
+    clear: "Löschen",
+    nobles: "Adlige",
+    market: "Markt",
+    actionLog: "Aktionslog",
+    showHide: "Ein-/ausblenden",
+    ruleGuardrails: "Regeln",
+    privateHand: "Private Hand",
+    reservedCards: "Reservierte Karten",
+    bgaTools: "BGA-Stil Werkzeuge",
+    exportImportReplay: "Export, Import und Replay",
+    liveTable: "Live-Tisch",
+    replayMove: "Replay {current} / {total}",
+    exportState: "Status exportieren",
+    importState: "Status importieren",
+    exportReplay: "Replay exportieren",
+    loadReplay: "Replay laden",
+    prevMove: "Vorheriger Zug",
+    nextMove: "Nächster Zug",
+    exitReplay: "Replay verlassen",
+    affordable: "Kaufbar",
+    needTokens: "Marker fehlen",
+    buy: "Kaufen",
+    reserve: "Reservieren",
+    choose: "Wählen",
+    tier: "Stufe",
+    deckCards: "Deckkarten",
+    reserveDeck: "Reservieren",
+    noReservedCards: "Keine reservierten Karten",
+    blindReserve: "Verdeckte Reservierung",
+    faceUpReserve: "Offene Reservierung",
+    blind: "Verdeckt",
+    faceUp: "Offen",
+    aiSmartUnavailable: "Smarte KI nicht verfügbar",
+    tokens: "Marker",
+    bonuses: "Boni",
+    reserved: "Reserviert",
+    purchasedSummary: "Gekaufte Karten: {cards}. Adlige: {nobles}.",
+    none: "Keine",
+    gameFinished: "Beendet",
+    gameProgress: "Läuft"
+  });
+
+  I18N.es = Object.assign({}, I18N.en, {
+    languageLabel: "Idioma",
+    tableEyebrow: "Mesa local no oficial",
+    save: "Guardar",
+    reset: "Reiniciar",
+    setupEyebrow: "Configuración hot-seat",
+    startTitle: "Iniciar partida local",
+    startDescription: "Se usan cartas y losetas genéricas compatibles con las reglas. No se incluyen arte oficial, logos, escaneos de cartas ni recursos de Board Game Arena.",
+    players: "Jugadores",
+    players2: "2 jugadores",
+    players3: "3 jugadores",
+    players4: "4 jugadores",
+    playerName: "Nombre jugador {n}",
+    smartAi: "IA inteligente",
+    startGame: "Iniciar",
+    resumeSave: "Continuar",
+    clearSave: "Borrar guardado",
+    quickStarts: "Inicio rápido",
+    currentPlayer: "Jugador actual",
+    round: "Ronda",
+    state: "Estado",
+    move: "Movimiento",
+    aiPlayers: "Jugadores IA",
+    aiUnavailableTitle: "La IA inteligente no está disponible",
+    aiUnavailableBody: "Puedes marcar oponentes IA, pero las decisiones automáticas siguen en despliegue. Por ahora todos los turnos son manuales.",
+    returnTokens: "Devolver fichas",
+    chooseOneNoble: "Elegir un noble",
+    bank: "Banco",
+    noTakeSelected: "No hay toma seleccionada.",
+    confirmTake: "Confirmar toma",
+    clear: "Limpiar",
+    nobles: "Nobles",
+    market: "Mercado",
+    actionLog: "Registro",
+    showHide: "Mostrar / ocultar",
+    ruleGuardrails: "Reglas",
+    privateHand: "Mano privada",
+    reservedCards: "Cartas reservadas",
+    bgaTools: "Herramientas estilo BGA",
+    exportImportReplay: "Exportar, importar y repetir",
+    liveTable: "Mesa activa",
+    replayMove: "Repetición {current} / {total}",
+    exportState: "Exportar estado",
+    importState: "Importar estado",
+    exportReplay: "Exportar repetición",
+    loadReplay: "Cargar repetición",
+    prevMove: "Movimiento anterior",
+    nextMove: "Movimiento siguiente",
+    exitReplay: "Salir de repetición",
+    affordable: "Comprable",
+    needTokens: "Faltan fichas",
+    buy: "Comprar",
+    reserve: "Reservar",
+    choose: "Elegir",
+    tier: "Nivel",
+    deckCards: "Cartas del mazo",
+    reserveDeck: "Reservar",
+    noReservedCards: "Sin cartas reservadas",
+    blindReserve: "Reserva oculta",
+    faceUpReserve: "Reserva visible",
+    blind: "Oculta",
+    faceUp: "Visible",
+    aiSmartUnavailable: "IA inteligente no disponible",
+    tokens: "Fichas",
+    bonuses: "Bonos",
+    reserved: "Reservadas",
+    purchasedSummary: "Cartas compradas: {cards}. Nobles: {nobles}.",
+    none: "Ninguno",
+    gameFinished: "Finalizada",
+    gameProgress: "En curso"
+  });
 
   var NOBLE_POOL = [
     { id: "noble-01", req: { white: 4, blue: 4 } },
@@ -49,14 +656,668 @@
   var replayData = null;
   var replayIndex = -1;
   var pendingTake = [];
+  var pendingPayment = null;
   var messageText = "";
   var startMessageText = "";
   var messageKind = "";
+  var pendingFlight = null;
 
+  var el = {};
+
+  */
+
+  I18N["zh-Hans"] = Object.assign({}, I18N.en, {
+    languageLabel: "\u8bed\u8a00",
+    tableEyebrow: "\u975e\u5b98\u65b9\u672c\u5730\u684c",
+    save: "\u4fdd\u5b58",
+    reset: "\u91cd\u7f6e",
+    setupEyebrow: "\u70ed\u5ea7\u8bbe\u7f6e",
+    startTitle: "\u5f00\u59cb\u672c\u5730\u6e38\u620f",
+    players: "\u73a9\u5bb6",
+    players2: "2 \u4eba",
+    players3: "3 \u4eba",
+    players4: "4 \u4eba",
+    playerName: "\u73a9\u5bb6 {n} \u540d\u79f0",
+    smartAi: "\u667a\u80fd AI",
+    startGame: "\u5f00\u59cb\u6e38\u620f",
+    resumeSave: "\u6062\u590d\u5b58\u6863",
+    clearSave: "\u6e05\u9664\u5b58\u6863",
+    currentPlayer: "\u5f53\u524d\u73a9\u5bb6",
+    round: "\u56de\u5408",
+    state: "\u72b6\u6001",
+    move: "\u6b65\u6570",
+    aiPlayers: "AI \u73a9\u5bb6",
+    aiUnavailableTitle: "\u667a\u80fd AI \u6682\u4e0d\u53ef\u7528",
+    aiUnavailableBody: "\u53ef\u4ee5\u5728\u8bbe\u7f6e\u91cc\u6807\u8bb0 AI \u5bf9\u624b\uff0c\u4f46\u81ea\u52a8\u51b3\u7b56\u4ecd\u5728\u90e8\u7f72\u4e2d\u3002\u76ee\u524d\u6240\u6709\u56de\u5408\u4ecd\u4e3a\u624b\u52a8\u70ed\u5ea7\u64cd\u4f5c\u3002",
+    bank: "\u94f6\u884c",
+    confirmTake: "\u786e\u8ba4\u62ff\u53d6",
+    clear: "\u6e05\u9664",
+    nobles: "\u8d35\u65cf",
+    market: "\u5e02\u573a",
+    actionLog: "\u884c\u52a8\u65e5\u5fd7",
+    showHide: "\u663e\u793a / \u9690\u85cf",
+    privateHand: "\u79c1\u4eba\u624b\u724c",
+    reservedCards: "\u4fdd\u7559\u724c",
+    buy: "\u8d2d\u4e70",
+    reserve: "\u9884\u7ea6",
+    choose: "\u9009\u62e9",
+    tier: "\u7b49\u7ea7",
+    reserveDeck: "\u9884\u7ea6",
+    blind: "\u6697\u724c",
+    faceUp: "\u660e\u724c",
+    tokens: "\u5b9d\u77f3",
+    bonuses: "\u52a0\u6210",
+    reserved: "\u4fdd\u7559",
+    none: "\u65e0",
+    gameReplay: "\u56de\u653e",
+    gameFinished: "\u5df2\u7ed3\u675f",
+    gameProgress: "\u8fdb\u884c\u4e2d"
+  });
+
+  I18N["zh-Hant"] = Object.assign({}, I18N["zh-Hans"], {
+    languageLabel: "\u8a9e\u8a00",
+    setupEyebrow: "\u71b1\u5ea7\u8a2d\u5b9a",
+    startTitle: "\u958b\u59cb\u672c\u5730\u904a\u6232",
+    smartAi: "\u667a\u6167 AI",
+    currentPlayer: "\u7576\u524d\u73a9\u5bb6",
+    aiUnavailableTitle: "\u667a\u6167 AI \u66ab\u4e0d\u53ef\u7528",
+    actionLog: "\u884c\u52d5\u65e5\u8a8c",
+    privateHand: "\u79c1\u4eba\u624b\u724c",
+    buy: "\u8cfc\u8cb7",
+    reserve: "\u9810\u7d04",
+    gameProgress: "\u9032\u884c\u4e2d"
+  });
+
+  I18N.ja = Object.assign({}, I18N.en, {
+    languageLabel: "\u8a00\u8a9e",
+    save: "\u4fdd\u5b58",
+    reset: "\u30ea\u30bb\u30c3\u30c8",
+    startTitle: "\u30ed\u30fc\u30ab\u30eb\u30b2\u30fc\u30e0\u3092\u958b\u59cb",
+    players: "\u30d7\u30ec\u30a4\u30e4\u30fc",
+    currentPlayer: "\u73fe\u5728\u306e\u30d7\u30ec\u30a4\u30e4\u30fc",
+    round: "\u30e9\u30a6\u30f3\u30c9",
+    state: "\u72b6\u614b",
+    move: "\u624b\u756a",
+    aiUnavailableTitle: "\u30b9\u30de\u30fc\u30c8AI\u306f\u672a\u5bfe\u5fdc",
+    bank: "\u9280\u884c",
+    nobles: "\u8cb4\u65cf",
+    market: "\u5e02\u5834",
+    actionLog: "\u30a2\u30af\u30b7\u30e7\u30f3\u30ed\u30b0",
+    buy: "\u8cfc\u5165",
+    reserve: "\u4e88\u7d04",
+    choose: "\u9078\u629e"
+  });
+
+  I18N.fr = Object.assign({}, I18N.en, {
+    languageLabel: "Langue",
+    save: "Sauver",
+    reset: "Reinitialiser",
+    startTitle: "Demarrer une partie locale",
+    players: "Joueurs",
+    currentPlayer: "Joueur actif",
+    round: "Tour",
+    state: "Etat",
+    move: "Coup",
+    aiUnavailableTitle: "IA intelligente indisponible",
+    bank: "Banque",
+    nobles: "Nobles",
+    market: "Marche",
+    actionLog: "Journal",
+    buy: "Acheter",
+    reserve: "Reserver",
+    choose: "Choisir"
+  });
+
+  I18N.de = Object.assign({}, I18N.en, {
+    languageLabel: "Sprache",
+    save: "Speichern",
+    reset: "Zuruecksetzen",
+    startTitle: "Lokales Spiel starten",
+    players: "Spieler",
+    currentPlayer: "Aktiver Spieler",
+    round: "Runde",
+    state: "Status",
+    move: "Zug",
+    aiUnavailableTitle: "Smarte KI ist nicht verfuegbar",
+    bank: "Bank",
+    nobles: "Adlige",
+    market: "Markt",
+    actionLog: "Aktionslog",
+    buy: "Kaufen",
+    reserve: "Reservieren",
+    choose: "Waehlen"
+  });
+
+  I18N.es = Object.assign({}, I18N.en, {
+    languageLabel: "Idioma",
+    save: "Guardar",
+    reset: "Reiniciar",
+    startTitle: "Iniciar partida local",
+    players: "Jugadores",
+    currentPlayer: "Jugador actual",
+    round: "Ronda",
+    state: "Estado",
+    move: "Movimiento",
+    aiUnavailableTitle: "IA inteligente no disponible",
+    bank: "Banco",
+    nobles: "Nobles",
+    market: "Mercado",
+    actionLog: "Registro",
+    buy: "Comprar",
+    reserve: "Reservar",
+    choose: "Elegir"
+  });
+
+  Object.assign(I18N["zh-Hans"], {
+    startDescription: "使用通用、规则兼容的卡牌与板块。不包含官方图片、标识、卡牌扫描或 Board Game Arena 素材。",
+    quickStarts: "快速开局",
+    start2p: "开始 2 人",
+    start3p: "开始 3 人",
+    start4p: "开始 4 人",
+    aiTakeover: "AI 接管",
+    aiLevel: "智能水平",
+    aiLevelEasy: "休闲",
+    aiLevelBalanced: "均衡",
+    aiLevelExpert: "高阶",
+    aiBadgeFormat: "AI 接管：{level}（暂时不可用）",
+    aiUnavailableTitle: "智能 AI 暂时不可用",
+    aiUnavailableBody: "可以在设置里标记 AI 对手，但自动决策仍在部署中。目前所有回合仍为手动热座操作。",
+    returnTokens: "归还宝石",
+    returnTokensBody: "当前玩家必须把宝石归还到 10 枚或更少，之后才会结算贵族或进入下一回合。",
+    chooseOneNoble: "选择一位贵族",
+    chooseOneNobleBody: "如果同时满足多位贵族条件，当前玩家只能获得其中一位。",
+    noTakeSelected: "尚未选择拿取。",
+    selectedTokens: "已选择：{tokens}。合法拿取需要 3 枚不同宝石，或从剩余至少 4 枚的同色堆拿 2 枚。",
+    noblesHint: "只看永久加成。贵族不会补充。",
+    marketHint: "购买、预约，或从牌堆暗抽预约。",
+    ruleGuardrails: "规则限制",
+    ruleGuardrailsBody: "每回合只能执行一个动作：拿 3 枚不同的非黄金宝石；从拿取前至少有 4 枚的同色宝石堆拿 2 枚；预约 1 张牌并在有黄金时获得 1 枚黄金；或购买 1 张市场/保留区牌。首位达到 15 声望的玩家会触发最终轮，确保所有玩家回合数相同。平局只比较已购买牌数量，更少者胜；仍平则共享胜利。",
+    bgaTools: "BGA 风格工具",
+    exportImportReplay: "导出、导入与回放",
+    liveTable: "实时桌面",
+    replayMove: "回放第 {current} / {total} 步",
+    bgaDescription: "这里使用稳定的 ZephyrLabs schema，参考公开 BGA Studio 概念：gamedatas 对象、类似通知的操作日志，以及 next_move_id。BGA 的璀璨宝石私有协议并不公开，因此这是 BGA 风格兼容，不是官方 BGA 协议等价复刻。",
+    exportState: "导出状态",
+    importState: "导入状态",
+    exportReplay: "导出回放",
+    loadReplay: "载入回放",
+    prevMove: "上一步",
+    nextMove: "下一步",
+    exitReplay: "退出回放",
+    jsonPlaceholder: "导出的 JSON 会显示在这里。导入或载入前，也可以把状态或回放 JSON 粘贴到这里。",
+    affordable: "可购买",
+    needTokens: "缺少宝石",
+    deckCards: "牌堆剩余",
+    noFaceUpCards: "没有剩余明牌。",
+    noReservedCards: "没有保留牌",
+    noActiveReserved: "当前玩家没有保留牌。",
+    blindReserve: "暗牌预约",
+    faceUpReserve: "明牌预约",
+    aiSmartUnavailable: "智能 AI 暂时不可用",
+    purchasedSummary: "已购牌：{cards}。贵族：{nobles}。",
+    prestige: "声望",
+    noNoblesRemain: "没有剩余贵族。",
+    gameDiscard: "需要归还",
+    gameNoble: "选择贵族",
+    gamePayment: "选择支付",
+    gameFinal: "最终轮（剩余 {turns} 回合）",
+    msgSaveSerializeFailed: "保存失败：无法序列化当前桌面状态。",
+    msgSaveStorageFailed: "保存失败：localStorage 不可用或空间已满。",
+    msgSavedInvalidCleared: "存档数据无效，已清除。",
+    msgSavedParseCleared: "存档数据无法解析，已清除。",
+    msgResolveStepFirst: "请先处理当前必须完成的步骤，再执行其他动作。",
+    msgGoldReserveOnly: "黄金只能在预约卡牌时获得。",
+    msgTakeShape: "拿取动作只能是 3 枚不同宝石，或 2 枚相同宝石。",
+    msgBankStackLow: "银行中该颜色宝石数量不足。",
+    msgTwoSameWhole: "拿取 2 枚同色宝石时，整个动作只能拿这 2 枚。",
+    msgTwoSameOnly: "最多只能拿 2 枚相同宝石。",
+    msgTwoSameNeedFour: "拿取 2 枚同色宝石前，该宝石堆至少需要有 4 枚。",
+    msgThreeDifferent: "拿取 3 枚宝石时必须颜色不同。",
+    msgSelectLegalTake: "请选择 3 枚不同的非黄金宝石，或从剩余至少 4 枚的同色堆选择 2 枚。",
+    msgReserveLimit: "每位玩家最多只能预约 3 张牌。",
+    msgMarketGone: "这张市场牌已经不可用。",
+    msgDeckEmpty: "该牌堆已空。",
+    msgNotEnoughForCard: "购买这张牌的宝石或黄金不足。",
+    msgChoosePayment: "请选择购买 {card} 的支付方式。",
+    msgPaymentInvalid: "当前支付没有刚好覆盖这张牌的花费。",
+    msgPaymentCleared: "已清空支付选择。",
+    msgPaymentCancelled: "已取消支付。",
+    confirmPurchase: "确认购买",
+    cancelPayment: "取消",
+    clearPayment: "清空支付",
+    noPaymentNeeded: "这张牌不需要支付。",
+    paymentNeed: "需要 {count}",
+    paymentRemaining: "剩余 {count}",
+    paymentSelected: "已选：{selected}",
+    paymentUseColor: "使用 {token}",
+    paymentUseGold: "使用黄金",
+    msgMustDiscard: "{player} 当前有 {count} 枚宝石，必须归还到 10 枚。",
+    msgStillMustDiscard: "{player} 仍有 {count} 枚宝石。请归还到 10 枚。",
+    msgMultipleNobles: "{player} 同时满足多位贵族条件，请选择一位。",
+    msgNobleNotEligible: "这位贵族当前不符合获得条件。",
+    msgNoActiveTableExport: "没有可导出的进行中桌面。",
+    msgStateExported: "当前状态已导出。",
+    msgReplayExported: "回放已导出。",
+    msgImportFailedSchema: "导入失败：需要 Gem Table 状态，或使用 {schema} 的 gamedatas.source_state。",
+    msgStateImported: "状态已导入。",
+    msgLoadReplayExpected: "载入回放失败：需要 { schema, gamedatas, moves }。",
+    msgLoadReplaySource: "载入回放失败：这个静态查看器需要 gamedatas.source_state。",
+    msgReplayLoaded: "回放已载入。使用下一步和上一步查看快照。",
+    msgInitialReplayPosition: "回放初始位置。",
+    msgReplayAtMove: "回放第 {move} 步：{type}。",
+    msgReturnedLiveTable: "已返回实时桌面。",
+    msgJsonParseFailed: "JSON 解析失败：{message}",
+    msgChoosePlayerCount: "请选择 2、3 或 4 位玩家。",
+    msgGameStarted: "游戏已开始。",
+    msgNoValidSavedTable: "没有找到有效存档。",
+    msgSavedResumed: "已恢复存档桌面。",
+    msgSavedCleared: "存档已清除。",
+    msgNoLiveTableSave: "没有可保存的实时桌面。",
+    msgGameSaved: "游戏已保存。",
+    logTook: "{player} 拿取了 {tokens}。",
+    logReserved: "{player} 预约了 {card}。",
+    logReservedGold: "{player} 预约了 {card}，并获得 1 枚黄金。",
+    logBlindTierCard: "一张 {tier} 级暗牌",
+    logBought: "{player} 购买了 {card}，获得 {points} 点声望。",
+    logReturned: "{player} 归还了 {token}。",
+    logReceivedNoble: "{player} 获得了 {noble}，得到 {points} 点声望。",
+    logFinalRoundBegins: "{player} 达到 15 声望，最终轮开始。",
+    logSharedWin: "共同获胜：{players}。",
+    logWinner: "胜者：{player}。"
+  });
+
+  Object.assign(I18N["zh-Hant"], {
+    tableEyebrow: "非官方本地桌",
+    save: "保存",
+    reset: "重置",
+    startDescription: "使用通用、規則相容的卡牌與板塊。不包含官方圖片、標識、卡牌掃描或 Board Game Arena 素材。",
+    players: "玩家",
+    players2: "2 人",
+    players3: "3 人",
+    players4: "4 人",
+    playerName: "玩家 {n} 名稱",
+    startGame: "開始遊戲",
+    resumeSave: "恢復存檔",
+    clearSave: "清除存檔",
+    quickStarts: "快速開局",
+    start2p: "開始 2 人",
+    start3p: "開始 3 人",
+    start4p: "開始 4 人",
+    aiTakeover: "AI 接管",
+    aiLevel: "智慧水平",
+    aiLevelEasy: "休閒",
+    aiLevelBalanced: "均衡",
+    aiLevelExpert: "高階",
+    aiBadgeFormat: "AI 接管：{level}（暫時不可用）",
+    round: "回合",
+    state: "狀態",
+    move: "步數",
+    aiPlayers: "AI 玩家",
+    aiUnavailableTitle: "智慧 AI 暫時不可用",
+    aiUnavailableBody: "可以在設定裡標記 AI 對手，但自動決策仍在部署中。目前所有回合仍為手動熱座操作。",
+    returnTokens: "歸還寶石",
+    returnTokensBody: "當前玩家必須把寶石歸還到 10 枚或更少，之後才會結算貴族或進入下一回合。",
+    chooseOneNoble: "選擇一位貴族",
+    chooseOneNobleBody: "如果同時滿足多位貴族條件，當前玩家只能獲得其中一位。",
+    bank: "銀行",
+    noTakeSelected: "尚未選擇拿取。",
+    selectedTokens: "已選擇：{tokens}。合法拿取需要 3 枚不同寶石，或從剩餘至少 4 枚的同色堆拿 2 枚。",
+    confirmTake: "確認拿取",
+    clear: "清除",
+    nobles: "貴族",
+    noblesHint: "只看永久加成。貴族不會補充。",
+    market: "市場",
+    marketHint: "購買、預約，或從牌堆暗抽預約。",
+    showHide: "顯示 / 隱藏",
+    ruleGuardrails: "規則限制",
+    ruleGuardrailsBody: "每回合只能執行一個動作：拿 3 枚不同的非黃金寶石；從拿取前至少有 4 枚的同色寶石堆拿 2 枚；預約 1 張牌並在有黃金時獲得 1 枚黃金；或購買 1 張市場/保留區牌。首位達到 15 聲望的玩家會觸發最終輪，確保所有玩家回合數相同。平局只比較已購買牌數量，更少者勝；仍平則共享勝利。",
+    reservedCards: "保留牌",
+    bgaTools: "BGA 風格工具",
+    exportImportReplay: "匯出、匯入與回放",
+    liveTable: "即時桌面",
+    replayMove: "回放第 {current} / {total} 步",
+    bgaDescription: "這裡使用穩定的 ZephyrLabs schema，參考公開 BGA Studio 概念：gamedatas 物件、類似通知的操作日誌，以及 next_move_id。BGA 的璀璨寶石私有協定並不公開，因此這是 BGA 風格相容，不是官方 BGA 協定等價復刻。",
+    exportState: "匯出狀態",
+    importState: "匯入狀態",
+    exportReplay: "匯出回放",
+    loadReplay: "載入回放",
+    prevMove: "上一步",
+    nextMove: "下一步",
+    exitReplay: "退出回放",
+    jsonPlaceholder: "匯出的 JSON 會顯示在這裡。匯入或載入前，也可以把狀態或回放 JSON 貼到這裡。",
+    affordable: "可購買",
+    needTokens: "缺少寶石",
+    choose: "選擇",
+    tier: "等級",
+    deckCards: "牌堆剩餘",
+    reserveDeck: "預約",
+    noFaceUpCards: "沒有剩餘明牌。",
+    noReservedCards: "沒有保留牌",
+    noActiveReserved: "當前玩家沒有保留牌。",
+    blind: "暗牌",
+    faceUp: "明牌",
+    aiSmartUnavailable: "智慧 AI 暫時不可用",
+    tokens: "寶石",
+    bonuses: "加成",
+    reserved: "保留",
+    purchasedSummary: "已購牌：{cards}。貴族：{nobles}。",
+    prestige: "聲望",
+    none: "無",
+    noNoblesRemain: "沒有剩餘貴族。",
+    gameReplay: "回放",
+    gameFinished: "已結束",
+    gameDiscard: "需要歸還",
+    gameNoble: "選擇貴族",
+    gameFinal: "最終輪（剩餘 {turns} 回合）",
+    gameProgress: "進行中"
+  });
+
+  Object.assign(I18N.ja, {
+    tableEyebrow: "非公式ローカル卓",
+    setupEyebrow: "ホットシート設定",
+    startDescription: "ルール互換の汎用カードとタイルを使います。公式画像、ロゴ、カードスキャン、Board Game Arena アセットは含みません。",
+    players2: "2人",
+    players3: "3人",
+    players4: "4人",
+    playerName: "プレイヤー {n} 名",
+    smartAi: "スマートAI",
+    startGame: "ゲーム開始",
+    resumeSave: "保存を再開",
+    clearSave: "保存を消去",
+    quickStarts: "クイック開始",
+    start2p: "2人で開始",
+    start3p: "3人で開始",
+    start4p: "4人で開始",
+    aiTakeover: "AIに任せる",
+    aiLevel: "AIレベル",
+    aiLevelEasy: "カジュアル",
+    aiLevelBalanced: "バランス",
+    aiLevelExpert: "上級",
+    aiBadgeFormat: "AI操作：{level}（一時的に利用不可）",
+    aiPlayers: "AIプレイヤー",
+    aiUnavailableTitle: "スマートAIは一時的に利用できません",
+    aiUnavailableBody: "設定でAI対戦相手を指定できますが、自動判断はまだデプロイ中です。現在はすべて手動ホットシートです。",
+    returnTokens: "トークンを返す",
+    returnTokensBody: "現在のプレイヤーは、貴族判定または次の手番に進む前にトークンを10個以下まで返します。",
+    chooseOneNoble: "貴族を1人選ぶ",
+    chooseOneNobleBody: "複数の貴族条件を同時に満たした場合、現在のプレイヤーは1人だけ受け取ります。",
+    noTakeSelected: "取得は未選択です。",
+    selectedTokens: "選択中：{tokens}。合法な取得は3色各1個、または4個以上ある同色から2個です。",
+    noblesHint: "永続ボーナスのみ参照。貴族は補充されません。",
+    marketHint: "購入、予約、または山札から伏せ予約。",
+    showHide: "表示 / 非表示",
+    ruleGuardrails: "ルール制限",
+    ruleGuardrailsBody: "1手番に実行できる行動は1つだけです。異なる非金トークン3個を取る、4個以上ある同色から2個取る、カードを1枚予約して可能なら金を1個得る、または市場/予約カードを1枚購入します。最初に15威信へ到達したプレイヤーが最終ラウンドを開始し、全員の手番数をそろえます。同点は購入済みカードが少ない方を優先し、それでも同点なら勝利を共有します。",
+    privateHand: "手元",
+    reservedCards: "予約カード",
+    bgaTools: "BGA風ツール",
+    exportImportReplay: "エクスポート、インポート、リプレイ",
+    liveTable: "ライブ卓",
+    replayMove: "リプレイ {current} / {total}",
+    bgaDescription: "公開されている BGA Studio の概念を参考にした安定した ZephyrLabs schema を使います。gamedatas オブジェクト、通知風の操作ログ、next_move_id を含みます。BGA の璀璨宝石の非公開プロトコルは公開されていないため、これはBGA風互換であり、公式BGAプロトコルの完全互換ではありません。",
+    exportState: "状態を書き出す",
+    importState: "状態を読み込む",
+    exportReplay: "リプレイを書き出す",
+    loadReplay: "リプレイを読み込む",
+    prevMove: "前の手",
+    nextMove: "次の手",
+    exitReplay: "リプレイ終了",
+    jsonPlaceholder: "書き出した JSON がここに表示されます。読み込み前に状態またはリプレイ JSON を貼り付けることもできます。",
+    affordable: "購入可能",
+    needTokens: "不足トークン",
+    tier: "レベル",
+    deckCards: "山札残り",
+    reserveDeck: "予約",
+    noFaceUpCards: "公開カードは残っていません。",
+    noReservedCards: "予約カードなし",
+    noActiveReserved: "現在のプレイヤーに予約カードはありません。",
+    blindReserve: "伏せ予約",
+    faceUpReserve: "公開予約",
+    aiSmartUnavailable: "スマートAIは一時的に利用できません",
+    reserved: "予約",
+    purchasedSummary: "購入カード：{cards}。貴族：{nobles}。",
+    prestige: "威信",
+    noNoblesRemain: "貴族は残っていません。",
+    gameDiscard: "返却待ち",
+    gameNoble: "貴族選択",
+    gameFinal: "最終ラウンド（残り {turns} 手番）",
+    gameProgress: "進行中"
+  });
+
+  Object.assign(I18N.fr, {
+    setupEyebrow: "Configuration hot-seat",
+    startDescription: "Cartes et tuiles generiques compatibles avec les regles. Aucun visuel officiel, logo, scan de carte ou asset Board Game Arena n'est inclus.",
+    players2: "2 joueurs",
+    players3: "3 joueurs",
+    players4: "4 joueurs",
+    playerName: "Nom du joueur {n}",
+    smartAi: "IA intelligente",
+    startGame: "Demarrer",
+    resumeSave: "Reprendre",
+    clearSave: "Effacer la sauvegarde",
+    quickStarts: "Demarrages rapides",
+    start2p: "Demarrer 2J",
+    start3p: "Demarrer 3J",
+    start4p: "Demarrer 4J",
+    aiTakeover: "IA prend le relais",
+    aiLevel: "Niveau IA",
+    aiLevelEasy: "Detendu",
+    aiLevelBalanced: "Equilibre",
+    aiLevelExpert: "Expert",
+    aiBadgeFormat: "Relais IA : {level} (temporairement indisponible)",
+    aiPlayers: "Joueurs IA",
+    aiUnavailableTitle: "IA temporairement indisponible",
+    aiUnavailableBody: "Les adversaires IA peuvent etre marques, mais les decisions automatiques sont encore en deploiement. Pour l'instant, tout reste manuel.",
+    returnTokens: "Rendre des jetons",
+    returnTokensBody: "Le joueur actif doit revenir a 10 jetons ou moins avant les nobles ou le prochain tour.",
+    chooseOneNoble: "Choisir un noble",
+    chooseOneNobleBody: "Si plusieurs nobles sont eligibles, le joueur actif en recoit exactement un.",
+    noTakeSelected: "Aucune prise selectionnee.",
+    selectedTokens: "Selection : {tokens}. Une prise legale demande 3 jetons differents ou 2 identiques depuis une pile a 4+.",
+    noblesHint: "Bonus permanents seulement. Pas de renouvellement.",
+    marketHint: "Acheter, reserver, ou reserver a l'aveugle depuis une pioche.",
+    showHide: "Afficher / masquer",
+    ruleGuardrails: "Regles",
+    ruleGuardrailsBody: "Une action par tour : prendre exactement 3 jetons non-or differents, prendre exactement 2 jetons non-or identiques depuis une pile qui en avait au moins 4, reserver une carte avec un or si disponible, ou acheter une carte du marche/reservee. Le premier joueur a 15 prestige declenche le dernier tour pour egaliser les tours. Les egalites utilisent seulement le plus petit nombre de cartes achetees; les egalites restantes sont partagees.",
+    privateHand: "Main privee",
+    reservedCards: "Cartes reservees",
+    bgaTools: "Outils style BGA",
+    exportImportReplay: "Export, import et replay",
+    liveTable: "Table active",
+    replayMove: "Replay {current} / {total}",
+    bgaDescription: "Schema ZephyrLabs stable inspire des concepts publics de BGA Studio : objet gamedatas, journal de coups type notifications et next_move_id. Le protocole prive BGA Splendor n'est pas public; c'est une compatibilite style BGA, pas une parite officielle.",
+    exportState: "Exporter l'etat",
+    importState: "Importer l'etat",
+    exportReplay: "Exporter replay",
+    loadReplay: "Charger replay",
+    prevMove: "Coup precedent",
+    nextMove: "Coup suivant",
+    exitReplay: "Quitter replay",
+    jsonPlaceholder: "Le JSON exporte apparait ici. Collez un etat ou replay JSON avant import/chargement.",
+    noActiveReserved: "Aucune carte reservee pour le joueur actif.",
+    aiSmartUnavailable: "IA temporairement indisponible",
+    prestige: "prestige",
+    gameFinal: "Dernier tour ({turns} tours restants)"
+  });
+
+  Object.assign(I18N.de, {
+    setupEyebrow: "Hot-Seat Setup",
+    startDescription: "Es werden generische, regelkompatible Karten und Platten verwendet. Keine offiziellen Grafiken, Logos, Kartenscans oder Board Game Arena Assets.",
+    players2: "2 Spieler",
+    players3: "3 Spieler",
+    players4: "4 Spieler",
+    playerName: "Name Spieler {n}",
+    smartAi: "Smarte KI",
+    startGame: "Starten",
+    resumeSave: "Fortsetzen",
+    clearSave: "Spielstand loeschen",
+    quickStarts: "Schnellstart",
+    start2p: "2S starten",
+    start3p: "3S starten",
+    start4p: "4S starten",
+    aiTakeover: "KI uebernimmt",
+    aiLevel: "KI-Niveau",
+    aiLevelEasy: "Locker",
+    aiLevelBalanced: "Ausgewogen",
+    aiLevelExpert: "Experte",
+    aiBadgeFormat: "KI uebernimmt: {level} (voruebergehend nicht verfuegbar)",
+    aiPlayers: "KI-Spieler",
+    aiUnavailableTitle: "Smarte KI voruebergehend nicht verfuegbar",
+    aiUnavailableBody: "KI-Gegner koennen markiert werden, automatische Entscheidungen werden aber noch bereitgestellt. Aktuell bleibt jeder Zug manuell.",
+    returnTokens: "Marker zurueckgeben",
+    returnTokensBody: "Der aktive Spieler muss auf 10 oder weniger Marker zurueckgeben, bevor Adlige oder der naechste Zug abgewickelt werden.",
+    chooseOneNoble: "Einen Adligen waehlen",
+    chooseOneNobleBody: "Sind mehrere Adlige moeglich, erhaelt der aktive Spieler genau einen.",
+    noTakeSelected: "Keine Auswahl.",
+    selectedTokens: "Auswahl: {tokens}. Legal sind 3 verschiedene Marker oder 2 gleiche aus einem Stapel mit 4+.",
+    noblesHint: "Nur permanente Boni. Keine Auffuellung.",
+    marketHint: "Kaufen, reservieren oder verdeckt vom Stapel reservieren.",
+    showHide: "Ein-/ausblenden",
+    ruleGuardrails: "Regeln",
+    ruleGuardrailsBody: "Eine Aktion pro Zug: genau 3 verschiedene Nicht-Gold-Marker nehmen, genau 2 gleiche Nicht-Gold-Marker aus einem Stapel nehmen, der vorher mindestens 4 hatte, eine Karte reservieren und falls moeglich Gold nehmen, oder eine Markt-/Reservekarte kaufen. Der erste Spieler mit 15 Prestige startet die Schlussrunde, damit alle gleich viele Zuege haben. Gleichstaende nutzen nur weniger gekaufte Karten; weitere Gleichstaende werden geteilt.",
+    privateHand: "Private Hand",
+    reservedCards: "Reservierte Karten",
+    bgaTools: "BGA-Stil Werkzeuge",
+    exportImportReplay: "Export, Import und Replay",
+    liveTable: "Live-Tisch",
+    replayMove: "Replay {current} / {total}",
+    bgaDescription: "Nutzt ein stabiles ZephyrLabs Schema nach oeffentlichen BGA Studio Konzepten: gamedatas Objekt, benachrichtigungsartiges Zuglog und next_move_id. Das private BGA Splendor Protokoll ist nicht oeffentlich; dies ist BGA-Stil Kompatibilitaet, keine offizielle Paritaet.",
+    exportState: "Status exportieren",
+    importState: "Status importieren",
+    exportReplay: "Replay exportieren",
+    loadReplay: "Replay laden",
+    prevMove: "Vorheriger Zug",
+    nextMove: "Naechster Zug",
+    exitReplay: "Replay verlassen",
+    jsonPlaceholder: "Exportiertes JSON erscheint hier. Vor Import/Laden kann Status- oder Replay-JSON eingefuegt werden.",
+    noActiveReserved: "Keine reservierten Karten fuer den aktiven Spieler.",
+    aiSmartUnavailable: "Smarte KI voruebergehend nicht verfuegbar",
+    prestige: "Prestige",
+    gameFinal: "Schlussrunde ({turns} Zuege uebrig)"
+  });
+
+  Object.assign(I18N.es, {
+    setupEyebrow: "Configuracion hot-seat",
+    startDescription: "Se usan cartas y losetas genericas compatibles con las reglas. No se incluyen artes oficiales, logos, escaneos de cartas ni assets de Board Game Arena.",
+    players2: "2 jugadores",
+    players3: "3 jugadores",
+    players4: "4 jugadores",
+    playerName: "Nombre jugador {n}",
+    smartAi: "IA inteligente",
+    startGame: "Iniciar",
+    resumeSave: "Continuar guardado",
+    clearSave: "Borrar guardado",
+    quickStarts: "Inicios rapidos",
+    start2p: "Iniciar 2J",
+    start3p: "Iniciar 3J",
+    start4p: "Iniciar 4J",
+    aiTakeover: "IA controla",
+    aiLevel: "Nivel IA",
+    aiLevelEasy: "Casual",
+    aiLevelBalanced: "Equilibrado",
+    aiLevelExpert: "Experto",
+    aiBadgeFormat: "IA controla: {level} (temporalmente no disponible)",
+    aiPlayers: "Jugadores IA",
+    aiUnavailableTitle: "IA temporalmente no disponible",
+    aiUnavailableBody: "Puedes marcar oponentes IA, pero las decisiones automaticas siguen en despliegue. Por ahora todos los turnos son manuales.",
+    returnTokens: "Devolver fichas",
+    returnTokensBody: "El jugador activo debe devolver fichas hasta tener 10 o menos antes de resolver nobles o el siguiente turno.",
+    chooseOneNoble: "Elegir un noble",
+    chooseOneNobleBody: "Si varios nobles son elegibles, el jugador activo recibe exactamente uno.",
+    noTakeSelected: "No hay toma seleccionada.",
+    selectedTokens: "Seleccion: {tokens}. Una toma legal requiere 3 fichas distintas o 2 iguales desde una pila con 4+.",
+    noblesHint: "Solo bonos permanentes. Sin reposicion.",
+    marketHint: "Comprar, reservar o reservar a ciegas desde un mazo.",
+    showHide: "Mostrar / ocultar",
+    ruleGuardrails: "Reglas",
+    ruleGuardrailsBody: "Una accion por turno: tomar exactamente 3 fichas no oro distintas, tomar exactamente 2 fichas no oro iguales desde una pila que tenia al menos 4, reservar una carta con oro si hay disponible, o comprar una carta del mercado/reservada. El primer jugador con 15 prestigio activa la ronda final para igualar turnos. Los empates usan solo menos cartas compradas; los empates restantes se comparten.",
+    privateHand: "Mano privada",
+    reservedCards: "Cartas reservadas",
+    bgaTools: "Herramientas estilo BGA",
+    exportImportReplay: "Exportar, importar y replay",
+    liveTable: "Mesa en vivo",
+    replayMove: "Replay {current} / {total}",
+    bgaDescription: "Usa un schema estable de ZephyrLabs inspirado en conceptos publicos de BGA Studio: objeto gamedatas, registro de movimientos tipo notificacion y next_move_id. El protocolo privado de BGA Splendor no es publico; esto es compatibilidad estilo BGA, no paridad oficial.",
+    exportState: "Exportar estado",
+    importState: "Importar estado",
+    exportReplay: "Exportar replay",
+    loadReplay: "Cargar replay",
+    prevMove: "Movimiento anterior",
+    nextMove: "Movimiento siguiente",
+    exitReplay: "Salir del replay",
+    jsonPlaceholder: "El JSON exportado aparece aqui. Pega JSON de estado o replay antes de importar/cargar.",
+    noActiveReserved: "No hay cartas reservadas para el jugador activo.",
+    aiSmartUnavailable: "IA temporalmente no disponible",
+    prestige: "prestigio",
+    gameFinal: "Ronda final ({turns} turnos restantes)"
+  });
+
+  var NOBLE_POOL = [
+    { id: "noble-01", req: { white: 4, blue: 4 } },
+    { id: "noble-02", req: { blue: 4, green: 4 } },
+    { id: "noble-03", req: { green: 4, red: 4 } },
+    { id: "noble-04", req: { red: 4, black: 4 } },
+    { id: "noble-05", req: { black: 4, white: 4 } },
+    { id: "noble-06", req: { white: 3, blue: 3, green: 3 } },
+    { id: "noble-07", req: { blue: 3, green: 3, red: 3 } },
+    { id: "noble-08", req: { green: 3, red: 3, black: 3 } },
+    { id: "noble-09", req: { red: 3, black: 3, white: 3 } },
+    { id: "noble-10", req: { black: 3, white: 3, blue: 3 } }
+  ].map(function (noble, index) {
+    return {
+      id: noble.id,
+      name: "Patron " + String(index + 1).padStart(2, "0"),
+      points: 3,
+      req: normalizeCost(noble.req)
+    };
+  });
+
+  var state = null;
+  var liveStateBeforeReplay = null;
+  var replayData = null;
+  var replayIndex = -1;
+  var pendingTake = [];
+  var pendingPayment = null;
+  var messageText = "";
+  var startMessageText = "";
+  var messageKind = "";
+  var pendingFlight = null;
+  var marketStickyTimer = null;
+  var marketElasticTimer = null;
+  var marketElasticFrame = null;
+  var marketStickyDelta = 0;
+  var marketStickyLastInputAt = 0;
+  var marketStickyReleaseUntil = 0;
+  var marketTouchPoint = null;
   var el = {};
 
   function byId(id) {
     return document.getElementById(id);
+  }
+
+  function t(key, params) {
+    var value = (I18N[currentLocale] && I18N[currentLocale][key]) || I18N.en[key] || key;
+    Object.keys(params || {}).forEach(function (name) {
+      value = value.replace(new RegExp("\\{" + name + "\\}", "g"), params[name]);
+    });
+    return value;
+  }
+
+  function applyTranslations() {
+    document.documentElement.lang = currentLocale;
+    document.querySelectorAll("[data-i18n]").forEach(function (node) {
+      node.textContent = t(node.dataset.i18n, { n: node.dataset.i18nN || "" });
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(function (node) {
+      node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder, { n: node.dataset.i18nN || "" }));
+    });
+    document.querySelectorAll("[data-i18n-aria-label]").forEach(function (node) {
+      node.setAttribute("aria-label", t(node.dataset.i18nAriaLabel));
+    });
+    if (el.languageSelect) {
+      el.languageSelect.value = currentLocale;
+      el.languageSelect.setAttribute("aria-label", t("languageLabel"));
+    }
   }
 
   function emptyCounts(includeGold) {
@@ -77,6 +1338,146 @@
     });
     return normalized;
   }
+
+  var SOURCE_CARD_ROWS = {
+    black: [
+      [0, 0, 1, 1, 1, 1],
+      [0, 0, 0, 1, 0, 2],
+      [0, 0, 2, 0, 0, 2],
+      [0, 1, 0, 3, 0, 1],
+      [0, 0, 0, 0, 0, 3],
+      [0, 0, 1, 1, 2, 1],
+      [0, 0, 2, 1, 2, 0],
+      [1, 0, 0, 0, 4, 0],
+      [1, 0, 3, 0, 2, 2],
+      [1, 2, 3, 0, 0, 3],
+      [2, 0, 0, 2, 1, 4],
+      [2, 0, 5, 0, 0, 0],
+      [2, 0, 0, 3, 0, 5],
+      [3, 6, 0, 0, 0, 0],
+      [3, 0, 3, 3, 3, 5],
+      [4, 0, 0, 7, 0, 0],
+      [4, 3, 0, 6, 0, 3],
+      [5, 3, 0, 7, 0, 0]
+    ],
+    blue: [
+      [0, 2, 1, 0, 0, 0],
+      [0, 1, 1, 2, 0, 1],
+      [0, 1, 1, 1, 0, 1],
+      [0, 0, 0, 1, 1, 3],
+      [0, 3, 0, 0, 0, 0],
+      [0, 0, 1, 2, 0, 2],
+      [0, 2, 0, 0, 0, 2],
+      [1, 0, 0, 4, 0, 0],
+      [1, 0, 0, 3, 2, 2],
+      [1, 3, 0, 0, 2, 3],
+      [2, 0, 5, 0, 3, 0],
+      [2, 0, 0, 0, 5, 0],
+      [2, 4, 2, 1, 0, 0],
+      [3, 0, 0, 0, 6, 0],
+      [3, 5, 3, 3, 0, 3],
+      [4, 0, 7, 0, 0, 0],
+      [4, 3, 6, 0, 3, 0],
+      [5, 0, 7, 0, 3, 0]
+    ],
+    green: [
+      [0, 0, 2, 0, 1, 0],
+      [0, 0, 0, 2, 2, 0],
+      [0, 0, 1, 0, 3, 1],
+      [0, 1, 1, 1, 1, 0],
+      [0, 2, 1, 1, 1, 0],
+      [0, 2, 0, 2, 1, 0],
+      [0, 0, 0, 3, 0, 0],
+      [1, 4, 0, 0, 0, 0],
+      [1, 0, 3, 3, 0, 2],
+      [1, 2, 2, 0, 3, 0],
+      [2, 1, 4, 0, 2, 0],
+      [2, 0, 0, 0, 0, 5],
+      [2, 0, 0, 0, 5, 3],
+      [3, 0, 0, 0, 0, 6],
+      [3, 3, 5, 3, 3, 0],
+      [4, 0, 3, 0, 6, 3],
+      [4, 0, 0, 0, 7, 0],
+      [5, 0, 0, 0, 7, 3]
+    ],
+    red: [
+      [0, 0, 3, 0, 0, 0],
+      [0, 3, 1, 1, 0, 0],
+      [0, 0, 0, 0, 2, 1],
+      [0, 2, 2, 0, 0, 1],
+      [0, 1, 2, 0, 1, 1],
+      [0, 1, 1, 0, 1, 1],
+      [0, 0, 2, 2, 0, 0],
+      [1, 0, 4, 0, 0, 0],
+      [1, 3, 0, 2, 3, 0],
+      [1, 3, 2, 2, 0, 0],
+      [2, 0, 1, 0, 4, 2],
+      [2, 5, 3, 0, 0, 0],
+      [2, 5, 0, 0, 0, 0],
+      [3, 0, 0, 6, 0, 0],
+      [3, 3, 3, 0, 5, 3],
+      [4, 0, 0, 0, 0, 7],
+      [4, 0, 0, 3, 3, 6],
+      [5, 0, 0, 3, 0, 7]
+    ],
+    white: [
+      [0, 1, 0, 0, 2, 2],
+      [0, 1, 0, 2, 0, 0],
+      [0, 1, 0, 1, 1, 1],
+      [0, 0, 0, 0, 3, 0],
+      [0, 0, 0, 0, 2, 2],
+      [0, 1, 0, 1, 1, 2],
+      [0, 1, 3, 0, 1, 0],
+      [1, 0, 0, 0, 0, 4],
+      [1, 2, 0, 2, 0, 3],
+      [1, 0, 2, 3, 3, 0],
+      [2, 2, 0, 4, 0, 1],
+      [2, 0, 0, 5, 0, 0],
+      [2, 3, 0, 5, 0, 0],
+      [3, 0, 6, 0, 0, 0],
+      [3, 3, 0, 5, 3, 3],
+      [4, 7, 0, 0, 0, 0],
+      [4, 6, 3, 3, 0, 0],
+      [5, 7, 3, 0, 0, 0]
+    ]
+  };
+
+  function sourceRowTier(index) {
+    if (index < 8) return 1;
+    if (index < 14) return 2;
+    return 3;
+  }
+
+  function sourceRowCost(row) {
+    return normalizeCost({
+      black: row[1],
+      white: row[2],
+      red: row[3],
+      blue: row[4],
+      green: row[5]
+    });
+  }
+
+  function buildDevelopmentCards() {
+    var cardsByTier = { 1: [], 2: [], 3: [] };
+    var counters = { 1: 0, 2: 0, 3: 0 };
+    ["black", "blue", "green", "red", "white"].forEach(function (color) {
+      SOURCE_CARD_ROWS[color].forEach(function (row, index) {
+        var tier = sourceRowTier(index);
+        counters[tier] += 1;
+        cardsByTier[tier].push({
+          id: "t" + tier + "-" + String(counters[tier]).padStart(2, "0"),
+          tier: tier,
+          color: color,
+          points: row[0],
+          cost: sourceRowCost(row)
+        });
+      });
+    });
+    return cardsByTier;
+  }
+
+  var DEVELOPMENT_CARDS = buildDevelopmentCards();
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -102,80 +1503,10 @@
     return copy;
   }
 
-  function pointValue(tier, index) {
-    if (tier === 1) {
-      return [0, 0, 0, 0, 0, 0, 0, 0, 1, 1][index % 10];
-    }
-    if (tier === 2) {
-      return [1, 1, 1, 2, 2, 2, 3, 3, 0, 2][index % 10];
-    }
-    return [3, 3, 4, 4, 4, 5, 5, 3, 4, 5][index % 10];
-  }
-
-  function generatedCost(tier, index, gem, points) {
-    var cost = emptyCounts(false);
-    var templates = {
-      1: [
-        [1, 1, 1, 0, 0],
-        [0, 2, 1, 1, 0],
-        [2, 0, 0, 1, 1],
-        [0, 1, 2, 0, 1],
-        [1, 0, 1, 2, 0],
-        [0, 0, 2, 2, 1],
-        [2, 1, 0, 0, 2],
-        [1, 2, 2, 0, 0],
-        [0, 0, 0, 4, 0],
-        [0, 3, 0, 0, 2]
-      ],
-      2: [
-        [0, 2, 2, 3, 0],
-        [3, 0, 2, 0, 2],
-        [2, 3, 0, 2, 0],
-        [0, 0, 3, 2, 3],
-        [2, 0, 0, 3, 3],
-        [0, 5, 0, 0, 0],
-        [0, 0, 5, 0, 0],
-        [0, 0, 0, 5, 0],
-        [0, 0, 0, 0, 5],
-        [5, 0, 0, 0, 0]
-      ],
-      3: [
-        [0, 3, 3, 5, 3],
-        [3, 0, 3, 3, 5],
-        [5, 3, 0, 3, 3],
-        [3, 5, 3, 0, 3],
-        [3, 3, 5, 3, 0],
-        [0, 0, 0, 7, 0],
-        [0, 0, 7, 0, 0],
-        [7, 0, 0, 0, 0],
-        [0, 7, 0, 0, 0],
-        [0, 0, 0, 0, 7]
-      ]
-    };
-    var base = templates[tier][index % templates[tier].length].slice();
-    var gemIndex = COLORS.indexOf(gem);
-    base[gemIndex] = Math.max(0, base[gemIndex] - (points > 2 ? 1 : 0));
-    COLORS.forEach(function (color, colorIndex) {
-      cost[color] = base[(colorIndex + index) % COLORS.length];
-    });
-    if (Object.values(cost).reduce(function (sum, value) { return sum + value; }, 0) === 0) {
-      cost[COLORS[(gemIndex + 1) % COLORS.length]] = tier + 2;
-    }
-    return cost;
-  }
-
   function generateDeck(tier, size) {
-    var deck = [];
-    for (var index = 0; index < size; index += 1) {
-      var gem = COLORS[(index + tier) % COLORS.length];
-      var points = pointValue(tier, index);
-      deck.push({
-        id: "t" + tier + "-" + String(index + 1).padStart(2, "0"),
-        tier: tier,
-        color: gem,
-        points: points,
-        cost: generatedCost(tier, index, gem, points)
-      });
+    var deck = (DEVELOPMENT_CARDS[tier] || []).map(clone);
+    if (deck.length !== size && window.console && window.console.warn) {
+      window.console.warn("Unexpected development deck size", tier, deck.length, size);
     }
     return shuffle(deck, 7000 + tier * 101);
   }
@@ -190,8 +1521,13 @@
     return "p" + (index + 1);
   }
 
-  function createGame(playerCount, names) {
+  function normalizeAiLevel(level) {
+    return AI_LEVELS.indexOf(level) >= 0 ? level : "balanced";
+  }
+
+  function createGame(playerCount, names, aiSettings) {
     var tokenCount = tokenCountForPlayers(playerCount);
+    var aiConfig = aiSettings || [];
     var decks = {
       1: generateDeck(1, TIER_SIZES[1]),
       2: generateDeck(2, TIER_SIZES[2]),
@@ -203,15 +1539,22 @@
       mode: "live",
       playerCount: playerCount,
       next_move_id: 1,
-      players: names.map(function (name, index) {
+      players: Array.from({ length: playerCount }, function (_, index) {
+        var aiLevel = normalizeAiLevel(aiConfig[index] && (aiConfig[index].level || aiConfig[index].mode));
         return {
           id: playerId(index),
-          name: cleanName(name, index),
+          name: cleanName(names[index], index),
           tokens: emptyCounts(true),
           bonuses: emptyCounts(false),
           reserved: [],
           purchased: [],
-          nobles: []
+          nobles: [],
+          ai: {
+            enabled: !!(aiConfig[index] && aiConfig[index].enabled),
+            mode: aiConfig[index] && aiConfig[index].enabled ? aiLevel : null,
+            level: aiLevel,
+            available: false
+          }
         };
       }),
       bank: emptyCounts(true),
@@ -273,7 +1616,7 @@
   }
 
   function canAct() {
-    return !!state && state.mode !== "replay" && !state.gameOver && !state.awaitingDiscard && !state.awaitingNobleChoice;
+    return !!state && state.mode !== "replay" && !state.gameOver && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment;
   }
 
   function logEntry(message) {
@@ -325,17 +1668,26 @@
     }
   }
 
+  function loadLanguagePreference() {
+    var saved = storageGetItem(LANGUAGE_KEY);
+    currentLocale = I18N[saved] ? saved : "en";
+  }
+
+  function saveLanguagePreference() {
+    storageSetItem(LANGUAGE_KEY, currentLocale);
+  }
+
   function saveState() {
     if (!state || state.mode === "replay") return;
     var serialized = "";
     try {
       serialized = JSON.stringify(state);
     } catch (error) {
-      showMessage("Save failed: table state could not be serialized.");
+      showMessage(t("msgSaveSerializeFailed"));
       return;
     }
     if (!storageSetItem(STORAGE_KEY, serialized)) {
-      showMessage("Save failed: localStorage is unavailable or full.");
+      showMessage(t("msgSaveStorageFailed"));
     }
   }
 
@@ -356,14 +1708,14 @@
       var parsed = JSON.parse(raw);
       if (!validateState(parsed)) {
         storageRemoveItem(STORAGE_KEY);
-        showStartMessage("Saved data was invalid and has been cleared.");
+        showStartMessage(t("msgSavedInvalidCleared"));
         return null;
       }
       parsed.mode = "live";
       return parsed;
     } catch (error) {
       storageRemoveItem(STORAGE_KEY);
-      showStartMessage("Saved data could not be parsed and has been cleared.");
+      showStartMessage(t("msgSavedParseCleared"));
       return null;
     }
   }
@@ -382,20 +1734,122 @@
     var count = Number(el.playerCount.value) || 4;
     el.playerNameFields.innerHTML = "";
     for (var index = 0; index < count; index += 1) {
+      var row = document.createElement("div");
+      row.className = "player-setup-row";
       var label = document.createElement("label");
-      label.textContent = "Player " + (index + 1) + " name";
+      var labelText = document.createElement("span");
+      labelText.dataset.i18n = "playerName";
+      labelText.dataset.i18nN = String(index + 1);
+      labelText.textContent = t("playerName", { n: index + 1 });
       var input = document.createElement("input");
       input.name = "playerName";
       input.autocomplete = "off";
       input.maxLength = 28;
-      input.placeholder = "Player " + (index + 1);
+      input.dataset.i18nPlaceholder = "playerName";
+      input.dataset.i18nN = String(index + 1);
+      input.placeholder = t("playerName", { n: index + 1 });
+      label.append(labelText);
       label.append(input);
-      el.playerNameFields.append(label);
+      var aiControl = document.createElement("div");
+      aiControl.className = "ai-control";
+      var aiLabel = document.createElement("label");
+      aiLabel.className = "ai-toggle";
+      var checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.name = "playerAi";
+      checkbox.value = String(index);
+      aiLabel.append(checkbox);
+      var aiText = document.createElement("span");
+      aiText.dataset.i18n = "aiTakeover";
+      aiText.textContent = t("aiTakeover");
+      aiLabel.append(aiText);
+      var levelLabel = document.createElement("label");
+      levelLabel.className = "ai-level";
+      var levelText = document.createElement("span");
+      levelText.dataset.i18n = "aiLevel";
+      levelText.textContent = t("aiLevel");
+      var levelSelect = document.createElement("select");
+      levelSelect.name = "playerAiLevel";
+      [
+        ["easy", "aiLevelEasy"],
+        ["balanced", "aiLevelBalanced"],
+        ["expert", "aiLevelExpert"]
+      ].forEach(function (entry) {
+        var option = document.createElement("option");
+        option.value = entry[0];
+        option.dataset.i18n = entry[1];
+        option.textContent = t(entry[1]);
+        if (entry[0] === "balanced") option.selected = true;
+        levelSelect.append(option);
+      });
+      function syncAiLevel() {
+        aiControl.classList.toggle("active", checkbox.checked);
+      }
+      checkbox.addEventListener("change", syncAiLevel);
+      checkbox.addEventListener("input", syncAiLevel);
+      checkbox.addEventListener("click", syncAiLevel);
+      syncAiLevel();
+      levelLabel.append(levelText);
+      levelLabel.append(levelSelect);
+      aiControl.append(aiLabel);
+      aiControl.append(levelLabel);
+      row.append(label);
+      row.append(aiControl);
+      el.playerNameFields.append(row);
     }
   }
 
   function gemStyle(color) {
     return "--gem:" + GEM_HEX[color];
+  }
+
+  function queueFlightFromElement(source, color, label, targetSelector) {
+    if (!source || !source.getBoundingClientRect || state && state.mode === "replay") return;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var rect = source.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    pendingFlight = {
+      color: color || "gold",
+      label: label || "",
+      targetSelector: targetSelector || ".active-hand-panel",
+      from: {
+        x: rect.left + rect.width / 2,
+        y: rect.top + rect.height / 2,
+        width: Math.min(rect.width, 120),
+        height: Math.min(rect.height, 160)
+      }
+    };
+  }
+
+  function flushPendingFlight() {
+    if (!pendingFlight || !document.body) return;
+    var flight = pendingFlight;
+    pendingFlight = null;
+    var schedule = window.requestAnimationFrame || function (callback) {
+      return window.setTimeout(callback, 16);
+    };
+    schedule(function () {
+      var target = document.querySelector(flight.targetSelector) || el.activeHandPanel || el.players;
+      if (!target || !target.getBoundingClientRect) return;
+      var rect = target.getBoundingClientRect();
+      var node = document.createElement("div");
+      node.className = "flight-card";
+      node.style.setProperty("--gem", GEM_HEX[flight.color] || GEM_HEX.gold);
+      node.style.setProperty("--from-x", flight.from.x + "px");
+      node.style.setProperty("--from-y", flight.from.y + "px");
+      node.style.setProperty("--to-x", rect.left + rect.width / 2 + "px");
+      node.style.setProperty("--to-y", rect.top + rect.height / 2 + "px");
+      node.style.setProperty("--w", Math.max(54, flight.from.width * 0.7) + "px");
+      node.style.setProperty("--h", Math.max(74, flight.from.height * 0.7) + "px");
+      node.textContent = flight.label;
+      document.body.append(node);
+      node.addEventListener("animationend", function () {
+        node.remove();
+      }, { once: true });
+      window.setTimeout(function () {
+        if (node.parentNode) node.remove();
+      }, 900);
+    });
   }
 
   function escapeHtml(value) {
@@ -411,14 +1865,23 @@
     var parts = COLORS.filter(function (color) {
       return (cost[color] || 0) > 0;
     }).map(function (color) {
-      return '<span class="cost-pill" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + " " + cost[color] + "</span>";
+      return '<span class="cost-pill" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " cost " + cost[color] + '"><span class="gem-dot"></span><span>' + cost[color] + "</span></span>";
+    });
+    return parts.length ? parts.join("") : '<span class="muted">Free</span>';
+  }
+
+  function requirementHtml(cost) {
+    var parts = COLORS.filter(function (color) {
+      return (cost[color] || 0) > 0;
+    }).map(function (color) {
+      return '<span class="requirement-tile" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " requirement " + cost[color] + '"><span>' + cost[color] + "</span></span>";
     });
     return parts.length ? parts.join("") : '<span class="muted">Free</span>';
   }
 
   function bonusesHtml(counts) {
     return COLORS.map(function (color) {
-      return '<span class="bonus-pill" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + " " + (counts[color] || 0) + "</span>";
+      return '<span class="bonus-pill" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + (counts[color] || 0) + '"><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span>' + (counts[color] || 0) + "</span></span>";
     }).join("");
   }
 
@@ -432,11 +1895,92 @@
     }).join("");
   }
 
+  function paymentNeeds(player, card) {
+    var needs = emptyCounts(false);
+    COLORS.forEach(function (color) {
+      needs[color] = Math.max((card.cost[color] || 0) - (player.bonuses[color] || 0), 0);
+    });
+    return needs;
+  }
+
+  function emptyPaymentPlan() {
+    return {
+      colored: emptyCounts(false),
+      gold: emptyCounts(false)
+    };
+  }
+
+  function paymentGoldTotal(payment) {
+    return COLORS.reduce(function (sum, color) {
+      return sum + (Number(payment && payment.gold && payment.gold[color]) || 0);
+    }, 0);
+  }
+
+  function paymentSpend(payment) {
+    var spend = emptyCounts(true);
+    COLORS.forEach(function (color) {
+      spend[color] = Number(payment && payment.colored && payment.colored[color]) || 0;
+    });
+    spend.gold = paymentGoldTotal(payment);
+    return spend;
+  }
+
+  function paymentSelectedText(payment) {
+    var parts = [];
+    COLORS.forEach(function (color) {
+      var colored = Number(payment && payment.colored && payment.colored[color]) || 0;
+      var gold = Number(payment && payment.gold && payment.gold[color]) || 0;
+      if (colored > 0) parts.push(TOKEN_LABEL[color] + " " + colored);
+      if (gold > 0) parts.push("* " + gold + " -> " + TOKEN_LABEL[color]);
+    });
+    return parts.length ? parts.join(", ") : "-";
+  }
+
+  function normalizePaymentPlan(player, card, payment) {
+    var needs = paymentNeeds(player, card);
+    var normalized = emptyPaymentPlan();
+    COLORS.forEach(function (color) {
+      var colored = Math.max(0, Number(payment && payment.colored && payment.colored[color]) || 0);
+      colored = Math.min(colored, player.tokens[color] || 0, needs[color]);
+      normalized.colored[color] = colored;
+      var gold = Math.max(0, Number(payment && payment.gold && payment.gold[color]) || 0);
+      normalized.gold[color] = Math.min(gold, Math.max(needs[color] - colored, 0));
+    });
+    var excessGold = paymentGoldTotal(normalized) - (player.tokens.gold || 0);
+    if (excessGold > 0) {
+      COLORS.slice().reverse().forEach(function (color) {
+        var remove = Math.min(normalized.gold[color], excessGold);
+        normalized.gold[color] -= remove;
+        excessGold -= remove;
+      });
+    }
+    return normalized;
+  }
+
+  function paymentIsLegal(player, card, payment) {
+    if (!player || !card || !payment) return false;
+    var needs = paymentNeeds(player, card);
+    if (paymentGoldTotal(payment) > (player.tokens.gold || 0)) return false;
+    return COLORS.every(function (color) {
+      var colored = Number(payment.colored && payment.colored[color]) || 0;
+      var gold = Number(payment.gold && payment.gold[color]) || 0;
+      return colored <= (player.tokens[color] || 0) && colored + gold === needs[color];
+    });
+  }
+
+  function paymentMoveArgs(payment) {
+    return {
+      tokens: paymentSpend(payment),
+      gold_as: clone(payment.gold || emptyCounts(false))
+    };
+  }
+
   function affordability(player, card) {
+    var needs = paymentNeeds(player, card);
     var pay = emptyCounts(true);
     var goldNeeded = 0;
     COLORS.forEach(function (color) {
-      var needed = Math.max((card.cost[color] || 0) - (player.bonuses[color] || 0), 0);
+      var needed = needs[color];
       var coloredPay = Math.min(player.tokens[color] || 0, needed);
       pay[color] = coloredPay;
       goldNeeded += needed - coloredPay;
@@ -459,26 +2003,30 @@
     var buyAttr = controls.buy ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
     var reserveAttr = controls.reserve ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
     var afford = controls.afford;
-    var affordText = afford && afford.ok ? "Affordable" : "Need tokens";
+    var affordText = afford && afford.ok ? t("affordable") : t("needTokens");
+    var actions = [];
+    if (controls.buy) {
+      actions.push('<button type="button" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
+    }
+    if (controls.reserve) {
+      actions.push('<button type="button" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
+    }
     return [
-      '<article class="dev-card" style="' + gemStyle(card.color) + '">',
-      "<h3><span>Tier " + card.tier + " " + TOKEN_LABEL[card.color] + '<br><span class="card-id">' + card.id + '</span></span><span class="points">' + card.points + "</span></h3>",
+      '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" style="' + gemStyle(card.color) + '">',
+      "<h3><span>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + '<br><span class="card-id">' + card.id + '</span></span><span class="points">' + card.points + "</span></h3>",
       '<div class="cost-row">' + costHtml(card.cost) + "</div>",
-      '<p class="muted compact">' + affordText + "</p>",
-      '<div class="card-actions">',
-      '<button type="button" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">Buy</button>",
-      '<button type="button" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">Reserve</button>",
-      "</div>",
+      '<p class="card-affordability compact">' + affordText + "</p>",
+      actions.length ? '<div class="card-actions">' + actions.join("") + "</div>" : "",
       "</article>"
     ].join("");
   }
 
   function renderNoble(noble, choiceMode) {
-    var button = choiceMode ? '<button type="button" class="primary" data-choose-noble="' + noble.id + '">Choose</button>' : "";
+    var button = choiceMode ? '<button type="button" class="primary" data-choose-noble="' + noble.id + '">' + t("choose") + "</button>" : "";
     return [
       '<article class="noble-card">',
-      "<strong>" + noble.points + " prestige</strong>",
-      '<div class="cost-row">' + costHtml(noble.req) + "</div>",
+      "<strong>" + noble.points + " " + t("prestige") + "</strong>",
+      '<div class="cost-row requirement-row">' + requirementHtml(noble.req) + "</div>",
       button,
       "</article>"
     ].join("");
@@ -496,10 +2044,10 @@
   }
 
   function takeSummaryText() {
-    if (pendingTake.length === 0) return "No take selected.";
-    return "Selected: " + pendingTake.map(function (color) {
+    if (pendingTake.length === 0) return t("noTakeSelected");
+    return t("selectedTokens", { tokens: pendingTake.map(function (color) {
       return TOKEN_LABEL[color];
-    }).join(", ") + ". Legal take requires 3 different or 2 matching from a stack with 4+.";
+    }).join(", ") });
   }
 
   function renderMarket() {
@@ -519,38 +2067,90 @@
       return [
         '<section class="tier">',
         '<div class="deck-box">',
-        '<span class="label">Tier ' + tier + "</span>",
+        '<span class="label">' + t("tier") + " " + tier + "</span>",
         "<strong>" + state.decks[tier].length + "</strong>",
-        '<span class="muted compact">Deck cards</span>',
-        '<button type="button" data-reserve-deck="' + tier + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">Reserve deck</button>",
+        '<span class="muted compact">' + t("deckCards") + "</span>",
+        '<button type="button" data-reserve-deck="' + tier + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
         "</div>",
-        '<div class="card-grid">' + (cards || '<span class="muted">No face-up cards remain.</span>') + "</div>",
+        '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
         "</section>"
+      ].join("");
+    }).join("");
+  }
+
+  function reservedSourceText(card) {
+    return card && card.reserved_from === "deck" ? t("blindReserve") : t("faceUpReserve");
+  }
+
+  function reservedPreviewHtml(card) {
+    if (!card || card.reserved_from === "deck") return "";
+    return [
+      '<span class="reserve-preview" role="tooltip" style="' + gemStyle(card.color) + '">',
+      '<span class="reserve-preview-title">',
+      "<strong>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + "</strong>",
+      '<span>' + card.points + " " + t("prestige") + "</span>",
+      "</span>",
+      '<span class="card-id">' + escapeHtml(card.id) + "</span>",
+      '<span class="reserve-preview-cost requirement-row">' + requirementHtml(card.cost) + "</span>",
+      "</span>"
+    ].join("");
+  }
+
+  function renderReservedSummary(player) {
+    if (!player.reserved.length) return '<span class="muted">' + t("noReservedCards") + "</span>";
+    return player.reserved.map(function (card, index) {
+      var blind = card.reserved_from === "deck";
+      var color = blind ? "gold" : card.color;
+      var previewAttrs = blind ? "" : ' data-reserve-preview-toggle="true" tabindex="0" role="button"';
+      return [
+        '<span class="reserve-badge ' + (blind ? "blind" : "face-up") + '" style="' + gemStyle(color) + '"' + previewAttrs + '>',
+        '<span class="reserve-slot" data-color="' + color + '">' + (index + 1) + "</span>",
+        blind ? t("blind") : t("faceUp"),
+        reservedPreviewHtml(card),
+        "</span>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderActiveReserved() {
+    var player = activePlayer();
+    if (!player) return;
+    el.activeHandMeta.textContent = player.name + " (" + player.reserved.length + "/3)";
+    el.activeTokenRow.innerHTML = tokensHtml(player.tokens, false);
+    el.activeBonusRow.innerHTML = bonusesHtml(player.bonuses);
+    if (!player.reserved.length) {
+      el.activeReserved.innerHTML = '<span class="muted">' + t("noActiveReserved") + "</span>";
+      return;
+    }
+    el.activeReserved.innerHTML = player.reserved.map(function (card, cardIndex) {
+      var afford = affordability(player, card);
+      return [
+        '<div class="active-reserved-item">',
+        '<span class="reserve-origin ' + (card.reserved_from === "deck" ? "blind" : "face-up") + '">' + reservedSourceText(card) + "</span>",
+        renderCard(card, {
+          buy: "buy-reserved",
+          value: state.current + ":" + cardIndex,
+          afford: afford,
+          buyDisabled: !canAct() || !afford.ok
+        }),
+        "</div>"
       ].join("");
     }).join("");
   }
 
   function renderPlayers() {
     el.players.innerHTML = state.players.map(function (player, playerIndex) {
-      var reservedCards = player.reserved.length
-        ? player.reserved.map(function (card, cardIndex) {
-            var afford = affordability(player, card);
-            return [
-              '<div class="reserved-card" style="' + gemStyle(card.color) + '">',
-              '<span>Tier ' + card.tier + " " + TOKEN_LABEL[card.color] + ", " + card.points + " prestige</span>",
-              '<button type="button" data-buy-reserved="' + playerIndex + ":" + cardIndex + '" ' + (playerIndex !== state.current || !canAct() || !afford.ok ? "disabled" : "") + ">Buy</button>",
-              "</div>"
-            ].join("");
-          }).join("")
-        : '<span class="muted">No reserved cards</span>';
-      var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : "None";
+      var reservedCards = renderReservedSummary(player);
+      var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : t("none");
+      var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t("aiBadgeFormat", { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
         '<article class="player-card ' + (playerIndex === state.current ? "active" : "") + '">',
-        '<div class="player-top"><h3>' + escapeHtml(player.name) + '</h3><strong class="score-line">' + scoreFor(player) + " prestige</strong></div>",
-        '<div><span class="label">Tokens (' + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false) + "</div></div>",
-        '<div><span class="label">Bonuses</span><div class="bonus-row">' + bonusesHtml(player.bonuses) + "</div></div>",
-        '<div><span class="label">Reserved (' + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
-        '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>Purchased cards: ' + player.purchased.length + ". Nobles: " + escapeHtml(nobleText) + ".</span></div>",
+        '<div class="player-top"><div><h3>' + escapeHtml(player.name) + "</h3>" + aiBadge + '</div><strong class="score-line">' + scoreFor(player) + " " + t("prestige") + "</strong></div>",
+        playerAiControlsHtml(player, playerIndex),
+        '<div><span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false) + "</div></div>",
+        '<div><span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses) + "</div></div>",
+        '<div><span class="label">' + t("reserved") + " (" + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
+        '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: nobleText })) + "</span></div>",
         "</article>"
       ].join("");
     }).join("");
@@ -559,7 +2159,7 @@
   function renderNobles() {
     el.nobles.innerHTML = state.nobles.length ? state.nobles.map(function (noble) {
       return renderNoble(noble, false);
-    }).join("") : '<span class="muted">No nobles remain.</span>';
+    }).join("") : '<span class="muted">' + t("noNoblesRemain") + "</span>";
   }
 
   function renderDiscard() {
@@ -586,6 +2186,80 @@
     }).join("");
   }
 
+  function pendingPaymentContext() {
+    if (!pendingPayment || !state) return null;
+    var player = activePlayer();
+    var parts = String(pendingPayment.value || "").split(":");
+    var card = null;
+    var context = null;
+    if (pendingPayment.source === "market") {
+      var tier = Number(parts[0]);
+      var marketIndex = Number(parts[1]);
+      card = state.market[tier] && state.market[tier][marketIndex];
+      context = { type: "buyMarket", player: player, card: card, tier: tier, index: marketIndex };
+    } else if (pendingPayment.source === "reserved") {
+      var playerIndex = Number(parts[0]);
+      var reservedIndex = Number(parts[1]);
+      if (playerIndex !== state.current) return null;
+      card = player && player.reserved[reservedIndex];
+      context = { type: "buyReserved", player: player, card: card, index: reservedIndex };
+    }
+    if (!context || !context.card || context.card.id !== pendingPayment.card_id) return null;
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, pendingPayment.payment);
+    return context;
+  }
+
+  function paymentRowsHtml(context) {
+    var player = context.player;
+    var needs = paymentNeeds(player, context.card);
+    var payment = pendingPayment.payment;
+    var rows = COLORS.filter(function (color) {
+      return needs[color] > 0;
+    }).map(function (color) {
+      var colored = payment.colored[color] || 0;
+      var gold = payment.gold[color] || 0;
+      var remaining = Math.max(needs[color] - colored - gold, 0);
+      var canAddColor = remaining > 0 && colored < (player.tokens[color] || 0);
+      var canAddGold = remaining > 0 && paymentGoldTotal(payment) < (player.tokens.gold || 0);
+      return [
+        '<div class="payment-row" style="' + gemStyle(color) + '">',
+        '<div class="payment-need">',
+        '<span class="requirement-tile" data-color="' + color + '" style="' + gemStyle(color) + '"><span>' + needs[color] + "</span></span>",
+        '<div><strong>' + TOKEN_LABEL[color] + '</strong><span>' + t("paymentRemaining", { count: remaining }) + "</span></div>",
+        "</div>",
+        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>* ' + gold + "</span></div>",
+        '<div class="payment-controls">',
+        '<button type="button" data-payment-add-color="' + color + '" style="' + gemStyle(color) + '" ' + (canAddColor ? "" : "disabled") + ">+ " + TOKEN_LABEL[color] + "</button>",
+        '<button type="button" data-payment-remove-color="' + color + '" ' + (colored > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL[color] + "</button>",
+        '<button type="button" data-payment-add-gold="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddGold ? "" : "disabled") + ">+ *</button>",
+        '<button type="button" data-payment-remove-gold="' + color + '" ' + (gold > 0 ? "" : "disabled") + ">- *</button>",
+        "</div>",
+        "</div>"
+      ].join("");
+    });
+    return rows.length ? rows.join("") : '<p class="muted compact">' + t("noPaymentNeeded") + "</p>";
+  }
+
+  function renderPaymentChoice() {
+    el.paymentPanel.hidden = !pendingPayment;
+    if (!pendingPayment) {
+      el.paymentCard.innerHTML = "";
+      el.paymentOptions.innerHTML = "";
+      el.paymentSummary.textContent = "";
+      return;
+    }
+    var context = pendingPaymentContext();
+    if (!context) {
+      pendingPayment = null;
+      el.paymentPanel.hidden = true;
+      return;
+    }
+    el.paymentCard.innerHTML = renderCard(context.card, { afford: affordability(context.player, context.card) });
+    el.paymentOptions.innerHTML = paymentRowsHtml(context);
+    el.paymentSummary.textContent = t("paymentSelected", { selected: paymentSelectedText(pendingPayment.payment) });
+    el.confirmPayment.disabled = !paymentIsLegal(context.player, context.card, pendingPayment.payment);
+  }
+
   function renderLog() {
     el.actionLog.innerHTML = state.log.map(function (entry) {
       return "<li>" + escapeHtml(entry) + "</li>";
@@ -594,23 +2268,281 @@
 
   function renderReplayStatus() {
     if (!state || state.mode !== "replay") {
-      el.replayStatus.textContent = "Live table";
+      el.replayStatus.textContent = t("liveTable");
       el.prevMove.disabled = true;
       el.nextMove.disabled = true;
       el.exitReplay.disabled = true;
       return;
     }
     var total = replayData && replayData.moves ? replayData.moves.length : 0;
-    el.replayStatus.textContent = "Replay move " + Math.max(0, replayIndex + 1) + " / " + total;
+    el.replayStatus.textContent = t("replayMove", { current: Math.max(0, replayIndex + 1), total: total });
     el.prevMove.disabled = replayIndex < 0;
     el.nextMove.disabled = !replayData || replayIndex >= total - 1;
     el.exitReplay.disabled = false;
+  }
+
+  function updateBoardProgress() {
+    var nav = byId("board-progress");
+    if (!nav) return;
+    var links = Array.from(nav.querySelectorAll("[data-progress-target]"));
+    syncBoardProgressOrder(nav, links);
+    links = Array.from(nav.querySelectorAll("[data-progress-target]"));
+    var doc = document.documentElement;
+    var scrollTop = window.pageYOffset || doc.scrollTop || document.body.scrollTop || 0;
+    var maxScroll = Math.max((doc.scrollHeight || 0) - window.innerHeight, 1);
+    var progress = Math.max(0, Math.min(1, scrollTop / maxScroll));
+    var center = window.innerHeight * 0.48;
+    var activeId = "";
+    var bestDistance = Infinity;
+    links.forEach(function (link) {
+      var section = byId(link.dataset.progressTarget);
+      if (!section) return;
+      var rect = section.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+      var sectionCenter = rect.top + rect.height / 2;
+      var distance = Math.abs(sectionCenter - center);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        activeId = section.id;
+      }
+    });
+    nav.style.setProperty("--progress", progress.toFixed(4));
+    links.forEach(function (link) {
+      link.classList.toggle("active", link.dataset.progressTarget === activeId);
+    });
+  }
+
+  function boardSectionSortKey(link) {
+    var section = byId(link.dataset.progressTarget);
+    if (!section) return { top: Number.MAX_SAFE_INTEGER, left: Number.MAX_SAFE_INTEGER };
+    var rect = section.getBoundingClientRect();
+    var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    return {
+      top: Math.round(rect.top + scrollTop),
+      left: Math.round(rect.left)
+    };
+  }
+
+  function syncBoardProgressOrder(nav, links) {
+    var sorted = links.slice().sort(function (a, b) {
+      var aKey = boardSectionSortKey(a);
+      var bKey = boardSectionSortKey(b);
+      if (aKey.top !== bKey.top) return aKey.top - bKey.top;
+      return aKey.left - bKey.left;
+    });
+    var changed = sorted.some(function (link, index) {
+      return link !== links[index];
+    });
+    if (!changed) return;
+    sorted.forEach(function (link) {
+      nav.appendChild(link);
+    });
+  }
+
+  function reducedMotionPreferred() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function marketHasViewportCenter() {
+    if (!state || reducedMotionPreferred()) return false;
+    if (Date.now() < marketStickyReleaseUntil) return false;
+    var market = byId("market-panel");
+    if (!market) return false;
+    var rect = market.getBoundingClientRect();
+    var viewportCenter = window.innerHeight / 2;
+    var topExtraRange = rect.height * 0.1;
+    return rect.top - topExtraRange < viewportCenter && rect.bottom > viewportCenter;
+  }
+
+  function marketCenterScrollTop(market) {
+    var rect = market.getBoundingClientRect();
+    var current = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    var maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
+    var target = current + rect.top + rect.height / 2 - window.innerHeight / 2;
+    return Math.max(0, Math.min(maxScroll, target));
+  }
+
+  function marketStickyThreshold() {
+    var market = byId("market-panel");
+    if (!market) return 460;
+    return Math.max(360, market.getBoundingClientRect().height * 1.18);
+  }
+
+  function setMarketStickyFeedback() {
+    document.body.classList.add("market-sticky-active");
+    if (marketStickyTimer) {
+      window.clearTimeout(marketStickyTimer);
+    }
+    marketStickyTimer = window.setTimeout(function () {
+      document.body.classList.remove("market-sticky-active");
+      marketStickyTimer = null;
+    }, 180);
+  }
+
+  function shouldLetNativeMarketScroll(target, deltaX, deltaY) {
+    var element = target instanceof Element ? target : target && target.parentElement;
+    if (!element) return false;
+    if (element.closest("input, textarea, select")) return true;
+    if (Math.abs(deltaX) > Math.abs(deltaY) && element.closest(".card-grid, .active-reserved")) return true;
+    return false;
+  }
+
+  function keepMarketCentered() {
+    var market = byId("market-panel");
+    if (!market) return;
+    var target = marketCenterScrollTop(market);
+    var current = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    if (Math.abs(current - target) > 1) {
+      window.scrollTo({ top: target, left: 0, behavior: "auto" });
+    }
+  }
+
+  function cancelMarketElasticReturn() {
+    if (marketElasticTimer) {
+      window.clearTimeout(marketElasticTimer);
+      marketElasticTimer = null;
+    }
+    if (marketElasticFrame) {
+      window.cancelAnimationFrame(marketElasticFrame);
+      marketElasticFrame = null;
+    }
+  }
+
+  function animateMarketCenterReturn() {
+    var market = byId("market-panel");
+    if (!market || reducedMotionPreferred()) return;
+    var start = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    var target = marketCenterScrollTop(market);
+    var distance = target - start;
+    if (Math.abs(distance) < 2) return;
+    var startTime = window.performance ? window.performance.now() : Date.now();
+    var duration = 240;
+    var overshoot = 0.58;
+    var step = function (time) {
+      var elapsed = Math.min((time - startTime) / duration, 1);
+      var shifted = elapsed - 1;
+      var eased = 1 + (overshoot + 1) * shifted * shifted * shifted + overshoot * shifted * shifted;
+      window.scrollTo({ top: start + distance * eased, left: 0, behavior: "auto" });
+      if (elapsed < 1) {
+        marketElasticFrame = window.requestAnimationFrame(step);
+      } else {
+        marketElasticFrame = null;
+      }
+    };
+    marketElasticFrame = window.requestAnimationFrame(step);
+  }
+
+  function animateMarketRelease(deltaY) {
+    if (reducedMotionPreferred()) {
+      window.scrollBy({ top: deltaY, left: 0, behavior: "auto" });
+      return;
+    }
+    var start = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    var maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
+    var target = Math.max(0, Math.min(maxScroll, start + deltaY));
+    var distance = target - start;
+    if (Math.abs(distance) < 1) return;
+    var startTime = window.performance ? window.performance.now() : Date.now();
+    var duration = 280;
+    var overshoot = 0.34;
+    var step = function (time) {
+      var elapsed = Math.min((time - startTime) / duration, 1);
+      var shifted = elapsed - 1;
+      var eased = 1 + (overshoot + 1) * shifted * shifted * shifted + overshoot * shifted * shifted;
+      window.scrollTo({ top: start + distance * eased, left: 0, behavior: "auto" });
+      if (elapsed < 1) {
+        marketElasticFrame = window.requestAnimationFrame(step);
+      } else {
+        marketElasticFrame = null;
+      }
+    };
+    marketElasticFrame = window.requestAnimationFrame(step);
+  }
+
+  function scheduleMarketElasticReturn() {
+    if (marketElasticTimer) {
+      window.clearTimeout(marketElasticTimer);
+    }
+    marketElasticTimer = window.setTimeout(function () {
+      marketElasticTimer = null;
+      animateMarketCenterReturn();
+    }, 90);
+  }
+
+  function applyMarketStickyScroll(deltaY) {
+    var now = Date.now();
+    var directionChanged = marketStickyDelta && Math.sign(marketStickyDelta) !== Math.sign(deltaY);
+    if (now - marketStickyLastInputAt > 240 || directionChanged) {
+      marketStickyDelta = 0;
+    }
+    marketStickyLastInputAt = now;
+    marketStickyDelta += deltaY;
+    setMarketStickyFeedback();
+    cancelMarketElasticReturn();
+
+    var threshold = marketStickyThreshold();
+    if (Math.abs(marketStickyDelta) < threshold) {
+      window.scrollBy({ top: deltaY, left: 0, behavior: "auto" });
+      scheduleMarketElasticReturn();
+      return;
+    }
+
+    marketStickyDelta = 0;
+    marketStickyReleaseUntil = now + 640;
+    cancelMarketElasticReturn();
+    animateMarketRelease(deltaY);
+  }
+
+  function handleMarketWheel(event) {
+    if (!marketHasViewportCenter() || shouldLetNativeMarketScroll(event.target, event.deltaX || 0, event.deltaY || 0)) return;
+    if (Math.abs(event.deltaY || 0) < 1 || Math.abs(event.deltaX || 0) > Math.abs(event.deltaY || 0)) return;
+    event.preventDefault();
+    applyMarketStickyScroll(event.deltaY);
+  }
+
+  function handleMarketTouchStart(event) {
+    var touch = event.touches && event.touches[0];
+    marketTouchPoint = touch ? { x: touch.clientX, y: touch.clientY } : null;
+  }
+
+  function handleMarketTouchMove(event) {
+    var touch = event.touches && event.touches[0];
+    if (!touch || !marketTouchPoint || !marketHasViewportCenter()) return;
+    if (shouldLetNativeMarketScroll(event.target, touch.clientX - marketTouchPoint.x, touch.clientY - marketTouchPoint.y)) return;
+    var deltaX = marketTouchPoint.x - touch.clientX;
+    var deltaY = marketTouchPoint.y - touch.clientY;
+    if (Math.abs(deltaX) > Math.abs(deltaY) || Math.abs(deltaY) < 2) return;
+    event.preventDefault();
+    applyMarketStickyScroll(deltaY);
+    marketTouchPoint = { x: touch.clientX, y: touch.clientY };
+  }
+
+  function clearMarketTouchPoint() {
+    marketTouchPoint = null;
+  }
+
+  function handleWindowScroll() {
+    updateBoardProgress();
+  }
+
+  function clearMarketStickyFeedback() {
+    marketStickyDelta = 0;
+    cancelMarketElasticReturn();
+    if (marketStickyTimer) {
+      window.clearTimeout(marketStickyTimer);
+      marketStickyTimer = null;
+    }
+    window.setTimeout(function () {
+      document.body.classList.remove("market-sticky-active");
+    }, 0);
   }
 
   function render() {
     var saved = loadSavedState();
     el.resumeGame.hidden = !saved || !!state;
     el.startMessage.textContent = startMessageText;
+    document.body.classList.toggle("game-active", !!state);
+    document.documentElement.classList.toggle("game-active-root", !!state);
 
     if (!state) {
       el.startPanel.hidden = false;
@@ -632,19 +2564,87 @@
     renderNobles();
     renderMarket();
     renderPlayers();
+    renderActiveReserved();
     renderDiscard();
     renderNobleChoice();
+    renderPaymentChoice();
     renderLog();
     renderReplayStatus();
+    flushPendingFlight();
+    updateBoardProgress();
+  }
+
+  function scrollToGameTable() {
+    if (!el.gamePanel || el.gamePanel.hidden) return;
+    var target = el.gamePanel;
+    var schedule = window.requestAnimationFrame || function (callback) {
+      return window.setTimeout(callback, 16);
+    };
+    schedule(function () {
+      if (!target || !target.scrollIntoView) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function gameStateText() {
-    if (state.mode === "replay") return "Replay";
-    if (state.gameOver) return "Finished";
-    if (state.awaitingDiscard) return "Discard required";
-    if (state.awaitingNobleChoice) return "Noble choice";
-    if (state.endTriggered) return "Final round (" + state.finalTurnsLeft + " turns left)";
-    return "In progress";
+    if (state.mode === "replay") return t("gameReplay");
+    if (state.gameOver) return t("gameFinished");
+    if (pendingPayment) return t("gamePayment");
+    if (state.awaitingDiscard) return t("gameDiscard");
+    if (state.awaitingNobleChoice) return t("gameNoble");
+    if (state.endTriggered) return t("gameFinal", { turns: state.finalTurnsLeft });
+    return t("gameProgress");
+  }
+
+  function reservePreviewTapMode() {
+    return !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse), (max-width: 760px)").matches);
+  }
+
+  function closeReservePreviews(except) {
+    if (!el.players) return;
+    Array.from(el.players.querySelectorAll(".reserve-badge.preview-open")).forEach(function (badge) {
+      if (badge !== except) badge.classList.remove("preview-open");
+    });
+  }
+
+  function aiLevelLabel(level) {
+    var keyByLevel = {
+      easy: "aiLevelEasy",
+      balanced: "aiLevelBalanced",
+      expert: "aiLevelExpert"
+    };
+    return t(keyByLevel[normalizeAiLevel(level)] || "aiLevelBalanced");
+  }
+
+  function aiLevelOptionsHtml(currentLevel) {
+    var selectedLevel = normalizeAiLevel(currentLevel);
+    var labels = {
+      easy: "aiLevelEasy",
+      balanced: "aiLevelBalanced",
+      expert: "aiLevelExpert"
+    };
+    return AI_LEVELS.map(function (level) {
+      return '<option value="' + level + '" data-i18n="' + labels[level] + '" ' + (level === selectedLevel ? "selected" : "") + ">" + t(labels[level]) + "</option>";
+    }).join("");
+  }
+
+  function playerAiControlsHtml(player, playerIndex) {
+    var ai = player.ai || { enabled: false, level: "balanced" };
+    var level = normalizeAiLevel(ai.level || ai.mode);
+    return [
+      '<div class="player-ai-control ' + (ai.enabled ? "active" : "") + '">',
+      '<label class="ai-toggle compact-toggle">',
+      '<input type="checkbox" data-player-ai-toggle="' + playerIndex + '" ' + (ai.enabled ? "checked" : "") + ">",
+      '<span data-i18n="aiTakeover">' + t("aiTakeover") + "</span>",
+      "</label>",
+      '<label class="ai-level compact-level">',
+      '<span data-i18n="aiLevel">' + t("aiLevel") + "</span>",
+      '<select data-player-ai-level="' + playerIndex + '" aria-label="' + escapeHtml(t("aiLevel")) + '">',
+      aiLevelOptionsHtml(level),
+      "</select>",
+      "</label>",
+      "</div>"
+    ].join("");
   }
 
   function pendingTakeIsLegal() {
@@ -660,48 +2660,48 @@
 
   function selectTake(color) {
     if (!canAct()) {
-      showMessage("Resolve the current required step before taking another action.");
+      showMessage(t("msgResolveStepFirst"));
       render();
       return;
     }
     if (color === "gold") {
-      showMessage("Gold can only be gained when reserving a card.");
+      showMessage(t("msgGoldReserveOnly"));
       render();
       return;
     }
     if (pendingTake.length >= 3) {
-      showMessage("A take action is either exactly 3 different tokens or exactly 2 matching tokens.");
+      showMessage(t("msgTakeShape"));
       render();
       return;
     }
     var already = pendingTake.filter(function (item) { return item === color; }).length;
     if (state.bank[color] <= already) {
-      showMessage("That bank stack does not have enough tokens.");
+      showMessage(t("msgBankStackLow"));
       render();
       return;
     }
     if (already > 0) {
       if (pendingTake.some(function (item) { return item !== color; })) {
-        showMessage("Two matching tokens must be the whole action.");
+        showMessage(t("msgTwoSameWhole"));
         render();
         return;
       }
       if (already >= 2) {
-        showMessage("You can take only two matching tokens.");
+        showMessage(t("msgTwoSameOnly"));
         render();
         return;
       }
       if (state.bank[color] < 4) {
-        showMessage("Two matching tokens require at least 4 in that bank stack before taking.");
+        showMessage(t("msgTwoSameNeedFour"));
         render();
         return;
       }
     } else if (pendingTake.length === 2 && pendingTake[0] === pendingTake[1]) {
-      showMessage("Two matching tokens must be the whole action.");
+      showMessage(t("msgTwoSameWhole"));
       render();
       return;
     } else if (pendingTake.indexOf(color) >= 0) {
-      showMessage("Three-token takes must use different colors.");
+      showMessage(t("msgThreeDifferent"));
       render();
       return;
     }
@@ -713,7 +2713,7 @@
   function confirmTake() {
     if (!canAct()) return;
     if (!pendingTakeIsLegal()) {
-      showMessage("Select exactly 3 different non-gold tokens, or exactly 2 matching tokens from a stack with 4+.");
+      showMessage(t("msgSelectLegalTake"));
       render();
       return;
     }
@@ -724,60 +2724,187 @@
       player.tokens[color] += 1;
     });
     pendingTake = [];
-    logEntry(player.name + " took " + taken.map(function (color) { return TOKEN_LABEL[color]; }).join(", ") + ".");
+    logEntry(t("logTook", { player: player.name, tokens: taken.map(function (color) { return TOKEN_LABEL[color]; }).join(", ") }));
     afterAction("takeTokens", { colors: taken });
   }
 
-  function reserveMarket(value) {
+  function reserveMarket(value, trigger) {
     if (!canAct()) return;
     var parts = value.split(":");
     var tier = Number(parts[0]);
     var index = Number(parts[1]);
     var player = activePlayer();
     if (player.reserved.length >= 3) {
-      showMessage("A player can reserve at most 3 cards.");
+      showMessage(t("msgReserveLimit"));
       render();
       return;
     }
     var card = state.market[tier][index];
     if (!card) {
-      showMessage("That market card is no longer available.");
+      showMessage(t("msgMarketGone"));
       render();
       return;
     }
+    queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), ".active-hand-panel");
     state.market[tier].splice(index, 1);
     refillMarket(state, tier);
     reserveCard(player, card, "reserveMarket", { card_id: card.id, tier: tier });
   }
 
-  function reserveDeck(tier) {
+  function reserveDeck(tier, trigger) {
     if (!canAct()) return;
     var player = activePlayer();
     if (player.reserved.length >= 3) {
-      showMessage("A player can reserve at most 3 cards.");
+      showMessage(t("msgReserveLimit"));
       render();
       return;
     }
     var card = state.decks[tier].pop();
     if (!card) {
-      showMessage("That deck is empty.");
+      showMessage(t("msgDeckEmpty"));
       render();
       return;
     }
+    queueFlightFromElement(trigger && trigger.closest(".deck-box"), "gold", t("blind"), ".active-hand-panel");
     reserveCard(player, card, "reserveDeck", { card_id: card.id, tier: tier });
   }
 
   function reserveCard(player, card, type, args) {
-    player.reserved.push(card);
+    var reservedCard = clone(card);
+    reservedCard.reserved_from = type === "reserveDeck" ? "deck" : "market";
+    reservedCard.reserved_public = type !== "reserveDeck";
+    player.reserved.push(reservedCard);
     var tookGold = false;
     if (state.bank.gold > 0) {
       state.bank.gold -= 1;
       player.tokens.gold += 1;
       tookGold = true;
     }
-    logEntry(player.name + " reserved " + card.id + (tookGold ? " and took gold." : "."));
+    var reserveText = type === "reserveDeck" ? t("logBlindTierCard", { tier: card.tier }) : card.id;
+    logEntry(t(tookGold ? "logReservedGold" : "logReserved", { player: player.name, card: reserveText }));
     args.took_gold = tookGold;
     afterAction(type, args);
+  }
+
+  function scrollToPaymentPanel() {
+    if (!el.paymentPanel || el.paymentPanel.hidden) return;
+    var schedule = window.requestAnimationFrame || function (callback) {
+      return window.setTimeout(callback, 16);
+    };
+    schedule(function () {
+      if (el.paymentPanel && !el.paymentPanel.hidden && el.paymentPanel.scrollIntoView) {
+        el.paymentPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }
+
+  function beginPaymentChoice(source, value, card) {
+    var player = activePlayer();
+    var afford = affordability(player, card);
+    if (!afford.ok) {
+      showMessage(t("msgNotEnoughForCard"));
+      render();
+      return false;
+    }
+    pendingTake = [];
+    pendingPayment = {
+      source: source,
+      value: String(value),
+      card_id: card.id,
+      payment: emptyPaymentPlan()
+    };
+    showMessage(t("msgChoosePayment", { card: card.id }), "ok");
+    render();
+    scrollToPaymentPanel();
+    return true;
+  }
+
+  function paymentSourceElement(payment) {
+    if (!payment) return null;
+    var attr = payment.source === "market" ? "data-buy-market" : "data-buy-reserved";
+    var value = String(payment.value || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    var button = document.querySelector("[" + attr + '="' + value + '"]');
+    return button && button.closest(".dev-card");
+  }
+
+  function adjustPayment(kind, color, delta) {
+    if (!pendingPayment) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var needs = paymentNeeds(context.player, context.card);
+    var payment = pendingPayment.payment;
+    var selected = (payment.colored[color] || 0) + (payment.gold[color] || 0);
+    if (kind === "colored") {
+      if (delta > 0 && selected < needs[color] && (payment.colored[color] || 0) < (context.player.tokens[color] || 0)) {
+        payment.colored[color] += 1;
+      } else if (delta < 0 && payment.colored[color] > 0) {
+        payment.colored[color] -= 1;
+      }
+    } else if (kind === "gold") {
+      if (delta > 0 && selected < needs[color] && paymentGoldTotal(payment) < (context.player.tokens.gold || 0)) {
+        payment.gold[color] += 1;
+      } else if (delta < 0 && payment.gold[color] > 0) {
+        payment.gold[color] -= 1;
+      }
+    }
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
+  function clearPaymentSelection() {
+    if (!pendingPayment) return;
+    pendingPayment.payment = emptyPaymentPlan();
+    showMessage(t("msgPaymentCleared"), "ok");
+    render();
+  }
+
+  function cancelPayment() {
+    if (!pendingPayment) return;
+    pendingPayment = null;
+    showMessage(t("msgPaymentCancelled"), "ok");
+    render();
+  }
+
+  function confirmPayment() {
+    if (!pendingPayment || !state || state.mode === "replay" || state.gameOver) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      pendingPayment = null;
+      showMessage(t("msgMarketGone"));
+      render();
+      return;
+    }
+    var payment = clone(pendingPayment.payment);
+    if (!paymentIsLegal(context.player, context.card, payment)) {
+      showMessage(t("msgPaymentInvalid"));
+      render();
+      return;
+    }
+    var sourceElement = paymentSourceElement(pendingPayment);
+    var card = context.card;
+    var args = {
+      card_id: card.id,
+      payment: paymentMoveArgs(payment)
+    };
+    spendForCard(context.player, paymentSpend(payment));
+    context.player.purchased.push(card);
+    context.player.bonuses[card.color] += 1;
+    logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
+    if (context.type === "buyMarket") {
+      args.tier = context.tier;
+      state.market[context.tier].splice(context.index, 1);
+      refillMarket(state, context.tier);
+    } else {
+      context.player.reserved.splice(context.index, 1);
+    }
+    queueFlightFromElement(sourceElement, card.color, t("buy"), ".player-card.active .purchased-summary");
+    pendingPayment = null;
+    showMessage("");
+    afterAction(context.type, args);
   }
 
   function buyMarket(value) {
@@ -787,14 +2914,11 @@
     var index = Number(parts[1]);
     var card = state.market[tier][index];
     if (!card) {
-      showMessage("That market card is no longer available.");
+      showMessage(t("msgMarketGone"));
       render();
       return;
     }
-    if (!buyCard(activePlayer(), card)) return;
-    state.market[tier].splice(index, 1);
-    refillMarket(state, tier);
-    afterAction("buyMarket", { card_id: card.id, tier: tier });
+    beginPaymentChoice("market", value, card);
   }
 
   function buyReserved(value) {
@@ -805,24 +2929,12 @@
     if (playerIndex !== state.current) return;
     var player = activePlayer();
     var card = player.reserved[index];
-    if (!card || !buyCard(player, card)) return;
-    player.reserved.splice(index, 1);
-    afterAction("buyReserved", { card_id: card.id });
-  }
-
-  function buyCard(player, card) {
-    var afford = affordability(player, card);
-    if (!afford.ok) {
-      showMessage("Not enough tokens or gold for that card.");
+    if (!card) {
+      showMessage(t("msgMarketGone"));
       render();
-      return false;
+      return;
     }
-    spendForCard(player, afford.pay);
-    player.purchased.push(card);
-    player.bonuses[card.color] += 1;
-    logEntry(player.name + " bought " + card.id + " for " + card.points + " prestige.");
-    showMessage("");
-    return true;
+    beginPaymentChoice("reserved", value, card);
   }
 
   function afterAction(type, args) {
@@ -830,7 +2942,7 @@
     var actor = { id: player.id, name: player.name };
     if (totalTokens(player) > 10) {
       state.awaitingDiscard = true;
-      showMessage(player.name + " has " + totalTokens(player) + " tokens and must return down to 10.");
+      showMessage(t("msgMustDiscard", { player: player.name, count: totalTokens(player) }));
       recordMove(type, args, actor);
       saveState();
       render();
@@ -846,14 +2958,14 @@
     if ((player.tokens[color] || 0) <= 0) return;
     player.tokens[color] -= 1;
     state.bank[color] += 1;
-    logEntry(player.name + " returned " + TOKEN_LABEL[color] + ".");
+    logEntry(t("logReturned", { player: player.name, token: TOKEN_LABEL[color] }));
     if (totalTokens(player) <= 10) {
       state.awaitingDiscard = false;
       showMessage("");
       resolveNoblesOrTurn("discardToken", { color: color }, actor);
       return;
     }
-    showMessage(player.name + " still has " + totalTokens(player) + " tokens. Return down to 10.");
+    showMessage(t("msgStillMustDiscard", { player: player.name, count: totalTokens(player) }));
     recordMove("discardToken", { color: color }, actor);
     saveState();
     render();
@@ -874,7 +2986,7 @@
     if (index < 0) return null;
     var noble = state.nobles.splice(index, 1)[0];
     player.nobles.push(noble);
-    logEntry(player.name + " received " + noble.name + " for " + noble.points + " prestige.");
+    logEntry(t("logReceivedNoble", { player: player.name, noble: noble.name, points: noble.points }));
     return noble;
   }
 
@@ -898,7 +3010,7 @@
       return;
     }
     state.awaitingNobleChoice = eligible.map(function (noble) { return noble.id; });
-    showMessage(player.name + " is eligible for multiple nobles. Choose one.");
+    showMessage(t("msgMultipleNobles", { player: player.name }));
     recordMove(type, args, actor);
     saveState();
     render();
@@ -909,7 +3021,7 @@
     var player = activePlayer();
     var actor = { id: player.id, name: player.name };
     if (state.awaitingNobleChoice.indexOf(nobleId) < 0) {
-      showMessage("That noble is not eligible.");
+      showMessage(t("msgNobleNotEligible"));
       render();
       return;
     }
@@ -927,7 +3039,7 @@
     if (!state.endTriggered && scoreFor(player) >= 15) {
       state.endTriggered = true;
       state.finalTurnsLeft = state.players.length - 1 - state.current;
-      logEntry(player.name + " reached 15 prestige. Final round begins.");
+      logEntry(t("logFinalRoundBegins", { player: player.name }));
     } else if (state.endTriggered) {
       state.finalTurnsLeft -= 1;
     }
@@ -957,9 +3069,9 @@
       return entry.score === best.score && entry.purchased === best.purchased;
     });
     if (winners.length > 1) {
-      return "Shared win: " + winners.map(function (entry) { return entry.player.name; }).join(", ") + ".";
+      return t("logSharedWin", { players: winners.map(function (entry) { return entry.player.name; }).join(", ") });
     }
-    return "Winner: " + best.player.name + ".";
+    return t("logWinner", { player: best.player.name });
   }
 
   function recordMove(type, args, actor) {
@@ -995,7 +3107,8 @@
         reserved: clone(player.reserved),
         purchased_count: player.purchased.length,
         purchased: clone(player.purchased),
-        nobles: clone(player.nobles)
+        nobles: clone(player.nobles),
+        ai: clone(player.ai || { enabled: false, mode: null, level: "balanced", available: false })
       };
     });
     var data = {
@@ -1080,7 +3193,7 @@
 
   function exportStateJson() {
     if (!state) {
-      showMessage("No active table to export.");
+      showMessage(t("msgNoActiveTableExport"));
       render();
       return;
     }
@@ -1091,13 +3204,13 @@
       moves: clone(state.moves)
     };
     el.bgaJson.value = JSON.stringify(payload, null, 2);
-    showMessage("Current state exported.", "ok");
+    showMessage(t("msgStateExported"), "ok");
     render();
   }
 
   function exportReplayJson() {
     if (!state) {
-      showMessage("No active table to export.");
+      showMessage(t("msgNoActiveTableExport"));
       render();
       return;
     }
@@ -1108,7 +3221,7 @@
       moves: clone(state.moves)
     };
     el.bgaJson.value = JSON.stringify(payload, null, 2);
-    showMessage("Replay exported.", "ok");
+    showMessage(t("msgReplayExported"), "ok");
     render();
   }
 
@@ -1124,7 +3237,7 @@
       imported = stateFromGamedatas(payload);
     }
     if (!imported) {
-      showMessage("Import failed: expected a Gem Table state or gamedatas.source_state using " + SCHEMA + ".");
+      showMessage(t("msgImportFailedSchema", { schema: SCHEMA }));
       render();
       return;
     }
@@ -1134,7 +3247,8 @@
     replayData = null;
     replayIndex = -1;
     pendingTake = [];
-    showMessage("State imported.", "ok");
+    pendingPayment = null;
+    showMessage(t("msgStateImported"), "ok");
     saveState();
     render();
   }
@@ -1143,13 +3257,13 @@
     var payload = parseJsonTextarea();
     if (!payload) return;
     if (payload.schema !== SCHEMA || !payload.gamedatas || !Array.isArray(payload.moves)) {
-      showMessage("Load replay failed: expected { schema, gamedatas, moves }.");
+      showMessage(t("msgLoadReplayExpected"));
       render();
       return;
     }
     var initial = stateFromGamedatas(payload.gamedatas);
     if (!initial) {
-      showMessage("Load replay failed: gamedatas.source_state is required for this static viewer.");
+      showMessage(t("msgLoadReplaySource"));
       render();
       return;
     }
@@ -1161,7 +3275,8 @@
     state = initial;
     state.mode = "replay";
     pendingTake = [];
-    showMessage("Replay loaded. Use Next move and Prev move to inspect snapshots.", "ok");
+    pendingPayment = null;
+    showMessage(t("msgReplayLoaded"), "ok");
     render();
   }
 
@@ -1176,7 +3291,7 @@
       state = stateFromGamedatas(replayData.moves[replayIndex].state_after);
     }
     state.mode = "replay";
-    var moveText = replayIndex === -1 ? "Initial replay position." : "Replay at move " + replayData.moves[replayIndex].move_id + ": " + replayData.moves[replayIndex].type + ".";
+    var moveText = replayIndex === -1 ? t("msgInitialReplayPosition") : t("msgReplayAtMove", { move: replayData.moves[replayIndex].move_id, type: replayData.moves[replayIndex].type });
     showMessage(moveText, "ok");
     render();
   }
@@ -1188,7 +3303,8 @@
     replayData = null;
     replayIndex = -1;
     pendingTake = [];
-    showMessage(state ? "Returned to live table." : "");
+    pendingPayment = null;
+    showMessage(state ? t("msgReturnedLiveTable") : "");
     render();
   }
 
@@ -1196,7 +3312,7 @@
     try {
       return JSON.parse(el.bgaJson.value);
     } catch (error) {
-      showMessage("JSON parse failed: " + error.message);
+      showMessage(t("msgJsonParseFailed", { message: error.message }));
       render();
       return null;
     }
@@ -1205,26 +3321,33 @@
   function startGameWithCurrentForm(countOverride) {
     var count = countOverride || Number(el.playerCount.value);
     if (![2, 3, 4].includes(count)) {
-      showStartMessage("Choose 2, 3, or 4 players.");
+      showStartMessage(t("msgChoosePlayerCount"));
       render();
       return;
     }
     el.playerCount.value = String(count);
-    if (el.playerNameFields.querySelectorAll("input").length !== count) {
+    if (el.playerNameFields.querySelectorAll('input[name="playerName"]').length !== count) {
       renderNameFields();
     }
-    var names = Array.from(el.playerNameFields.querySelectorAll("input")).map(function (input, index) {
+    var names = Array.from(el.playerNameFields.querySelectorAll('input[name="playerName"]')).map(function (input, index) {
       return cleanName(input.value, index);
     });
-    state = createGame(count, names);
+    var aiLevels = Array.from(el.playerNameFields.querySelectorAll('select[name="playerAiLevel"]'));
+    var aiSettings = Array.from(el.playerNameFields.querySelectorAll('input[name="playerAi"]')).map(function (input, index) {
+      var level = normalizeAiLevel(aiLevels[index] && aiLevels[index].value);
+      return { enabled: input.checked, mode: level, level: level };
+    });
+    state = createGame(count, names, aiSettings);
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
     pendingTake = [];
+    pendingPayment = null;
     showStartMessage("");
-    showMessage("Game started.", "ok");
+    showMessage(t("msgGameStarted"), "ok");
     saveState();
     render();
+    scrollToGameTable();
   }
 
   function resetToStart() {
@@ -1233,13 +3356,59 @@
     replayData = null;
     replayIndex = -1;
     pendingTake = [];
+    pendingPayment = null;
     messageText = "";
     messageKind = "";
     clearSavedState();
     render();
   }
 
+  function updatePlayerAi(playerIndex, enabled, level) {
+    if (!state || !state.players[playerIndex]) return;
+    var player = state.players[playerIndex];
+    var selectedLevel = normalizeAiLevel(level || player.ai && (player.ai.level || player.ai.mode));
+    player.ai = {
+      enabled: !!enabled,
+      mode: enabled ? selectedLevel : null,
+      level: selectedLevel,
+      available: false
+    };
+    saveState();
+    render();
+  }
+
   function wireEvents() {
+    var boardProgress = byId("board-progress");
+    if (boardProgress) {
+      boardProgress.addEventListener("click", function (event) {
+        var link = event.target.closest("[data-progress-target]");
+        if (!link) return;
+        var section = byId(link.dataset.progressTarget);
+        if (!section || !section.scrollIntoView) return;
+        event.preventDefault();
+        section.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    window.addEventListener("scroll", function () {
+      if (reservePreviewTapMode()) closeReservePreviews();
+    }, { passive: true });
+    window.addEventListener("resize", function () {
+      updateBoardProgress();
+      clearMarketStickyFeedback();
+      closeReservePreviews();
+    });
+    window.addEventListener("wheel", handleMarketWheel, { passive: false });
+    window.addEventListener("touchstart", handleMarketTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleMarketTouchMove, { passive: false });
+    window.addEventListener("touchend", clearMarketTouchPoint, { passive: true });
+    window.addEventListener("touchcancel", clearMarketTouchPoint, { passive: true });
+    el.languageSelect.addEventListener("change", function () {
+      currentLocale = I18N[el.languageSelect.value] ? el.languageSelect.value : "en";
+      saveLanguagePreference();
+      applyTranslations();
+      render();
+    });
     el.playerCount.addEventListener("change", renderNameFields);
     el.startForm.addEventListener("submit", function (event) {
       event.preventDefault();
@@ -1257,26 +3426,27 @@
     el.resumeGame.addEventListener("click", function () {
       var saved = loadSavedState();
       if (!saved) {
-        showStartMessage("No valid saved table found.");
+        showStartMessage(t("msgNoValidSavedTable"));
         render();
         return;
       }
       state = saved;
       pendingTake = [];
-      showMessage("Saved table resumed.", "ok");
+      pendingPayment = null;
+      showMessage(t("msgSavedResumed"), "ok");
       render();
     });
     el.clearSave.addEventListener("click", function () {
       clearSavedState();
-      showStartMessage("Saved data cleared.", "ok");
+      showStartMessage(t("msgSavedCleared"), "ok");
       render();
     });
     el.saveGame.addEventListener("click", function () {
       if (!state || state.mode === "replay") {
-        showMessage("No live table to save.");
+        showMessage(t("msgNoLiveTableSave"));
       } else {
         saveState();
-        showMessage("Game saved.", "ok");
+        showMessage(t("msgGameSaved"), "ok");
       }
       render();
     });
@@ -1284,8 +3454,22 @@
     el.confirmTake.addEventListener("click", confirmTake);
     el.clearTake.addEventListener("click", function () {
       pendingTake = [];
+      pendingPayment = null;
       showMessage("");
       render();
+    });
+    el.confirmPayment.addEventListener("click", confirmPayment);
+    el.clearPayment.addEventListener("click", clearPaymentSelection);
+    el.cancelPayment.addEventListener("click", cancelPayment);
+    el.paymentOptions.addEventListener("click", function (event) {
+      var addColor = event.target.closest("[data-payment-add-color]");
+      var removeColor = event.target.closest("[data-payment-remove-color]");
+      var addGold = event.target.closest("[data-payment-add-gold]");
+      var removeGold = event.target.closest("[data-payment-remove-gold]");
+      if (addColor) adjustPayment("colored", addColor.dataset.paymentAddColor, 1);
+      else if (removeColor) adjustPayment("colored", removeColor.dataset.paymentRemoveColor, -1);
+      else if (addGold) adjustPayment("gold", addGold.dataset.paymentAddGold, 1);
+      else if (removeGold) adjustPayment("gold", removeGold.dataset.paymentRemoveGold, -1);
     });
     el.bankTokens.addEventListener("click", function (event) {
       var button = event.target.closest("[data-bank-color]");
@@ -1296,16 +3480,44 @@
       var reserveDeckButton = event.target.closest("[data-reserve-deck]");
       var buyMarketButton = event.target.closest("[data-buy-market]");
       if (reserveMarketButton) {
-        reserveMarket(reserveMarketButton.dataset.reserveMarket);
+        reserveMarket(reserveMarketButton.dataset.reserveMarket, reserveMarketButton);
       } else if (reserveDeckButton) {
-        reserveDeck(Number(reserveDeckButton.dataset.reserveDeck));
+        reserveDeck(Number(reserveDeckButton.dataset.reserveDeck), reserveDeckButton);
       } else if (buyMarketButton) {
-        buyMarket(buyMarketButton.dataset.buyMarket);
+        buyMarket(buyMarketButton.dataset.buyMarket, buyMarketButton);
       }
     });
     el.players.addEventListener("click", function (event) {
+      var reservePreview = event.target.closest("[data-reserve-preview-toggle]");
+      if (reservePreview && reservePreviewTapMode()) {
+        var alreadyOpen = reservePreview.classList.contains("preview-open");
+        closeReservePreviews(reservePreview);
+        reservePreview.classList.toggle("preview-open", !alreadyOpen);
+        event.stopPropagation();
+        return;
+      }
       var button = event.target.closest("[data-buy-reserved]");
-      if (button) buyReserved(button.dataset.buyReserved);
+      if (button) buyReserved(button.dataset.buyReserved, button);
+    });
+    document.addEventListener("click", function () {
+      if (reservePreviewTapMode()) closeReservePreviews();
+    });
+    el.players.addEventListener("change", function (event) {
+      var toggle = event.target.closest("[data-player-ai-toggle]");
+      var levelSelect = event.target.closest("[data-player-ai-level]");
+      if (toggle) {
+        var toggleIndex = Number(toggle.dataset.playerAiToggle);
+        var pairedLevel = el.players.querySelector('[data-player-ai-level="' + toggleIndex + '"]');
+        updatePlayerAi(toggleIndex, toggle.checked, pairedLevel && pairedLevel.value);
+      } else if (levelSelect) {
+        var levelIndex = Number(levelSelect.dataset.playerAiLevel);
+        var pairedToggle = el.players.querySelector('[data-player-ai-toggle="' + levelIndex + '"]');
+        updatePlayerAi(levelIndex, pairedToggle && pairedToggle.checked, levelSelect.value);
+      }
+    });
+    el.activeReserved.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-buy-reserved]");
+      if (button) buyReserved(button.dataset.buyReserved, button);
     });
     el.discardTokens.addEventListener("click", function (event) {
       var button = event.target.closest("[data-discard-color]");
@@ -1327,6 +3539,7 @@
   function collectElements() {
     [
       "start-panel",
+      "language-select",
       "start-form",
       "start-game",
       "start-message",
@@ -1344,6 +3557,13 @@
       "discard-tokens",
       "noble-choice-panel",
       "noble-choice-list",
+      "payment-panel",
+      "payment-card",
+      "payment-summary",
+      "payment-options",
+      "confirm-payment",
+      "clear-payment",
+      "cancel-payment",
       "take-summary",
       "bank-tokens",
       "confirm-take",
@@ -1351,6 +3571,11 @@
       "nobles",
       "market",
       "players",
+      "active-hand-panel",
+      "active-hand-meta",
+      "active-token-row",
+      "active-bonus-row",
+      "active-reserved",
       "action-log",
       "save-game",
       "reset-game",
@@ -1371,24 +3596,21 @@
     });
   }
 
-  function init() {
-    collectElements();
-    renderNameFields();
-    wireEvents();
-    render();
-
+  function installDebugHooks() {
     window.__gemTableDebug = {
       createGame: createGame,
       getState: function () { return state; },
-      startGame: function (count, names) {
-        state = createGame(count, names || []);
+      startGame: function (count, names, aiSettings) {
+        state = createGame(count, names || [], aiSettings || []);
         pendingTake = [];
+        pendingPayment = null;
         render();
         return state;
       },
       setState: function (nextState) {
         if (validateState(nextState)) {
           state = nextState;
+          pendingPayment = null;
           render();
         }
       },
@@ -1413,6 +3635,18 @@
       clearSave: clearSavedState,
       schema: SCHEMA
     };
+  }
+
+  function init() {
+    collectElements();
+    installDebugHooks();
+    loadLanguagePreference();
+    applyTranslations();
+    renderNameFields();
+    wireEvents();
+    render();
+
+    installDebugHooks();
   }
 
   if (document.readyState === "loading") {
