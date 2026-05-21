@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260522-mobile-reserve-preview2" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -16,21 +16,33 @@
     <header class="table-header">
       <a href="index.html" class="back-link">ZephyrLabs</a>
       <div>
-        <p class="eyebrow">Unofficial local table</p>
+        <p class="eyebrow" data-i18n="tableEyebrow">Unofficial local table</p>
         <h1>Gem Table</h1>
       </div>
       <div class="header-actions">
-        <button id="save-game" type="button">Save</button>
-        <button id="reset-game" type="button">Reset</button>
+        <label class="language-switch">
+          <span data-i18n="languageLabel">Language</span>
+          <select id="language-select" name="language-select" aria-label="Language">
+            <option value="zh-Hans">&#31616;&#20013;</option>
+            <option value="zh-Hant">&#32321;&#20013;</option>
+            <option value="en">English</option>
+            <option value="ja">&#26085;&#26412;&#35486;</option>
+            <option value="fr">Fran&ccedil;ais</option>
+            <option value="de">Deutsch</option>
+            <option value="es">Espa&ntilde;ol</option>
+          </select>
+        </label>
+        <button id="save-game" type="button" data-i18n="save">Save</button>
+        <button id="reset-game" type="button" data-i18n="reset">Reset</button>
       </div>
     </header>
 
     <main>
       <section id="start-panel" class="start-panel" aria-labelledby="start-title">
         <div class="start-copy">
-          <p class="eyebrow">Hot-seat setup</p>
-          <h2 id="start-title">Start a local game</h2>
-          <p class="muted">
+          <p class="eyebrow" data-i18n="setupEyebrow">Hot-seat setup</p>
+          <h2 id="start-title" data-i18n="startTitle">Start a local game</h2>
+          <p class="muted" data-i18n="startDescription">
             Generic, rules-compatible cards and tiles are used. No official artwork,
             logos, card scans, or Board Game Arena assets are included.
           </p>
@@ -39,113 +51,176 @@
 
         <form id="start-form" class="start-form" novalidate>
           <label>
-            Players
+            <span data-i18n="players">Players</span>
             <select id="player-count" name="player-count">
-              <option value="2">2 players</option>
-              <option value="3">3 players</option>
-              <option value="4" selected>4 players</option>
+              <option value="2" data-i18n="players2">2 players</option>
+              <option value="3" data-i18n="players3">3 players</option>
+              <option value="4" selected data-i18n="players4">4 players</option>
             </select>
           </label>
 
           <div id="player-name-fields" class="name-fields"></div>
 
           <div class="form-actions">
-            <button id="start-game" type="submit" class="primary">Start game</button>
-            <button id="resume-game" type="button" hidden>Resume save</button>
-            <button id="clear-save" type="button">Clear save</button>
+            <button id="start-game" type="submit" class="primary" data-i18n="startGame">Start game</button>
+            <button id="resume-game" type="button" hidden data-i18n="resumeSave">Resume save</button>
+            <button id="clear-save" type="button" data-i18n="clearSave">Clear save</button>
           </div>
 
-          <div class="quick-starts" aria-label="Quick starts">
-            <button type="button" data-quick-start="2">Start 2P</button>
-            <button type="button" data-quick-start="3">Start 3P</button>
-            <button type="button" data-quick-start="4">Start 4P</button>
+          <div class="quick-starts" aria-label="Quick starts" data-i18n-aria-label="quickStarts">
+            <button type="button" data-quick-start="2" data-i18n="start2p">Start 2P</button>
+            <button type="button" data-quick-start="3" data-i18n="start3p">Start 3P</button>
+            <button type="button" data-quick-start="4" data-i18n="start4p">Start 4P</button>
           </div>
         </form>
       </section>
 
       <section id="game-panel" class="game-panel" hidden>
+        <nav id="board-progress" class="board-progress" aria-label="Board sections">
+          <a href="#market-panel" data-progress-target="market-panel"><span data-i18n="market">Market</span></a>
+          <a href="#players-panel" data-progress-target="players-panel"><span data-i18n="players">Players</span></a>
+          <a href="#bank-panel" data-progress-target="bank-panel"><span data-i18n="bank">Bank</span></a>
+          <a href="#active-hand-panel" data-progress-target="active-hand-panel"><span data-i18n="reservedCards">Reserved cards</span></a>
+          <a href="#nobles-panel" data-progress-target="nobles-panel"><span data-i18n="nobles">Nobles</span></a>
+          <a href="#bga-panel" data-progress-target="bga-panel"><span data-i18n="bgaTools">BGA-style tools</span></a>
+        </nav>
+
         <div class="status-bar">
           <div>
-            <span class="label">Current player</span>
+            <span class="label" data-i18n="currentPlayer">Current player</span>
             <strong id="current-player">-</strong>
           </div>
           <div>
-            <span class="label">Round</span>
+            <span class="label" data-i18n="round">Round</span>
             <strong id="round-label">1</strong>
           </div>
           <div>
-            <span class="label">State</span>
+            <span class="label" data-i18n="state">State</span>
             <strong id="game-state-label">In progress</strong>
           </div>
           <div>
-            <span class="label">Move</span>
+            <span class="label" data-i18n="move">Move</span>
             <strong id="move-label">0</strong>
           </div>
         </div>
 
         <p id="message" class="message" role="status"></p>
 
+        <section class="ai-notice" aria-labelledby="ai-notice-title">
+          <div>
+            <p class="eyebrow" data-i18n="aiPlayers">AI players</p>
+            <h2 id="ai-notice-title" data-i18n="aiUnavailableTitle">Smart AI is temporarily unavailable</h2>
+          </div>
+          <p class="muted compact" data-i18n="aiUnavailableBody">
+            AI opponents can be marked in setup, but automated decisions are
+            still being deployed. For now, every turn remains manual hot-seat.
+          </p>
+        </section>
+
         <section id="discard-panel" class="step-panel" hidden>
           <div>
-            <h2>Return tokens</h2>
-            <p class="muted">The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.</p>
+            <h2 data-i18n="returnTokens">Return tokens</h2>
+            <p class="muted" data-i18n="returnTokensBody">The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.</p>
           </div>
           <div id="discard-tokens" class="token-row"></div>
         </section>
 
         <section id="noble-choice-panel" class="step-panel" hidden>
           <div>
-            <h2>Choose one noble</h2>
-            <p class="muted">If several nobles are eligible, the active player receives exactly one.</p>
+            <h2 data-i18n="chooseOneNoble">Choose one noble</h2>
+            <p class="muted" data-i18n="chooseOneNobleBody">If several nobles are eligible, the active player receives exactly one.</p>
           </div>
           <div id="noble-choice-list" class="noble-row"></div>
         </section>
 
+        <section id="payment-panel" class="step-panel payment-panel" hidden>
+          <div>
+            <h2 data-i18n="choosePayment">Choose payment</h2>
+            <p class="muted" data-i18n="choosePaymentBody">Select the exact tokens to spend. Gold can replace any needed color.</p>
+          </div>
+          <div class="payment-workspace">
+            <div id="payment-card" class="payment-card"></div>
+            <div>
+              <p id="payment-summary" class="muted compact"></p>
+              <div id="payment-options" class="payment-options"></div>
+            </div>
+            <div class="payment-actions action-buttons">
+              <button id="confirm-payment" type="button" class="primary" data-i18n="confirmPurchase">Confirm purchase</button>
+              <button id="clear-payment" type="button" data-i18n="clearPayment">Clear payment</button>
+              <button id="cancel-payment" type="button" data-i18n="cancelPayment">Cancel</button>
+            </div>
+          </div>
+        </section>
+
         <div class="table-layout">
-          <section class="bank-panel" aria-labelledby="bank-title">
-            <div class="panel-heading">
-              <div>
-                <h2 id="bank-title">Bank</h2>
-                <p id="take-summary" class="muted compact">No take selected.</p>
+          <div class="table-main">
+            <section id="market-panel" class="market-panel" aria-labelledby="market-title">
+              <div class="panel-heading">
+                <h2 id="market-title" data-i18n="market">Market</h2>
+                <span class="muted compact" data-i18n="marketHint">Buy, reserve, or reserve blind from a deck.</span>
               </div>
-              <div class="action-buttons">
-                <button id="confirm-take" type="button" class="primary">Confirm take</button>
-                <button id="clear-take" type="button">Clear</button>
+              <div id="market" class="market"></div>
+            </section>
+
+            <section id="bank-panel" class="bank-panel" aria-labelledby="bank-title">
+              <div class="panel-heading">
+                <div>
+                  <h2 id="bank-title" data-i18n="bank">Bank</h2>
+                  <p id="take-summary" class="muted compact">No take selected.</p>
+                </div>
+                <div class="action-buttons">
+                  <button id="confirm-take" type="button" class="primary" data-i18n="confirmTake">Confirm take</button>
+                  <button id="clear-take" type="button" data-i18n="clear">Clear</button>
+                </div>
               </div>
-            </div>
-            <div id="bank-tokens" class="bank-tokens"></div>
-          </section>
+              <div id="bank-tokens" class="bank-tokens"></div>
+            </section>
 
-          <section class="nobles-panel" aria-labelledby="nobles-title">
-            <div class="panel-heading">
-              <h2 id="nobles-title">Nobles</h2>
-              <span class="muted compact">Permanent bonuses only. No replenishment.</span>
-            </div>
-            <div id="nobles" class="noble-row"></div>
-          </section>
+            <section id="active-hand-panel" class="active-hand-panel" aria-labelledby="active-hand-title">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow" data-i18n="privateHand">Private hand</p>
+                  <h2 id="active-hand-title" data-i18n="reservedCards">Reserved cards</h2>
+                </div>
+                <span id="active-hand-meta" class="muted compact"></span>
+              </div>
+              <div class="active-player-dock">
+                <div class="active-token-panel">
+                  <span class="label" data-i18n="tokens">Tokens</span>
+                  <div id="active-token-row" class="token-row"></div>
+                  <span class="label" data-i18n="bonuses">Bonuses</span>
+                  <div id="active-bonus-row" class="bonus-row"></div>
+                </div>
+                <div id="active-reserved" class="active-reserved"></div>
+              </div>
+            </section>
 
-          <section class="market-panel" aria-labelledby="market-title">
-            <div class="panel-heading">
-              <h2 id="market-title">Market</h2>
-              <span class="muted compact">Buy, reserve, or reserve blind from a deck.</span>
-            </div>
-            <div id="market" class="market"></div>
-          </section>
+            <section id="nobles-panel" class="nobles-panel" aria-labelledby="nobles-title">
+              <div class="panel-heading">
+                <h2 id="nobles-title" data-i18n="nobles">Nobles</h2>
+                <span class="muted compact" data-i18n="noblesHint">Permanent bonuses only. No replenishment.</span>
+              </div>
+              <div id="nobles" class="noble-row"></div>
+            </section>
+          </div>
 
           <aside class="side-panel">
-            <section aria-labelledby="players-title">
-              <h2 id="players-title">Players</h2>
+            <section id="players-panel" class="players-panel" aria-labelledby="players-title">
+              <h2 id="players-title" data-i18n="players">Players</h2>
               <div id="players" class="players"></div>
             </section>
 
-            <section aria-labelledby="log-title">
-              <h2 id="log-title">Action log</h2>
+            <details class="log-panel">
+              <summary>
+                <span data-i18n="actionLog">Action log</span>
+                <span class="muted compact" data-i18n="showHide">Show / hide</span>
+              </summary>
               <ol id="action-log" class="action-log"></ol>
-            </section>
+            </details>
 
             <section aria-labelledby="rules-title" class="help-panel">
-              <h2 id="rules-title">Rule guardrails</h2>
-              <p>
+              <h2 id="rules-title" data-i18n="ruleGuardrails">Rule guardrails</h2>
+              <p data-i18n="ruleGuardrailsBody">
                 One action per turn: take exactly 3 different non-gold tokens,
                 take exactly 2 matching non-gold tokens from a stack that had at
                 least 4, reserve one card with gold if available, or buy one
@@ -157,15 +232,15 @@
           </aside>
         </div>
 
-        <section class="bga-panel" aria-labelledby="bga-title">
+        <section id="bga-panel" class="bga-panel" aria-labelledby="bga-title">
           <div class="panel-heading">
             <div>
-              <p class="eyebrow">BGA-style tools</p>
-              <h2 id="bga-title">Export, import, and replay</h2>
+              <p class="eyebrow" data-i18n="bgaTools">BGA-style tools</p>
+              <h2 id="bga-title" data-i18n="exportImportReplay">Export, import, and replay</h2>
             </div>
             <span id="replay-status" class="muted compact">Live table</span>
           </div>
-          <p class="muted">
+          <p class="muted" data-i18n="bgaDescription">
             This uses a stable ZephyrLabs schema inspired by public BGA Studio
             concepts: a <code>gamedatas</code> object, notification-like move log,
             and <code>next_move_id</code>. The exact private BGA Splendor protocol
@@ -173,19 +248,19 @@
             protocol parity.
           </p>
           <div class="bga-actions">
-            <button id="export-state" type="button">Export state</button>
-            <button id="import-state" type="button">Import state</button>
-            <button id="export-replay" type="button">Export replay</button>
-            <button id="load-replay" type="button">Load replay</button>
-            <button id="prev-move" type="button">Prev move</button>
-            <button id="next-move" type="button">Next move</button>
-            <button id="exit-replay" type="button">Exit replay</button>
+            <button id="export-state" type="button" data-i18n="exportState">Export state</button>
+            <button id="import-state" type="button" data-i18n="importState">Import state</button>
+            <button id="export-replay" type="button" data-i18n="exportReplay">Export replay</button>
+            <button id="load-replay" type="button" data-i18n="loadReplay">Load replay</button>
+            <button id="prev-move" type="button" data-i18n="prevMove">Prev move</button>
+            <button id="next-move" type="button" data-i18n="nextMove">Next move</button>
+            <button id="exit-replay" type="button" data-i18n="exitReplay">Exit replay</button>
           </div>
-          <textarea id="bga-json" spellcheck="false" placeholder="Exported JSON appears here. Paste state or replay JSON here before importing/loading."></textarea>
+          <textarea id="bga-json" spellcheck="false" placeholder="Exported JSON appears here. Paste state or replay JSON here before importing/loading." data-i18n-placeholder="jsonPlaceholder"></textarea>
         </section>
       </section>
     </main>
 
-    <script src="splendor-table.js"></script>
+    <script src="splendor-table.js?v=20260522-mobile-reserve-preview2"></script>
   </body>
 </html>
