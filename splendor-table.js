@@ -1863,6 +1863,17 @@ Object.assign(I18N.de, {
     }
   }
 
+  function fillMarketSlot(game, tier, index) {
+    if (!game || !game.market[tier]) return null;
+    var replacement = game.decks[tier] && game.decks[tier].length ? game.decks[tier].pop() : null;
+    if (replacement) {
+      game.market[tier][index] = replacement;
+      return replacement;
+    }
+    game.market[tier].splice(index, 1);
+    return null;
+  }
+
   function activePlayer() {
     return state && state.players[state.current];
   }
@@ -2492,7 +2503,10 @@ Object.assign(I18N.de, {
     var player = displayPlayer();
     var playerIndex = displayCurrentIndex();
     if (!player) return;
-    el.activeHandMeta.textContent = player.name + " (" + player.reserved.length + "/3)";
+    el.activeHandMeta.innerHTML = [
+      '<span class="active-hand-chip">' + escapeHtml(player.name) + " (" + player.reserved.length + "/3)</span>",
+      '<span class="active-hand-chip token-count">' + escapeHtml(t("tokens")) + " " + totalTokens(player) + "/10</span>"
+    ].join("");
     el.activeTokenRow.innerHTML = tokensHtml(player.tokens, false, null, true);
     el.activeBonusRow.innerHTML = bonusesHtml(player.bonuses, player);
     if (!player.reserved.length) {
@@ -2947,6 +2961,7 @@ Object.assign(I18N.de, {
     el.startMessage.textContent = startMessageText;
     document.body.classList.toggle("game-active", !!state);
     document.documentElement.classList.toggle("game-active-root", !!state);
+    document.body.classList.toggle("turn-locked", !!(state && (state.turnTransition || state.aiThinking)));
 
     if (!state) {
       el.startPanel.hidden = false;
@@ -3190,8 +3205,7 @@ Object.assign(I18N.de, {
       return;
     }
     queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), playerPanelTarget(".reserved-list"));
-    state.market[tier].splice(index, 1);
-    refillMarket(state, tier);
+    fillMarketSlot(state, tier, index);
     reserveCard(player, card, "reserveMarket", { card_id: card.id, tier: tier });
   }
 
@@ -3320,8 +3334,7 @@ Object.assign(I18N.de, {
     logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
     if (context.type === "buyMarket") {
       args.tier = context.tier;
-      state.market[context.tier].splice(context.index, 1);
-      refillMarket(state, context.tier);
+      fillMarketSlot(state, context.tier, context.index);
     } else {
       args.tier = card.tier;
       args.reserved_from = card.reserved_from || "market";
@@ -4074,6 +4087,15 @@ Object.assign(I18N.de, {
     return null;
   }
 
+  function extractBgaInitialGamedatas(payload) {
+    var snapshots = payload && Array.isArray(payload.snapshots) ? payload.snapshots : [];
+    for (var index = 0; index < snapshots.length; index += 1) {
+      var gamedatas = snapshots[index] && snapshots[index].gameui && snapshots[index].gameui.gamedatas;
+      if (gamedatas && gamedatas.market && gamedatas.carddb) return gamedatas;
+    }
+    return null;
+  }
+
   function bgaGemColor(code) {
     return {
       C: "white",
@@ -4083,6 +4105,75 @@ Object.assign(I18N.de, {
       O: "black",
       G: "gold"
     }[String(code || "").trim().toUpperCase()] || "";
+  }
+
+  function bgaCardTypeColor(type) {
+    return ["white", "blue", "green", "red", "black"][Number(type)] || "";
+  }
+
+  function bgaRawCardTypeId(card, fallback) {
+    if (card && card.type !== undefined && card.type !== null && card.type !== "") return card.type;
+    if (card && card.id !== undefined && card.id !== null && card.id !== "") return card.id;
+    return fallback !== undefined && fallback !== null ? fallback : "";
+  }
+
+  function bgaCostToCounts(value) {
+    var counts = emptyCounts(false);
+    if (!value) return counts;
+    if (typeof value === "string") {
+      value.split("").forEach(function (code) {
+        var color = bgaGemColor(code);
+        if (COLORS.indexOf(color) >= 0) counts[color] += 1;
+      });
+      return counts;
+    }
+    if (typeof value === "object") {
+      Object.keys(value).forEach(function (code) {
+        var color = bgaGemColor(code) || (COLORS.indexOf(code) >= 0 ? code : "");
+        if (COLORS.indexOf(color) >= 0) counts[color] += Math.max(0, Number(value[code]) || 0);
+      });
+    }
+    return counts;
+  }
+
+  function bgaPoolToBank(pool) {
+    var bank = emptyCounts(true);
+    Object.keys(pool || {}).forEach(function (code) {
+      var color = bgaGemColor(code) || (ALL_TOKENS.indexOf(code) >= 0 ? code : "");
+      if (ALL_TOKENS.indexOf(color) >= 0) bank[color] = Math.max(0, Number(pool[code]) || 0);
+    });
+    return bank;
+  }
+
+  function bgaObjectValues(value) {
+    if (Array.isArray(value)) return value;
+    if (!value || typeof value !== "object") return [];
+    return Object.keys(value).map(function (key) { return value[key]; });
+  }
+
+  function bgaCostMatchesLocal(a, b) {
+    return COLORS.every(function (color) {
+      return (Number(a && a[color]) || 0) === (Number(b && b[color]) || 0);
+    });
+  }
+
+  function bgaLocalCardMatch(tier, color, points, cost) {
+    var cards = DEVELOPMENT_CARDS[Math.max(1, Math.min(3, Number(tier) || 1))] || [];
+    return cards.find(function (card) {
+      return card.color === color &&
+        Number(card.points) === Number(points || 0) &&
+        bgaCostMatchesLocal(card.cost, cost);
+    });
+  }
+
+  function bgaWithLocalCardId(card) {
+    var local = bgaLocalCardMatch(card.tier, card.color, card.points, card.cost);
+    if (!local) return card;
+    var mapped = clone(local);
+    mapped.bga_id = card.bga_id;
+    mapped.bga_card_id = card.id;
+    mapped.bga_original_id = card.bga_id;
+    return mapped;
   }
 
   function bgaTierFromCard(card, args) {
@@ -4097,25 +4188,45 @@ Object.assign(I18N.de, {
   }
 
   function bgaCardId(card, fallback) {
-    var raw = card && (card.type || card.id) || fallback;
+    var raw = bgaRawCardTypeId(card, fallback);
     return "bga-" + String(raw || "unknown");
   }
 
-  function bgaCardFromNotification(item, groupItems, fallback) {
+  function bgaCardFromDb(raw, gamedatas, fallback) {
+    var id = String(raw || fallback && fallback.id || "unknown");
+    var db = gamedatas && gamedatas.carddb && gamedatas.carddb[id];
+    var tier = Math.max(1, Math.min(3, Number(fallback && fallback.tier) || 1));
+    var color = fallback && fallback.color || "gold";
+    var points = Math.max(0, Number(fallback && fallback.points) || 0);
+    var cost = normalizeCost({});
+    if (db) {
+      tier = Math.max(1, Math.min(3, Number(db.lvl) || tier));
+      color = bgaCardTypeColor(db.type) || color;
+      points = Math.max(0, Number(db.points) || 0);
+      cost = bgaCostToCounts(db.cost);
+    }
+    return bgaWithLocalCardId({
+      id: "bga-" + id,
+      bga_id: id,
+      tier: tier,
+      color: color,
+      points: points,
+      cost: cost
+    });
+  }
+
+  function bgaCardFromNotification(item, groupItems, fallback, gamedatas) {
     var args = item && item.args || {};
     var card = args.card || fallback && fallback.card || {};
     var scoreItem = groupItems.find(function (entry) {
       return entry && entry.type === "updateScore" && String(entry.args && entry.args.player_id) === String(args.player_id || fallback && fallback.player_id);
     });
-    var color = bgaGemColor(args.gem_type) || fallback && fallback.color || "gold";
-    return {
-      id: bgaCardId(card, fallback && fallback.id),
-      bga_id: String(card.type || card.id || fallback && fallback.id || ""),
+    var raw = bgaRawCardTypeId(card, fallback && fallback.id);
+    return bgaCardFromDb(raw, gamedatas, {
       tier: bgaTierFromCard(card, args),
-      color: color,
-      points: Math.max(0, Number(scoreItem && scoreItem.args && scoreItem.args.amount_vp) || 0),
-      cost: normalizeCost({})
-    };
+      color: bgaGemColor(args.gem_type) || fallback && fallback.color || "gold",
+      points: Math.max(0, Number(scoreItem && scoreItem.args && scoreItem.args.amount_vp) || 0)
+    });
   }
 
   function bgaCoinsFromGap(items, sign) {
@@ -4157,11 +4268,18 @@ Object.assign(I18N.de, {
     });
   }
 
-  function buildBgaPlayerList(data) {
+  function buildBgaPlayerList(data, gamedatas) {
     var players = Array.isArray(data && data.players) ? data.players.slice(0, 4) : [];
     var byId = {};
     players.forEach(function (player) {
       byId[String(player.id)] = true;
+    });
+    var gdPlayers = gamedatas && gamedatas.players && typeof gamedatas.players === "object" ? gamedatas.players : {};
+    bgaObjectValues(gdPlayers).forEach(function (player) {
+      var id = player && (player.id || player.player_id);
+      if (!id || byId[String(id)]) return;
+      byId[String(id)] = true;
+      players.push({ id: id, name: player.name || "BGA Player " + (players.length + 1) });
     });
     (data && data.logs || []).forEach(function (packet) {
       (packet.data || []).forEach(function (entry) {
@@ -4173,6 +4291,111 @@ Object.assign(I18N.de, {
       });
     });
     return players.slice(0, 4);
+  }
+
+  function bgaDeckPlaceholders(tier, count) {
+    var cards = [];
+    for (var index = 0; index < Math.max(0, Number(count) || 0); index += 1) {
+      cards.push({
+        id: "bga-hidden-t" + tier + "-" + index,
+        bga_id: "",
+        tier: tier,
+        color: "gold",
+        points: 0,
+        cost: normalizeCost({}),
+        hidden: true
+      });
+    }
+    return cards;
+  }
+
+  function bgaNobleFromDb(raw, gamedatas, fallback) {
+    var id = String(raw || fallback && fallback.id || "unknown");
+    var db = gamedatas && gamedatas.nobledb && gamedatas.nobledb[id];
+    return {
+      id: "bga-noble-" + id,
+      bga_id: id,
+      name: String(db && db.name || fallback && fallback.name || "BGA noble"),
+      points: Math.max(0, Number(db && db.points || fallback && fallback.points || 3) || 3),
+      req: bgaCostToCounts(db && db.cost || fallback && fallback.req)
+    };
+  }
+
+  function applyBgaInitialGamedatas(game, gamedatas) {
+    if (!gamedatas || !gamedatas.market || !gamedatas.carddb) return false;
+    var market = gamedatas.market || {};
+    if (market.pool) game.bank = bgaPoolToBank(market.pool);
+    [1, 2, 3].forEach(function (tier) {
+      var row = market["row_" + tier] || {};
+      var cards = bgaObjectValues(row.cards).map(function (entry) {
+        return bgaCardFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, { tier: tier });
+      }).filter(function (card) {
+        return card && card.bga_id && card.bga_id !== "unknown";
+      });
+      game.market[tier] = cards;
+      game.decks[tier] = bgaDeckPlaceholders(tier, Number(row.count) || 0);
+    });
+    game.nobles = bgaObjectValues(market.nobles).map(function (entry) {
+      return bgaNobleFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, {});
+    }).filter(function (noble) {
+      return noble && noble.bga_id && noble.bga_id !== "unknown";
+    });
+    var activePlayer = gamedatas.gamestate && gamedatas.gamestate.active_player;
+    if (activePlayer !== undefined && activePlayer !== null) {
+      var activeIndex = game.players.findIndex(function (player) {
+        return String(player.bga_id || "") === String(activePlayer);
+      });
+      if (activeIndex >= 0) game.current = activeIndex;
+    }
+    game.round = Math.max(1, Number(gamedatas.roundnumber) || game.round || 1);
+    return true;
+  }
+
+  function decrementBgaDeck(game, tier) {
+    if (game.decks[tier] && game.decks[tier].length) game.decks[tier].pop();
+  }
+
+  function removeBgaMarketCard(game, card) {
+    var tier = Math.max(1, Math.min(3, Number(card && card.tier) || 1));
+    var cards = game.market[tier] || [];
+    var index = cards.findIndex(function (entry) {
+      return entry && card && ((entry.bga_id && entry.bga_id === card.bga_id) || entry.id === card.id);
+    });
+    if (index >= 0) {
+      cards[index] = null;
+      return { tier: tier, index: index };
+    }
+    return null;
+  }
+
+  function revealBgaMarketCard(game, items, tier, gamedatas, slot) {
+    var reveal = (items || []).find(function (entry) {
+      return entry && entry.type === "revealCard" && entry.args && entry.args.card;
+    });
+    if (!reveal) {
+      if (slot && game.market[slot.tier] && !game.market[slot.tier][slot.index]) game.market[slot.tier].splice(slot.index, 1);
+      return null;
+    }
+    var revealCard = bgaCardFromNotification(reveal, items || [], { tier: tier }, gamedatas);
+    if (!revealCard || !revealCard.bga_id || revealCard.bga_id === "unknown") {
+      if (slot && game.market[slot.tier] && !game.market[slot.tier][slot.index]) game.market[slot.tier].splice(slot.index, 1);
+      return null;
+    }
+    var targetTier = Math.max(1, Math.min(3, Number(revealCard.tier || tier) || 1));
+    var exists = (game.market[targetTier] || []).some(function (entry) {
+      return entry && entry.bga_id === revealCard.bga_id;
+    });
+    if (!exists) {
+      if (slot && slot.tier === targetTier && Number.isInteger(slot.index) && game.market[targetTier]) {
+        game.market[targetTier][slot.index] = revealCard;
+      } else {
+        var emptyIndex = (game.market[targetTier] || []).findIndex(function (entry) { return !entry; });
+        if (emptyIndex >= 0) game.market[targetTier][emptyIndex] = revealCard;
+        else game.market[targetTier].push(revealCard);
+      }
+    }
+    decrementBgaDeck(game, targetTier);
+    return revealCard;
   }
 
   function groupBgaPacketsByMove(logs) {
@@ -4190,7 +4413,7 @@ Object.assign(I18N.de, {
     });
   }
 
-  function applyBgaMoveGroup(game, group, playerLookup) {
+  function applyBgaMoveGroup(game, group, playerLookup, gamedatas) {
     var items = group.items || [];
     var publicReserve = items.find(function (entry) { return entry.type === "reserveCard" && (entry.log || entry.args && entry.args.player_name); });
     var privateReserve = items.find(function (entry) { return entry.type === "reserveCard" && entry.args && entry.args.card; });
@@ -4209,7 +4432,7 @@ Object.assign(I18N.de, {
     applyBgaCoinGaps(game, player, coins);
 
     if (buy) {
-      var buyCard = bgaCardFromNotification(buy, items, { player_id: externalId });
+      var buyCard = bgaCardFromNotification(buy, items, { player_id: externalId }, gamedatas);
       var fromHand = /hand/i.test(String(buy.args && buy.args.card && buy.args.card.location || ""));
       if (fromHand) {
         var reservedIndex = player.reserved.findIndex(function (card) {
@@ -4221,6 +4444,9 @@ Object.assign(I18N.de, {
         } else {
           buyCard.reserved_from = "deck";
         }
+      } else {
+        var buySlot = removeBgaMarketCard(game, buyCard);
+        revealBgaMarketCard(game, items, buyCard.tier, gamedatas, buySlot);
       }
       if (COLORS.indexOf(buyCard.color) >= 0) player.bonuses[buyCard.color] += 1;
       player.purchased.push(buyCard);
@@ -4241,9 +4467,15 @@ Object.assign(I18N.de, {
       var reserveItem = publicReserve || privateReserve;
       var cardSource = privateReserve && privateReserve.args && privateReserve.args.card || reserveItem.args && reserveItem.args.card || {};
       var fromDeck = /^draw_/i.test(String(cardSource.location || "")) || !!(reserveItem.args && reserveItem.args.drawpile);
-      var reserveCard = bgaCardFromNotification(reserveItem, items, { card: cardSource, id: cardSource.type || cardSource.id, player_id: externalId });
+      var reserveCard = bgaCardFromNotification(reserveItem, items, { card: cardSource, id: bgaRawCardTypeId(cardSource, ""), player_id: externalId }, gamedatas);
       reserveCard.reserved_from = fromDeck ? "deck" : "market";
       if (player.reserved.length < 3) player.reserved.push(reserveCard);
+      if (fromDeck) {
+        decrementBgaDeck(game, reserveCard.tier);
+      } else {
+        var reserveSlot = removeBgaMarketCard(game, reserveCard);
+        revealBgaMarketCard(game, items, reserveCard.tier, gamedatas, reserveSlot);
+      }
       return {
         type: fromDeck ? "reserveDeck" : "reserveMarket",
         player: player,
@@ -4257,12 +4489,12 @@ Object.assign(I18N.de, {
     }
 
     if (claim) {
-      var noble = {
-        id: "bga-noble-" + String(claim.args && claim.args.card && (claim.args.card.type || claim.args.card.id) || group.move_id),
-        name: String(claim.args && claim.args.noble_desc || "BGA noble"),
-        points: 3,
-        req: normalizeCost({})
-      };
+      var nobleRaw = bgaRawCardTypeId(claim.args && claim.args.card, group.move_id);
+      var noble = bgaNobleFromDb(nobleRaw, gamedatas, { name: claim.args && claim.args.noble_desc || "BGA noble" });
+      var nobleIndex = game.nobles.findIndex(function (entry) {
+        return entry && ((entry.bga_id && entry.bga_id === noble.bga_id) || entry.id === noble.id);
+      });
+      if (nobleIndex >= 0) noble = game.nobles.splice(nobleIndex, 1)[0];
       player.nobles.push(noble);
       return { type: "chooseNoble", player: player, args: { noble_id: noble.name } };
     }
@@ -4286,8 +4518,10 @@ Object.assign(I18N.de, {
   function convertBgaCaptureToReplayPayload(payload) {
     if (!isBgaCapturePayload(payload) || bgaCaptureHasExpansionHint(payload)) return null;
     var data = extractBgaReplayData(payload);
+    var initialBgaGamedatas = extractBgaInitialGamedatas(payload);
     if (!data || !Array.isArray(data.logs)) return null;
-    var bgaPlayers = buildBgaPlayerList(data);
+    if (!initialBgaGamedatas) return null;
+    var bgaPlayers = buildBgaPlayerList(data, initialBgaGamedatas);
     if (bgaPlayers.length < 2) return null;
     var game = createGame(bgaPlayers.length, bgaPlayers.map(function (player, index) {
       return player.name || "BGA Player " + (index + 1);
@@ -4295,21 +4529,22 @@ Object.assign(I18N.de, {
       return { enabled: false, mode: null, level: "balanced" };
     }));
     game.table_seed = 0;
-    game.decks = { 1: [], 2: [], 3: [] };
-    game.market = { 1: [], 2: [], 3: [] };
-    game.nobles = [];
     game.log = ["Imported base-game BGA replay capture " + (payload.table_id || "") + "."];
     game.moves = [];
     game.next_move_id = 1;
 
     var playerLookup = {};
     bgaPlayers.forEach(function (player, index) {
-      if (game.players[index]) playerLookup[String(player.id)] = game.players[index];
+      if (game.players[index]) {
+        game.players[index].bga_id = String(player.id);
+        playerLookup[String(player.id)] = game.players[index];
+      }
     });
+    applyBgaInitialGamedatas(game, initialBgaGamedatas);
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
 
     groupBgaPacketsByMove(data.logs).forEach(function (group) {
-      var converted = applyBgaMoveGroup(game, group, playerLookup);
+      var converted = applyBgaMoveGroup(game, group, playerLookup, initialBgaGamedatas);
       if (!converted) return;
       var actor = converted.player;
       var move = {
