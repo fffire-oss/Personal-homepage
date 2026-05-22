@@ -37,3 +37,5 @@ Then visit `http://localhost:8000`.
 ## Deployment Notes
 
 The homepage is designed as static HTML/CSS/JS. The production domain may also run a separate private BGA replay API behind `/api/bga/replay`; that runtime is intentionally not part of this public homepage repository and should be deployed separately.
+
+Gem Table Smart AI uses DinoBoard behind the same-origin `/api/dinoboard` reverse proxy. See [DinoBoard AI deployment](docs/dinoboard-ai-deployment.md) for the server layout, rate limits, fail2ban rules, and AI strength tiers.
