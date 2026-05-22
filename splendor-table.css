@@ -2906,8 +2906,91 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     grid-template-columns: minmax(0, 1fr) minmax(120px, 0.78fr);
   }
 
+  .noble-row {
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 4px;
+  }
+
+  .noble-card {
+    flex: 0 0 116px;
+    width: 116px;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .noble-card strong {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  .noble-card .requirement-row {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+
+  .noble-card .requirement-tile {
+    width: 22px;
+    height: 22px;
+    font-size: 0.62rem;
+  }
+
   .players {
-    grid-template-columns: 1fr;
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(238px, 82vw);
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 4px;
+  }
+
+  .player-card {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .player-top {
+    align-items: center;
+    gap: 6px;
+  }
+
+  .player-top h3,
+  .score-line {
+    overflow: hidden;
+    font-size: 0.76rem;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .player-resource-panel {
+    grid-template-columns: max-content repeat(6, 24px);
+    gap: 4px 2px;
+    padding: 5px;
+  }
+
+  .player-resource-panel .label {
+    font-size: 0.58rem;
+  }
+
+  .player-resource-panel .token {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 0 2px;
+    font-size: 0.55rem;
+  }
+
+  .player-resource-panel .bonus-pill {
+    width: 24px;
+    min-height: 30px;
+    font-size: 0.58rem;
+  }
+
+  .player-resource-panel .bonus-label {
+    font-size: 0.42rem;
   }
 
   .active-reserved {
