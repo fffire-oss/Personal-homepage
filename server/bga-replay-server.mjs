@@ -11,6 +11,7 @@ const PORT = Number(process.env.PORT || 4175);
 const JOB_ROOT = path.resolve(process.env.BGA_REPLAY_JOB_DIR || path.join(REPO_ROOT, ".bga-replay-jobs"));
 const CRAWLER_PATH = path.join(REPO_ROOT, "tools", "bga-replay-crawler.mjs");
 const jobs = new Map();
+const jobsByTable = new Map();
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -77,7 +78,14 @@ function createJob(tableId) {
     createdAt: new Date().toISOString()
   };
   jobs.set(jobId, job);
+  jobsByTable.set(tableId, job);
   runJob(job);
+  return job;
+}
+
+function reusableJobForTable(tableId) {
+  const job = jobsByTable.get(tableId);
+  if (!job || job.status === "failed") return null;
   return job;
 }
 
@@ -139,8 +147,8 @@ async function handleApi(req, res, url) {
       sendJson(res, 400, { error: "numeric tableId is required" });
       return;
     }
-    const job = createJob(tableId);
-    sendJson(res, 202, publicJob(job));
+    const job = reusableJobForTable(tableId) || createJob(tableId);
+    sendJson(res, job.status === "done" ? 200 : 202, publicJob(job));
     return;
   }
 

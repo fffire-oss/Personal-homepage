@@ -228,8 +228,8 @@
       msgBgaServerQueued: "Server is crawling BGA table {table}. Keep this page open.",
       msgBgaServerDone: "Server captured the replay JSON. Download is ready.",
       msgBgaServerFailed: "Server crawl failed: {message}",
-      msgBgaCaptureUnsupported: "Import failed: this is raw BGA capture data, not a ZephyrLabs replay JSON yet.",
-      msgBgaExpansionUnsupported: "Import failed: this BGA capture appears to include an expansion or unsupported variant. Only base-game replay JSON is supported.",
+      msgBgaCaptureUnsupported: "Replay JSON is ready to download, but raw BGA captures cannot be imported into the local table yet.",
+      msgBgaExpansionUnsupported: "Replay JSON is ready to download, but this table appears to use an expansion or unsupported variant, so it cannot be imported into the local base-game table.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReturnedLiveTable: "Returned to live table.",
@@ -1416,8 +1416,8 @@ Object.assign(I18N.de, {
     msgBgaServerQueued: "\u670d\u52a1\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8bf7\u4fdd\u6301\u9875\u9762\u6253\u5f00\u3002",
     msgBgaServerDone: "\u670d\u52a1\u5668\u5df2\u751f\u6210\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f7d\u3002",
     msgBgaServerFailed: "\u670d\u52a1\u5668\u722c\u53d6\u5931\u8d25\uff1a{message}",
-    msgBgaCaptureUnsupported: "\u5bfc\u5165\u5931\u8d25\uff1a\u8fd9\u662f BGA \u539f\u59cb\u91c7\u96c6\u6570\u636e\uff0c\u8fd8\u4e0d\u662f ZephyrLabs \u53ef\u76f4\u63a5\u56de\u653e\u7684 JSON\u3002",
-    msgBgaExpansionUnsupported: "\u5bfc\u5165\u5931\u8d25\uff1a\u8be5 BGA \u56de\u653e\u4f3c\u4e4e\u5305\u542b\u6269\u5c55\u6216\u4e0d\u652f\u6301\u7684\u53d8\u4f53\uff0c\u76ee\u524d\u53ea\u652f\u6301\u57fa\u7840\u7248\u56de\u653e JSON\u3002",
+    msgBgaCaptureUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f7d\uff1b\u4f46 BGA \u539f\u59cb\u91c7\u96c6\u6570\u636e\u8fd8\u4e0d\u80fd\u76f4\u63a5\u5bfc\u5165\u672c\u5730\u724c\u684c\u3002",
+    msgBgaExpansionUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f7d\uff1b\u4f46\u8be5 BGA \u56de\u653e\u5305\u542b\u6269\u5c55\u6216\u4e0d\u652f\u6301\u7684\u53d8\u4f53\uff0c\u4e0d\u80fd\u5bfc\u5165\u5f53\u524d\u57fa\u7840\u7248\u672c\u5730\u724c\u684c\u3002",
     msgContinueFromReplay: "\u5df2\u5c06\u5f53\u524d\u56de\u653e\u8282\u70b9\u8f6c\u4e3a\u53ef\u7ee7\u7eed\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8bf7\u91cd\u65b0\u4ece\u5934\u8f7d\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1462,8 +1462,8 @@ Object.assign(I18N.de, {
     msgBgaServerQueued: "\u4f3a\u670d\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8acb\u4fdd\u6301\u9801\u9762\u958b\u555f\u3002",
     msgBgaServerDone: "\u4f3a\u670d\u5668\u5df2\u7522\u751f\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f09\u3002",
     msgBgaServerFailed: "\u4f3a\u670d\u5668\u722c\u53d6\u5931\u6557\uff1a{message}",
-    msgBgaCaptureUnsupported: "\u532f\u5165\u5931\u6557\uff1a\u9019\u662f BGA \u539f\u59cb\u63a1\u96c6\u8cc7\u6599\uff0c\u9084\u4e0d\u662f ZephyrLabs \u53ef\u76f4\u63a5\u56de\u653e\u7684 JSON\u3002",
-    msgBgaExpansionUnsupported: "\u532f\u5165\u5931\u6557\uff1a\u8a72 BGA \u56de\u653e\u4f3c\u4e4e\u5305\u542b\u64f4\u5145\u6216\u4e0d\u652f\u63f4\u7684\u8b8a\u9ad4\uff0c\u76ee\u524d\u53ea\u652f\u63f4\u57fa\u790e\u7248\u56de\u653e JSON\u3002",
+    msgBgaCaptureUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f09\uff1b\u4f46 BGA \u539f\u59cb\u63a1\u96c6\u8cc7\u6599\u9084\u4e0d\u80fd\u76f4\u63a5\u532f\u5165\u672c\u5730\u724c\u684c\u3002",
+    msgBgaExpansionUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f09\uff1b\u4f46\u8a72 BGA \u56de\u653e\u5305\u542b\u64f4\u5145\u6216\u4e0d\u652f\u63f4\u7684\u8b8a\u9ad4\uff0c\u4e0d\u80fd\u532f\u5165\u76ee\u524d\u57fa\u790e\u7248\u672c\u5730\u724c\u684c\u3002",
     msgContinueFromReplay: "\u5df2\u5c07\u7576\u524d\u56de\u653e\u7bc0\u9ede\u8f49\u70ba\u53ef\u7e7c\u7e8c\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8acb\u91cd\u65b0\u5f9e\u982d\u8f09\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1543,6 +1543,8 @@ Object.assign(I18N.de, {
   var lastHumanPlayerIndex = 0;
   var turnAdvanceTimer = null;
   var overlayRefreshTimer = null;
+  var activeBgaReplayJobId = "";
+  var activeBgaReplayPollTimer = null;
   var el = {};
 
   function byId(id) {
@@ -3950,11 +3952,31 @@ Object.assign(I18N.de, {
     el.startBgaDownload.href = url;
   }
 
+  function setBgaImportBusy(isBusy) {
+    if (el.startImportBgaTable) el.startImportBgaTable.disabled = !!isBusy;
+    if (el.startBgaTableId) el.startBgaTableId.disabled = !!isBusy;
+  }
+
+  function clearActiveBgaReplayJob() {
+    if (activeBgaReplayPollTimer) {
+      window.clearTimeout(activeBgaReplayPollTimer);
+      activeBgaReplayPollTimer = null;
+    }
+    activeBgaReplayJobId = "";
+    setBgaImportBusy(false);
+  }
+
   function cleanBgaTableId(value) {
     return String(value || "").replace(/[^\d]/g, "");
   }
 
   function importBgaTableFromStart() {
+    if (activeBgaReplayJobId) {
+      var activeMessage = t("msgBgaServerQueued", { table: cleanBgaTableId(el.startBgaTableId && el.startBgaTableId.value) });
+      showStartMessage(activeMessage, "ok");
+      if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = activeMessage;
+      return;
+    }
     var tableId = cleanBgaTableId(el.startBgaTableId && el.startBgaTableId.value);
     if (!tableId) {
       showStartMessage(t("msgBgaTableIdRequired"));
@@ -3963,6 +3985,7 @@ Object.assign(I18N.de, {
       return;
     }
     setStartBgaDownload("");
+    setBgaImportBusy(true);
     var queued = t("msgBgaServerQueued", { table: tableId });
     showStartMessage(queued, "ok");
     if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = queued;
@@ -3974,8 +3997,10 @@ Object.assign(I18N.de, {
       if (!response.ok) throw new Error(String(response.status));
       return response.json();
     }).then(function (job) {
+      activeBgaReplayJobId = job.jobId || "";
       pollBgaReplayJob(job.jobId);
     }).catch(function () {
+      clearActiveBgaReplayJob();
       showStartMessage(t("msgBgaServerUnavailable"));
       if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = t("msgBgaServerUnavailable");
       render();
@@ -3995,6 +4020,7 @@ Object.assign(I18N.de, {
         setStartBgaDownload(job.downloadUrl || "");
         var compatibility = job.compatibility || {};
         var messageKey = compatibility.has_expansion_hint ? "msgBgaExpansionUnsupported" : "msgBgaCaptureUnsupported";
+        clearActiveBgaReplayJob();
         if (job.importable) {
           fetch(job.downloadUrl).then(function (response) { return response.json(); }).then(function (payload) {
             loadReplayPayload(payload, "", true);
@@ -4005,11 +4031,12 @@ Object.assign(I18N.de, {
           return;
         }
         showStartMessage(t(messageKey));
-        if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = t(messageKey) + " " + t("msgBgaServerDone");
+        if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = t(messageKey);
         render();
         return;
       }
       if (job.status === "failed") {
+        clearActiveBgaReplayJob();
         var failed = t("msgBgaServerFailed", { message: job.error || "unknown error" });
         showStartMessage(failed);
         if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = failed;
@@ -4019,10 +4046,13 @@ Object.assign(I18N.de, {
       var queued = t("msgBgaServerQueued", { table: job.tableId || "" });
       showStartMessage(queued, "ok");
       if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = queued;
-      window.setTimeout(function () {
+      if (activeBgaReplayPollTimer) window.clearTimeout(activeBgaReplayPollTimer);
+      activeBgaReplayPollTimer = window.setTimeout(function () {
+        activeBgaReplayPollTimer = null;
         pollBgaReplayJob(jobId);
       }, 1500);
     }).catch(function () {
+      clearActiveBgaReplayJob();
       showStartMessage(t("msgBgaServerUnavailable"));
       if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = t("msgBgaServerUnavailable");
       render();
@@ -4379,6 +4409,7 @@ Object.assign(I18N.de, {
     }
     if (el.startClearReplay) {
       el.startClearReplay.addEventListener("click", function () {
+        clearActiveBgaReplayJob();
         el.startReplayJson.value = "";
         if (el.startReplayFileStatus) el.startReplayFileStatus.textContent = t("startReplayBody");
         if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = t("bgaTableImportStatus");
