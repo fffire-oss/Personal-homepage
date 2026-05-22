@@ -100,6 +100,30 @@ button:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
+.button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  min-width: 0;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 760;
+  text-align: center;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.button-link:hover {
+  border-color: var(--accent);
+  background: rgba(49, 215, 255, 0.11);
+  transform: translateY(-1px);
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.42;
@@ -151,6 +175,7 @@ code {
 }
 
 .back-link:focus-visible,
+.button-link:focus-visible,
 button:focus-visible,
 select:focus-visible,
 input:focus-visible,
@@ -2264,6 +2289,40 @@ body.market-sticky-active .market-panel {
   overflow-wrap: anywhere;
 }
 
+.bga-actions .button-link {
+  flex: 0 1 auto;
+}
+
+.bga-capture-panel {
+  display: grid;
+  gap: 12px;
+  padding: 13px 14px;
+  border: 1px solid rgba(49, 215, 255, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(49, 215, 255, 0.055), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
+.bga-capture-panel h3 {
+  margin: 0 0 4px;
+  color: #eef8f8;
+  font-size: 0.92rem;
+}
+
+.bga-table-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 780;
+}
+
+.bga-table-field input {
+  max-width: 320px;
+}
+
 @media (max-width: 1180px) {
   .start-panel {
     grid-template-columns: 1fr;
@@ -2467,7 +2526,8 @@ body.market-sticky-active .market-panel {
   .form-actions button,
   .quick-starts button,
   .action-buttons button,
-  .bga-actions button {
+  .bga-actions button,
+  .bga-actions .button-link {
     flex: 1 1 130px;
   }
 

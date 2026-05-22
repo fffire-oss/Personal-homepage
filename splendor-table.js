@@ -126,6 +126,13 @@
       exitReplay: "Exit replay",
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
       fileIoHint: "Exports download as .json files. Import buttons read a selected .json file directly.",
+      bgaCaptureTitle: "BGA replay capture",
+      bgaCaptureBody: "Install the userscript, open the official BGA review page with your own account, then export the browser-visible replay data as JSON.",
+      bgaTableIdLabel: "BGA table ID",
+      bgaTableIdPlaceholder: "123456789",
+      openBgaReview: "Open BGA review",
+      downloadBgaCaptureScript: "Download capture script",
+      bgaCaptureStatus: "Credentials stay on BGA. This site does not ask for or store your BGA password.",
       affordable: "Affordable",
       needTokens: "Need tokens",
       buy: "Buy",
@@ -206,6 +213,8 @@
       msgLoadReplaySource: "Load replay failed: gamedatas.source_state is required for this static viewer.",
       msgReplayLoaded: "Replay loaded. Use Next move and Prev move to inspect snapshots.",
       msgContinueFromReplay: "Replay snapshot converted to a live table. Reload the saved JSON to replay from the beginning.",
+      msgBgaTableIdRequired: "Enter a numeric BGA table ID first.",
+      msgBgaReviewOpened: "BGA review opened. Log in on BGA if prompted, then use the capture script on that page.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReturnedLiveTable: "Returned to live table.",
@@ -1367,10 +1376,18 @@ Object.assign(I18N.de, {
     startReplayPlaceholder: "\u5728\u8fd9\u91cc\u7c98\u8d34\u5b8c\u6574\u7684\u56de\u653e JSON\u3002",
     startReplayBody: "\u5bfc\u5165\u5b8c\u6574\u56de\u653e\u94fe\u540e\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u4e2a\u8bb0\u5f55\u70b9\u7ee7\u7eed\u6e38\u620f\u3002",
     fileIoHint: "\u5bfc\u51fa\u4f1a\u76f4\u63a5\u4e0b\u8f7d .json \u6587\u4ef6\uff0c\u5bfc\u5165\u6309\u94ae\u4f1a\u76f4\u63a5\u8bfb\u53d6\u9009\u62e9\u7684 .json \u6587\u4ef6\u3002",
+    bgaCaptureTitle: "BGA \u56de\u653e\u91c7\u96c6",
+    bgaCaptureBody: "\u5148\u5b89\u88c5 userscript\uff0c\u518d\u7528\u4f60\u81ea\u5df1\u7684 BGA \u8d26\u53f7\u6253\u5f00\u5b98\u65b9\u56de\u653e\u9875\uff0c\u6700\u540e\u5bfc\u51fa\u6d4f\u89c8\u5668\u5df2\u52a0\u8f7d\u7684\u56de\u653e JSON\u3002",
+    bgaTableIdLabel: "BGA \u724c\u684c ID",
+    openBgaReview: "\u6253\u5f00 BGA \u56de\u653e",
+    downloadBgaCaptureScript: "\u4e0b\u8f7d\u91c7\u96c6\u811a\u672c",
+    bgaCaptureStatus: "\u8d26\u53f7\u5bc6\u7801\u53ea\u5728 BGA \u5b98\u65b9\u9875\u9762\u8f93\u5165\uff0c\u672c\u7ad9\u4e0d\u4f1a\u8be2\u95ee\u6216\u4fdd\u5b58\u4f60\u7684 BGA \u5bc6\u7801\u3002",
     continueFromReplay: "\u4ece\u6b64\u7ee7\u7eed",
     msgExportPreparing: "\u6b63\u5728\u51c6\u5907\u5bfc\u51fa\u6587\u4ef6...",
     msgExportFailed: "\u5bfc\u51fa\u5931\u8d25\uff1a{message}",
     msgFileReadFailed: "\u6587\u4ef6\u8bfb\u53d6\u5931\u8d25\uff1a{message}",
+    msgBgaTableIdRequired: "\u8bf7\u5148\u8f93\u5165\u6570\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
+    msgBgaReviewOpened: "\u5df2\u6253\u5f00 BGA \u56de\u653e\u9875\u3002\u5982\u679c\u8981\u6c42\u767b\u5f55\uff0c\u8bf7\u5728 BGA \u9875\u9762\u5b8c\u6210\u767b\u5f55\uff0c\u7136\u540e\u4f7f\u7528\u91c7\u96c6\u811a\u672c\u5bfc\u51fa\u3002",
     msgContinueFromReplay: "\u5df2\u5c06\u5f53\u524d\u56de\u653e\u8282\u70b9\u8f6c\u4e3a\u53ef\u7ee7\u7eed\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8bf7\u91cd\u65b0\u4ece\u5934\u8f7d\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1390,10 +1407,18 @@ Object.assign(I18N.de, {
     startReplayPlaceholder: "\u5728\u9019\u88e1\u8cbc\u4e0a\u5b8c\u6574\u7684\u56de\u653e JSON\u3002",
     startReplayBody: "\u532f\u5165\u5b8c\u6574\u56de\u653e\u93c8\u5f8c\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u500b\u8a18\u9304\u9ede\u7e7c\u7e8c\u904a\u6232\u3002",
     fileIoHint: "\u532f\u51fa\u6703\u76f4\u63a5\u4e0b\u8f09 .json \u6a94\u6848\uff0c\u532f\u5165\u6309\u9215\u6703\u76f4\u63a5\u8b80\u53d6\u9078\u64c7\u7684 .json \u6a94\u6848\u3002",
+    bgaCaptureTitle: "BGA \u56de\u653e\u63a1\u96c6",
+    bgaCaptureBody: "\u5148\u5b89\u88dd userscript\uff0c\u518d\u7528\u4f60\u81ea\u5df1\u7684 BGA \u5e33\u865f\u6253\u958b\u5b98\u65b9\u56de\u653e\u9801\uff0c\u6700\u5f8c\u532f\u51fa\u700f\u89bd\u5668\u5df2\u8f09\u5165\u7684\u56de\u653e JSON\u3002",
+    bgaTableIdLabel: "BGA \u724c\u684c ID",
+    openBgaReview: "\u6253\u958b BGA \u56de\u653e",
+    downloadBgaCaptureScript: "\u4e0b\u8f09\u63a1\u96c6\u8173\u672c",
+    bgaCaptureStatus: "\u5e33\u865f\u5bc6\u78bc\u53ea\u5728 BGA \u5b98\u65b9\u9801\u9762\u8f38\u5165\uff0c\u672c\u7ad9\u4e0d\u6703\u8a62\u554f\u6216\u4fdd\u5b58\u4f60\u7684 BGA \u5bc6\u78bc\u3002",
     continueFromReplay: "\u5f9e\u6b64\u7e7c\u7e8c",
     msgExportPreparing: "\u6b63\u5728\u6e96\u5099\u532f\u51fa\u6a94\u6848...",
     msgExportFailed: "\u532f\u51fa\u5931\u6557\uff1a{message}",
     msgFileReadFailed: "\u6a94\u6848\u8b80\u53d6\u5931\u6557\uff1a{message}",
+    msgBgaTableIdRequired: "\u8acb\u5148\u8f38\u5165\u6578\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
+    msgBgaReviewOpened: "\u5df2\u6253\u958b BGA \u56de\u653e\u9801\u3002\u5982\u679c\u8981\u6c42\u767b\u5165\uff0c\u8acb\u5728 BGA \u9801\u9762\u5b8c\u6210\u767b\u5165\uff0c\u7136\u5f8c\u4f7f\u7528\u63a1\u96c6\u8173\u672c\u532f\u51fa\u3002",
     msgContinueFromReplay: "\u5df2\u5c07\u7576\u524d\u56de\u653e\u7bc0\u9ede\u8f49\u70ba\u53ef\u7e7c\u7e8c\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8acb\u91cd\u65b0\u5f9e\u982d\u8f09\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1405,22 +1430,34 @@ Object.assign(I18N.de, {
 
   Object.assign(I18N.ja, {
     buyShort: "\u8cb7",
-    reserveShort: "\u4e88"
+    reserveShort: "\u4e88",
+    bgaCaptureTitle: "BGA \u30ea\u30d7\u30ec\u30a4\u53d6\u5f97",
+    bgaCaptureBody: "userscript \u3092\u5165\u308c\u3001\u81ea\u5206\u306e BGA \u30a2\u30ab\u30a6\u30f3\u30c8\u3067\u516c\u5f0f\u30ec\u30d3\u30e5\u30fc\u30da\u30fc\u30b8\u3092\u958b\u3044\u3066\u304b\u3089 JSON \u3092\u66f8\u304d\u51fa\u3057\u307e\u3059\u3002",
+    bgaTableIdLabel: "BGA table ID",
+    openBgaReview: "BGA \u56de\u653e\u3092\u958b\u304f",
+    downloadBgaCaptureScript: "\u53d6\u5f97\u30b9\u30af\u30ea\u30d7\u30c8",
+    bgaCaptureStatus: "\u30d1\u30b9\u30ef\u30fc\u30c9\u306f BGA \u516c\u5f0f\u30da\u30fc\u30b8\u3067\u306e\u307f\u5165\u529b\u3057\u307e\u3059\u3002\u672c\u30b5\u30a4\u30c8\u306f\u4fdd\u5b58\u3057\u307e\u305b\u3093\u3002"
   });
 
   Object.assign(I18N.fr, {
     buyShort: "Ach.",
-    reserveShort: "Res."
+    reserveShort: "Res.",
+    downloadBgaCaptureScript: "Script capture",
+    openBgaReview: "Ouvrir BGA"
   });
 
   Object.assign(I18N.de, {
     buyShort: "Kauf",
-    reserveShort: "Res."
+    reserveShort: "Res.",
+    downloadBgaCaptureScript: "Capture-Skript",
+    openBgaReview: "BGA offnen"
   });
 
   Object.assign(I18N.es, {
     buyShort: "Com.",
-    reserveShort: "Res."
+    reserveShort: "Res.",
+    downloadBgaCaptureScript: "Script captura",
+    openBgaReview: "Abrir BGA"
   });
 
   var NOBLE_POOL = [
@@ -4066,6 +4103,24 @@ Object.assign(I18N.de, {
     });
   }
 
+  function cleanBgaTableId(value) {
+    return String(value || "").replace(/[^\d]/g, "");
+  }
+
+  function openBgaReviewByTableId() {
+    var tableId = cleanBgaTableId(el.bgaTableId && el.bgaTableId.value);
+    if (!tableId) {
+      showMessage(t("msgBgaTableIdRequired"));
+      if (el.bgaCaptureStatus) el.bgaCaptureStatus.textContent = t("msgBgaTableIdRequired");
+      render();
+      return;
+    }
+    var url = "https://boardgamearena.com/gamereview?table=" + encodeURIComponent(tableId);
+    window.open(url, "_blank", "noopener,noreferrer");
+    if (el.bgaCaptureStatus) el.bgaCaptureStatus.textContent = t("msgBgaReviewOpened");
+    showMessage(t("msgBgaReviewOpened"), "ok");
+  }
+
   function loadReplayPayload(payload, rawText, fromStart) {
     if (payload.schema !== SCHEMA || !payload.gamedatas || !Array.isArray(payload.moves)) {
       if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
@@ -4557,6 +4612,14 @@ Object.assign(I18N.de, {
     el.importState.addEventListener("click", importStateJson);
     el.exportReplay.addEventListener("click", exportReplayJson);
     el.loadReplay.addEventListener("click", loadReplayJson);
+    if (el.openBgaReview) {
+      el.openBgaReview.addEventListener("click", openBgaReviewByTableId);
+    }
+    if (el.bgaTableId) {
+      el.bgaTableId.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") openBgaReviewByTableId();
+      });
+    }
     el.prevMove.addEventListener("click", function () { stepReplay(-1); });
     el.nextMove.addEventListener("click", function () { stepReplay(1); });
     if (el.continueReplay) {
@@ -4626,6 +4689,9 @@ Object.assign(I18N.de, {
       "reset-game",
       "bga-json",
       "bga-file-status",
+      "bga-table-id",
+      "open-bga-review",
+      "bga-capture-status",
       "export-state",
       "import-state",
       "export-replay",
