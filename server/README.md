@@ -6,6 +6,13 @@ It does not ask the frontend for a BGA password. The server runs the crawler in
 a local browser context. Log in to BGA in that browser profile before relying on
 it for private or Premium-only reviews.
 
+To prepare that profile safely, run this once from the repository root and log
+in inside the opened BGA browser window:
+
+```bash
+node tools/bga-replay-crawler.mjs --table 854928957 --manual --wait-ms 300000
+```
+
 ```bash
 cd server
 npm install
