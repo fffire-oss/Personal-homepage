@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css?v=20260522-mobile-top-dock1" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260522-boardreplaylab-mobiletop1" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -85,7 +85,7 @@
               <div>
                 <h3 id="start-bga-import-title" data-i18n="bgaTableImportTitle">Import by BGA table ID</h3>
                 <p class="muted compact" data-i18n="bgaTableImportBody">
-                  Enter a table ID to try direct import. If the server cannot access BGA, use the BGAtoFreeboard crawler project and import its JSON file.
+                  Enter a table ID to try direct import. If the server cannot access BGA, use the BoardReplayLab crawler project and import its JSON file.
                 </p>
               </div>
               <label class="bga-table-field">
@@ -94,7 +94,7 @@
               </label>
               <div class="bga-actions">
                 <button id="start-import-bga-table" type="button" class="primary" data-i18n="importBgaTable">Import table ID</button>
-                <a class="button-link" href="https://github.com/Haro-stack/BGAtoFreeboard" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler project</a>
+                <a class="button-link" href="https://github.com/Haro-stack/BoardReplayLab" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler project</a>
                 <a id="start-bga-download" class="button-link" href="#" hidden download data-i18n="downloadCapturedJson">Download captured JSON</a>
               </div>
               <p id="start-bga-import-status" class="muted compact" data-i18n="bgaTableImportStatus">
@@ -126,19 +126,19 @@
 
         <section id="table-top-panel" class="table-top-panel">
           <div class="status-bar">
-            <div>
+            <div class="status-item status-player">
               <span class="label" data-i18n="currentPlayer">Current player</span>
               <strong id="current-player">-</strong>
             </div>
-            <div>
+            <div class="status-item status-round">
               <span class="label" data-i18n="round">Round</span>
               <strong id="round-label">1</strong>
             </div>
-            <div>
+            <div class="status-item status-state">
               <span class="label" data-i18n="state">State</span>
               <strong id="game-state-label">In progress</strong>
             </div>
-            <div>
+            <div class="status-item status-move">
               <span class="label" data-i18n="move">Move</span>
               <strong id="move-label">0</strong>
             </div>
@@ -156,8 +156,15 @@
               <span class="bank-toggle" data-i18n="showHide">Show / hide</span>
             </summary>
             <div class="bank-body">
+              <div id="bank-discard" class="bank-discard" hidden>
+                <div class="bank-discard-head">
+                  <strong data-i18n="returnTokens">Return tokens</strong>
+                  <span id="bank-discard-summary" class="muted compact"></span>
+                </div>
+                <div id="bank-discard-tokens" class="token-row"></div>
+              </div>
               <div id="bank-tokens" class="bank-tokens"></div>
-              <div class="action-buttons">
+              <div id="bank-take-actions" class="action-buttons">
                 <button id="confirm-take" type="button" class="primary" data-i18n="confirmTake">Confirm take</button>
                 <button id="clear-take" type="button" data-i18n="clear">Clear</button>
               </div>
@@ -328,7 +335,7 @@
             <div>
               <h3 id="bga-capture-title" data-i18n="bgaCaptureTitle">BGA replay capture</h3>
               <p class="muted compact" data-i18n="bgaCaptureBody">
-                Open the official BGA review page, or use BGAtoFreeboard to crawl and convert browser-visible replay data as JSON.
+                Open the official BGA review page, or use BoardReplayLab to crawl and convert browser-visible replay data as JSON.
               </p>
             </div>
             <label class="bga-table-field">
@@ -337,7 +344,7 @@
             </label>
             <div class="bga-actions">
               <button id="open-bga-review" type="button" data-i18n="openBgaReview">Open BGA review</button>
-              <a class="button-link" href="https://github.com/Haro-stack/BGAtoFreeboard" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler project</a>
+              <a class="button-link" href="https://github.com/Haro-stack/BoardReplayLab" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler project</a>
             </div>
             <p id="bga-capture-status" class="muted compact" data-i18n="bgaCaptureStatus">
               Credentials stay on BGA. This site does not ask for or store your BGA password.
@@ -348,6 +355,6 @@
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260522-mobile-top-dock1"></script>
+    <script src="splendor-table.js?v=20260522-boardreplaylab-mobiletop1"></script>
   </body>
 </html>

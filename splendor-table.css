@@ -1083,6 +1083,35 @@ body:not(.game-active) .board-progress {
   margin-top: 8px;
 }
 
+.bank-discard {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid rgba(255, 191, 69, 0.24);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(255, 191, 69, 0.1), transparent),
+    rgba(255, 255, 255, 0.04);
+}
+
+.bank-discard-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.bank-discard-head strong {
+  color: #ffe1a6;
+  font-size: 0.82rem;
+}
+
+.bank-discard .token-row {
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
 .side-panel {
   display: grid;
   align-content: start;
@@ -2366,7 +2395,7 @@ body:not(.game-active) .board-progress {
 
 @media (max-width: 760px) {
   html.game-active-root {
-    scroll-padding-top: var(--table-top-dock-height, 164px);
+    scroll-padding-top: 12px;
   }
 
   html,
@@ -2393,7 +2422,7 @@ body:not(.game-active) .board-progress {
 
   body.game-active main {
     width: min(100% - 12px, 760px);
-    padding-top: calc(var(--table-top-dock-height, 164px) + 4px);
+    padding-top: 8px;
     padding-bottom: 108px;
   }
 
@@ -2423,36 +2452,70 @@ body:not(.game-active) .board-progress {
   }
 
   .status-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 7px;
-    padding: 8px;
+    grid-template-columns: minmax(70px, 1.25fr) minmax(44px, 0.58fr) minmax(44px, 0.58fr) minmax(58px, auto);
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .status-state {
+    display: none;
+  }
+
+  .status-bar .label {
+    display: block;
+    overflow: hidden;
+    margin-bottom: 1px;
+    font-size: 0.5rem;
+    letter-spacing: 0;
+    opacity: 0.82;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .status-bar strong {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    font-size: clamp(0.66rem, 2.8vw, 0.82rem);
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .status-actions {
-    justify-self: stretch;
+    justify-self: end;
   }
 
   .status-actions button {
-    width: 100%;
+    width: auto;
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 0.58rem;
   }
 
   .table-top-panel {
-    position: fixed;
+    position: sticky;
     top: max(6px, env(safe-area-inset-top));
-    left: 50%;
+    left: auto;
     z-index: 94;
-    width: min(100vw - 12px, 760px);
-    max-height: min(48vh, 360px);
+    width: 100%;
+    max-height: min(42vh, 300px);
     overflow-x: hidden;
     overflow-y: auto;
-    transform: translateX(-50%);
+    transform: none;
     box-shadow:
       0 0 0 1px rgba(49, 215, 255, 0.08),
       0 18px 46px rgba(0, 0, 0, 0.48);
   }
 
+  .step-panel {
+    position: relative;
+    z-index: 1;
+    margin-top: 2px;
+  }
+
   .table-bank-panel {
-    padding: 8px;
+    padding: 6px;
   }
 
   .bank-body {
@@ -2461,17 +2524,33 @@ body:not(.game-active) .board-progress {
     margin-top: 7px;
   }
 
+  .bank-discard {
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .bank-discard-head {
+    display: grid;
+    gap: 2px;
+  }
+
+  .bank-discard .token-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 1px;
+  }
+
   .bank-tokens {
     min-height: 34px;
   }
 
   .bank-summary h3 {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
   }
 
   .bank-summary .compact {
-    font-size: 0.68rem;
-    line-height: 1.25;
+    font-size: 0.62rem;
+    line-height: 1.18;
   }
 
   .bank-toggle {

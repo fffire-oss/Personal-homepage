@@ -19,7 +19,7 @@ Static personal homepage for ZephyrLabs projects.
 
 ## Related Work
 
-- [BGAtoFreeboard](https://github.com/Haro-stack/BGAtoFreeboard): planned public crawler/converter project for downloading BGA JSON data. The current ZephyrLabs site links to this as the public home for BGA capture tooling.
+- [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): public crawler/converter project for downloading BGA replay JSON data and converting supported captures for Gem Table.
 - DinoBoard: earlier board-game tooling reference and experiment.
 
 ## Local Preview

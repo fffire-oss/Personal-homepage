@@ -10,7 +10,7 @@
 
 - `ZephyrLabs 是我的个人实验场，记录代码、游戏、滑雪和一些正在形成的想法。`
 - `I build small tools, learn in public, and keep a personal trail of projects.`
-- `Code, games, skiing, and notes from ongoing experiments.`
+- `Code, games, snowboarding, and notes from ongoing experiments.`
 
 你的版本：
 
@@ -80,7 +80,7 @@
 ```text
 Learn:
 Build:
-Ski:
+Snowboard:
 Explore:
 ```
 
@@ -200,7 +200,7 @@ admin_note:
 ## 9. 以后可以扩展的页面
 
 ```text
-/skiing.html       滑雪学习记录
+/snowboarding.html 滑雪板学习记录
 /notes.html        短笔记
 /projects.html     项目总览
 /gem-table.html    游戏页
