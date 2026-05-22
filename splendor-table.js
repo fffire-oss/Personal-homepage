@@ -2116,7 +2116,12 @@ Object.assign(I18N.de, {
     });
     var title = t("bonusCardsTitle", { color: TOKEN_LABEL[color] });
     var body = cards.length ? cards.map(function (card) {
-      return '<span class="bonus-card-row"><strong>' + escapeHtml(card.id) + '</strong><span>' + t("tier") + " " + card.tier + " / " + card.points + " " + t("prestige") + "</span></span>";
+      return [
+        '<span class="bonus-card-row">',
+        '<span class="bonus-card-main"><strong>' + escapeHtml(card.id) + '</strong><span>' + t("tier") + " " + card.tier + " / " + card.points + " " + t("prestige") + "</span></span>",
+        '<span class="bonus-card-cost">' + costHtml(card.cost) + "</span>",
+        "</span>"
+      ].join("");
     }).join("") : '<span class="muted compact">' + t("bonusCardsEmpty") + "</span>";
     return '<span class="bonus-preview" role="tooltip"><span class="bonus-preview-title">' + escapeHtml(title) + "</span>" + body + "</span>";
   }
