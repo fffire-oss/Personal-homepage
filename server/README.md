@@ -49,6 +49,13 @@ npm run install-browser
 npm start
 ```
 
+If the production host uses a system Chrome or Chromium instead of the
+Playwright-managed browser download, set:
+
+```bash
+PLAYWRIGHT_CHROMIUM_EXECUTABLE=/usr/bin/chromium npm start
+```
+
 The crawler script is kept in `tools/bga-replay-crawler.mjs` so the website can
 link to it on GitHub. When launched through this server it resolves Playwright
 from `server/node_modules`.
