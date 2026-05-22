@@ -6,7 +6,15 @@
   var SCHEMA = "zephyrlabs-gemtable-bga-v1";
   var RULESET_SCHEMA = "zephyrlabs-gemtable-ruleset-v1";
   var BASE_RULESET_ID = "splendor-base";
+  var ORIENT_RULESET_ID = "splendor-base-orient";
   var EXPANSION_MODULES = ["cities", "trading_posts", "orient", "strongholds"];
+  var ENGINE_SUPPORTED_MODULES = ["orient"];
+  var BASE_MARKET_ID = "base";
+  var ORIENT_MARKET_ID = "orient";
+  var BASE_MARKET_SLOT_COUNT = 4;
+  var ORIENT_MARKET_SLOT_COUNT = 2;
+  var ORIENT_CATALOG_SCHEMA = "zephyrlabs-gemtable-orient-placeholder-catalog-v1";
+  var MOVE_EVENT_SCHEMA = "zephyrlabs-gemtable-move-events-v1";
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
@@ -62,6 +70,9 @@
       aiLevelExpert: "Expert",
       aiBadgeFormat: "DinoBoard AI: {level}",
       randomAiBadgeFormat: "Random AI: {level}",
+      rulesetModules: "Modules",
+      rulesetModulesHint: "Base game starts with every module off.",
+      orientModule: "Orient",
       startGame: "Start game",
       resumeSave: "Resume save",
       clearSave: "Clear save",
@@ -91,6 +102,12 @@
       noblesHint: "Permanent bonuses only. No replenishment.",
       market: "Market",
       marketHint: "Buy, reserve, or reserve blind from a deck.",
+      baseMarketTab: "Base",
+      orientMarketTab: "Orient",
+      orientMarketHint: "Generic placeholder cards for later Orient abilities.",
+      orientAbilityPlaceholder: "Ability slot",
+      orientActionsPending: "Actions pending",
+      orientSlotLabel: "Slot {slot}",
       actionLog: "Action log",
       logSafeMode: "Masked",
       logFullMode: "Full",
@@ -242,7 +259,7 @@
       msgBgaServerFailed: "Server crawl failed: {message}",
       msgBgaCaptureUnsupported: "Replay JSON is ready to download, but this BGA capture could not be adapted into the current Gem Table replay schema.",
       msgBgaExpansionUnsupported: "Replay JSON is ready to download, but an active expansion flag was detected, so it cannot be imported into the base-game table.",
-      msgRulesetUnsupported: "This replay uses unsupported Splendor modules: {modules}. Current Gem Table supports base game only.",
+      msgRulesetUnsupported: "This replay uses unsupported Splendor modules: {modules}. Current Gem Table supports base game plus the Orient market placeholder.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReplayJumped: "Jumped to move {move}.",
@@ -1596,6 +1613,7 @@ Object.assign(I18N.de, {
   var replayAutoTimer = null;
   var replayAutoplay = false;
   var replayJumpClickValue = null;
+  var activeMarketPage = BASE_MARKET_ID;
   var overlayRefreshTimer = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
@@ -1664,6 +1682,18 @@ Object.assign(I18N.de, {
     };
   }
 
+  function createRuleset(options) {
+    var ruleset = createBaseRuleset();
+    var modules = options && options.modules || {};
+    if (modules.orient === true) {
+      ruleset.id = ORIENT_RULESET_ID;
+      ruleset.name = "Splendor base + Orient";
+      ruleset.modules.orient = true;
+    }
+    ruleset.supported_by_engine = rulesetSupportedByEngine(ruleset);
+    return ruleset;
+  }
+
   function normalizeRuleset(ruleset) {
     var normalized = createBaseRuleset();
     if (!ruleset || typeof ruleset !== "object") return normalized;
@@ -1673,7 +1703,9 @@ Object.assign(I18N.de, {
     EXPANSION_MODULES.forEach(function (module) {
       normalized.modules[module] = modules[module] === true;
     });
-    normalized.supported_by_engine = activeRulesetModules(normalized).length === 0;
+    if (normalized.modules.orient && normalized.id === BASE_RULESET_ID) normalized.id = ORIENT_RULESET_ID;
+    if (normalized.modules.orient && normalized.name === "Splendor base") normalized.name = "Splendor base + Orient";
+    normalized.supported_by_engine = rulesetSupportedByEngine(normalized);
     return normalized;
   }
 
@@ -1685,15 +1717,25 @@ Object.assign(I18N.de, {
   }
 
   function unsupportedRulesetModules(ruleset) {
-    return activeRulesetModules(ruleset);
+    return activeRulesetModules(ruleset).filter(function (module) {
+      return ENGINE_SUPPORTED_MODULES.indexOf(module) < 0;
+    });
   }
 
   function rulesetSupportedByEngine(ruleset) {
     return unsupportedRulesetModules(ruleset).length === 0;
   }
 
+  function orientEnabledForRuleset(ruleset) {
+    return normalizeRuleset(ruleset).modules.orient === true;
+  }
+
   function ensureStateRuleset(game) {
-    if (game && typeof game === "object") game.ruleset = normalizeRuleset(game.ruleset);
+    if (game && typeof game === "object") {
+      game.ruleset = normalizeRuleset(game.ruleset);
+      ensureModuleState(game);
+      ensureMarketStructure(game);
+    }
     return game;
   }
 
@@ -1836,6 +1878,46 @@ Object.assign(I18N.de, {
   }
 
   var DEVELOPMENT_CARDS = buildDevelopmentCards();
+
+  function orientPlaceholderCost(tier, colorIndex, variant) {
+    var cost = emptyCounts(false);
+    var primary = COLORS[(colorIndex + tier + variant) % COLORS.length];
+    var secondary = COLORS[(colorIndex + 2 + variant) % COLORS.length];
+    var tertiary = COLORS[(colorIndex + 4) % COLORS.length];
+    cost[primary] = tier + 1;
+    cost[secondary] = tier;
+    if (tier > 1) cost[tertiary] = tier - 1;
+    return normalizeCost(cost);
+  }
+
+  function buildOrientCards() {
+    var cardsByTier = { 1: [], 2: [], 3: [] };
+    [1, 2, 3].forEach(function (tier) {
+      COLORS.forEach(function (color, colorIndex) {
+        [0, 1].forEach(function (variant) {
+          var number = colorIndex * 2 + variant + 1;
+          cardsByTier[tier].push({
+            id: "orient-t" + tier + "-" + String(number).padStart(2, "0"),
+            tier: tier,
+            color: color,
+            points: tier === 1 ? 0 : tier - 1,
+            cost: orientPlaceholderCost(tier, colorIndex, variant),
+            module: ORIENT_MARKET_ID,
+            catalog_schema: ORIENT_CATALOG_SCHEMA,
+            abilities: [{
+              id: "orient-placeholder-window",
+              timing: "on_acquire",
+              effect: "placeholder",
+              status: "pending"
+            }]
+          });
+        });
+      });
+    });
+    return cardsByTier;
+  }
+
+  var ORIENT_CARDS = buildOrientCards();
 
   var DINOBOARD_CARDS = [
     [1, 1, 0, [0, 0, 0, 0, 3]], [1, 1, 0, [1, 0, 0, 0, 2]], [1, 1, 0, [0, 0, 2, 0, 2]],
@@ -2084,6 +2166,139 @@ Object.assign(I18N.de, {
     return shuffle(deck, (seed || 7000) + tier * 101);
   }
 
+  function generateOrientDeck(tier, seed) {
+    return shuffle((ORIENT_CARDS[tier] || []).map(clone), (seed || 9000) + tier * 379);
+  }
+
+  function emptyTieredMarket() {
+    return { 1: [], 2: [], 3: [] };
+  }
+
+  function marketSlotIdFor(marketId, tier, index) {
+    return marketId + "-t" + tier + "-s" + (index + 1);
+  }
+
+  function deckSlotIdFor(marketId, tier) {
+    return marketId + "-t" + tier + "-deck";
+  }
+
+  function createMarketSlotGroup(marketId, count) {
+    var slots = { 1: [], 2: [], 3: [] };
+    [1, 2, 3].forEach(function (tier) {
+      for (var index = 0; index < count; index += 1) {
+        slots[tier].push(marketSlotIdFor(marketId, tier, index));
+      }
+    });
+    return slots;
+  }
+
+  function createMarketSlots() {
+    return {
+      base: createMarketSlotGroup(BASE_MARKET_ID, BASE_MARKET_SLOT_COUNT),
+      orient: createMarketSlotGroup(ORIENT_MARKET_ID, ORIENT_MARKET_SLOT_COUNT)
+    };
+  }
+
+  function createModuleState(ruleset) {
+    var orientEnabled = orientEnabledForRuleset(ruleset);
+    return {
+      orient: {
+        enabled: orientEnabled,
+        status: orientEnabled ? "placeholder_market" : "disabled",
+        catalog_schema: ORIENT_CATALOG_SCHEMA,
+        card_count: [1, 2, 3].reduce(function (sum, tier) {
+          return sum + (ORIENT_CARDS[tier] || []).length;
+        }, 0),
+        market_slot_count: ORIENT_MARKET_SLOT_COUNT,
+        event_schema: MOVE_EVENT_SCHEMA
+      }
+    };
+  }
+
+  function ensureModuleState(game) {
+    if (!game) return null;
+    var base = createModuleState(game.ruleset);
+    var existing = game.module_state && typeof game.module_state === "object" ? game.module_state : {};
+    var orient = existing.orient && typeof existing.orient === "object" ? existing.orient : {};
+    game.module_state = {
+      orient: Object.assign({}, base.orient, orient, {
+        enabled: base.orient.enabled,
+        status: base.orient.enabled ? (orient.status || "placeholder_market") : "disabled",
+        catalog_schema: ORIENT_CATALOG_SCHEMA,
+        market_slot_count: ORIENT_MARKET_SLOT_COUNT,
+        event_schema: MOVE_EVENT_SCHEMA
+      })
+    };
+    return game.module_state;
+  }
+
+  function normalizeTieredMarket(value) {
+    var market = emptyTieredMarket();
+    [1, 2, 3].forEach(function (tier) {
+      var cards = value && (value[tier] || value[String(tier)]);
+      market[tier] = Array.isArray(cards) ? cards.filter(Boolean) : [];
+    });
+    return market;
+  }
+
+  function normalizeTieredDecks(value) {
+    var decks = emptyTieredMarket();
+    [1, 2, 3].forEach(function (tier) {
+      var cards = value && (value[tier] || value[String(tier)]);
+      decks[tier] = Array.isArray(cards) ? cards : [];
+    });
+    return decks;
+  }
+
+  function ensureMarketSlotGroup(game, marketId, slotCount, market) {
+    if (!game.market_slots[marketId] || typeof game.market_slots[marketId] !== "object") {
+      game.market_slots[marketId] = {};
+    }
+    [1, 2, 3].forEach(function (tier) {
+      var existing = game.market_slots[marketId][tier] || game.market_slots[marketId][String(tier)] || [];
+      var target = Math.max(Array.isArray(market && market[tier]) ? market[tier].length : 0, slotCount);
+      if (!Array.isArray(existing)) existing = [];
+      while (existing.length < target) {
+        existing.push(marketSlotIdFor(marketId, tier, existing.length));
+      }
+      game.market_slots[marketId][tier] = existing;
+    });
+  }
+
+  function ensureMarketStructure(game) {
+    if (!game) return game;
+    if (!game.market) game.market = emptyTieredMarket();
+    if (!game.decks) game.decks = emptyTieredMarket();
+    game.market = normalizeTieredMarket(game.market);
+    game.decks = normalizeTieredDecks(game.decks);
+    game.orient_market = normalizeTieredMarket(game.orient_market);
+    game.orient_decks = normalizeTieredDecks(game.orient_decks);
+    if (!game.market_slots || typeof game.market_slots !== "object") game.market_slots = createMarketSlots();
+    ensureMarketSlotGroup(game, BASE_MARKET_ID, BASE_MARKET_SLOT_COUNT, game.market);
+    ensureMarketSlotGroup(game, ORIENT_MARKET_ID, ORIENT_MARKET_SLOT_COUNT, game.orient_market);
+    if (orientEnabledForRuleset(game.ruleset)) {
+      [1, 2, 3].forEach(function (tier) {
+        if (game.orient_market[tier].length === 0 && game.orient_decks[tier].length === 0) {
+          game.orient_decks[tier] = generateOrientDeck(tier, (Number(game.table_seed) || 9000) + 4000);
+          refillOrientMarket(game, tier);
+        }
+      });
+    }
+    return game;
+  }
+
+  function marketSlotId(game, marketId, tier, index) {
+    ensureMarketStructure(game);
+    var group = game.market_slots && game.market_slots[marketId] && game.market_slots[marketId][tier];
+    return group && group[index] || marketSlotIdFor(marketId, tier, index);
+  }
+
+  function removeMarketSlotId(game, marketId, tier, index) {
+    ensureMarketStructure(game);
+    var group = game.market_slots && game.market_slots[marketId] && game.market_slots[marketId][tier];
+    if (Array.isArray(group)) group.splice(index, 1);
+  }
+
   function emptySeenCards() {
     return { 1: [], 2: [], 3: [] };
   }
@@ -2217,21 +2432,28 @@ Object.assign(I18N.de, {
     return aiSelectionSequence;
   }
 
-  function createGame(playerCount, names, aiSettings) {
+  function createGame(playerCount, names, aiSettings, options) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
     var tableSeed = randomSeed();
+    var ruleset = createRuleset(options || {});
     var decks = {
       1: generateDeck(1, TIER_SIZES[1], tableSeed),
       2: generateDeck(2, TIER_SIZES[2], tableSeed + 1009),
       3: generateDeck(3, TIER_SIZES[3], tableSeed + 2003)
     };
+    var orientDecks = orientEnabledForRuleset(ruleset) ? {
+      1: generateOrientDeck(1, tableSeed + 4001),
+      2: generateOrientDeck(2, tableSeed + 5003),
+      3: generateOrientDeck(3, tableSeed + 6007)
+    } : emptyTieredMarket();
     var game = {
       schema: SCHEMA,
       created_at: new Date().toISOString(),
       mode: "live",
       playerCount: playerCount,
-      ruleset: createBaseRuleset(),
+      ruleset: ruleset,
+      module_state: createModuleState(ruleset),
       table_seed: tableSeed,
       next_move_id: 1,
       players: Array.from({ length: playerCount }, function (_, index) {
@@ -2257,6 +2479,9 @@ Object.assign(I18N.de, {
       bank: emptyCounts(true),
       decks: decks,
       market: { 1: [], 2: [], 3: [] },
+      orient_decks: orientDecks,
+      orient_market: emptyTieredMarket(),
+      market_slots: createMarketSlots(),
       seen_cards: emptySeenCards(),
       nobles: shuffle(NOBLE_POOL, tableSeed + 9111).slice(0, playerCount + 1),
       current: 0,
@@ -2278,6 +2503,7 @@ Object.assign(I18N.de, {
     [1, 2, 3].forEach(function (tier) {
       refillMarket(game, tier);
       rememberSeenCards(game, game.market[tier]);
+      if (orientEnabledForRuleset(game.ruleset)) refillOrientMarket(game, tier);
     });
     game.log.unshift("Started " + playerCount + "-player local table.");
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
@@ -2296,6 +2522,14 @@ Object.assign(I18N.de, {
     }
   }
 
+  function refillOrientMarket(game, tier) {
+    if (!game.orient_market) game.orient_market = emptyTieredMarket();
+    if (!game.orient_decks) game.orient_decks = emptyTieredMarket();
+    while (game.orient_market[tier].length < ORIENT_MARKET_SLOT_COUNT && game.orient_decks[tier].length > 0) {
+      game.orient_market[tier].push(game.orient_decks[tier].pop());
+    }
+  }
+
   function fillMarketSlot(game, tier, index) {
     if (!game || !game.market[tier]) return null;
     var replacement = game.decks[tier] && game.decks[tier].length ? game.decks[tier].pop() : null;
@@ -2305,6 +2539,7 @@ Object.assign(I18N.de, {
       return replacement;
     }
     game.market[tier].splice(index, 1);
+    removeMarketSlotId(game, BASE_MARKET_ID, tier, index);
     return null;
   }
 
@@ -3121,10 +3356,15 @@ Object.assign(I18N.de, {
   }
 
   function renderCard(card, controls) {
+    controls = controls || {};
     var buyAttr = controls.buy ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
     var reserveAttr = controls.reserve ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
     var afford = controls.afford;
-    var affordText = afford && afford.ok ? t("affordable") : t("needTokens");
+    var affordText = afford ? (afford.ok ? t("affordable") : t("needTokens")) : "";
+    var cardModule = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(t("orientModule")) + "</span>" : "";
+    var abilityBadge = cardModule === ORIENT_MARKET_ID ? '<span class="orient-ability-chip">' + escapeHtml(t("orientAbilityPlaceholder")) + "</span>" : "";
+    var slotBadge = controls.slotId ? '<span class="orient-slot-chip">' + escapeHtml(t("orientSlotLabel", { slot: controls.slotId })) + "</span>" : "";
     var actions = [];
     if (controls.buy) {
       actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
@@ -3133,10 +3373,13 @@ Object.assign(I18N.de, {
       actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
     }
     return [
-      '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" style="' + gemStyle(card.color) + '">',
+      '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '" style="' + gemStyle(card.color) + '">',
       "<h3><span>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + '<br><span class="card-id">' + card.id + '</span></span><span class="points">' + card.points + "</span></h3>",
+      moduleBadge,
       '<div class="cost-row">' + costHtml(card.cost) + "</div>",
-      '<p class="card-affordability compact">' + affordText + "</p>",
+      abilityBadge,
+      slotBadge,
+      affordText ? '<p class="card-affordability compact">' + affordText + "</p>" : "",
       actions.length ? '<div class="card-actions">' + actions.join("") + "</div>" : "",
       "</article>"
     ].join("");
@@ -3185,7 +3428,25 @@ Object.assign(I18N.de, {
     }).join(", ") });
   }
 
-  function renderMarket() {
+  function renderMarketTabs() {
+    if (!el.marketTabBase || !el.marketTabOrient) return;
+    var orientEnabled = !!(state && orientEnabledForRuleset(state.ruleset));
+    if (!orientEnabled && activeMarketPage === ORIENT_MARKET_ID) activeMarketPage = BASE_MARKET_ID;
+    [
+      [el.marketTabBase, BASE_MARKET_ID, true],
+      [el.marketTabOrient, ORIENT_MARKET_ID, orientEnabled]
+    ].forEach(function (entry) {
+      var button = entry[0];
+      var page = entry[1];
+      var enabled = entry[2];
+      button.classList.toggle("active", activeMarketPage === page);
+      button.disabled = !enabled;
+      button.setAttribute("aria-selected", activeMarketPage === page ? "true" : "false");
+      button.setAttribute("aria-disabled", enabled ? "false" : "true");
+    });
+  }
+
+  function renderBaseMarket() {
     var active = displayPlayer();
     el.market.innerHTML = [3, 2, 1].map(function (tier) {
       var cards = state.market[tier].map(function (card, index) {
@@ -3211,6 +3472,39 @@ Object.assign(I18N.de, {
         "</section>"
       ].join("");
     }).join("");
+  }
+
+  function renderOrientMarket() {
+    ensureStateRuleset(state);
+    el.market.innerHTML = [3, 2, 1].map(function (tier) {
+      var cards = (state.orient_market[tier] || []).map(function (card, index) {
+        return renderCard(card, {
+          value: tier + ":" + index,
+          slotId: marketSlotId(state, ORIENT_MARKET_ID, tier, index)
+        });
+      }).join("");
+      var deckCount = state.orient_decks && state.orient_decks[tier] ? state.orient_decks[tier].length : 0;
+      return [
+        '<section class="tier orient-tier">',
+        '<div class="deck-box" data-market-deck="' + ORIENT_MARKET_ID + '" data-tier="' + tier + '">',
+        '<span class="label">' + t("orientModule") + " " + t("tier") + " " + tier + "</span>",
+        "<strong>" + deckCount + "</strong>",
+        '<span class="muted compact">' + t("deckCards") + "</span>",
+        '<span class="muted compact">' + escapeHtml(deckSlotIdFor(ORIENT_MARKET_ID, tier)) + "</span>",
+        "</div>",
+        '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
+        "</section>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderMarket() {
+    renderMarketTabs();
+    if (activeMarketPage === ORIENT_MARKET_ID && orientEnabledForRuleset(state.ruleset)) {
+      renderOrientMarket();
+      return;
+    }
+    renderBaseMarket();
   }
 
   function reservedSourceText(card) {
@@ -3836,6 +4130,7 @@ Object.assign(I18N.de, {
       return;
     }
 
+    ensureStateRuleset(state);
     if (!state.turnTransition && !state.aiThinking && !isAiPlayer(activePlayer())) {
       lastHumanPlayerIndex = state.current;
     }
@@ -4077,9 +4372,10 @@ Object.assign(I18N.de, {
       render();
       return;
     }
+    var slotId = marketSlotId(state, BASE_MARKET_ID, tier, index);
     queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), playerPanelTarget(".reserved-list"));
     fillMarketSlot(state, tier, index);
-    reserveCard(player, card, "reserveMarket", { card_id: card.id, card: card, tier: tier, market_index: index });
+    reserveCard(player, card, "reserveMarket", { card_id: card.id, card: card, tier: tier, market_index: index, market_id: BASE_MARKET_ID, market_slot_id: slotId });
   }
 
   function reserveDeck(tier, trigger) {
@@ -4097,13 +4393,16 @@ Object.assign(I18N.de, {
       return;
     }
     queueFlightFromElement(trigger && trigger.closest(".deck-box"), "gold", t("blind"), playerPanelTarget(".reserved-list"));
-    reserveCard(player, card, "reserveDeck", { card_id: card.id, card: card, tier: tier });
+    reserveCard(player, card, "reserveDeck", { card_id: card.id, card: card, tier: tier, market_id: BASE_MARKET_ID, deck_slot_id: deckSlotIdFor(BASE_MARKET_ID, tier) });
   }
 
   function reserveCard(player, card, type, args) {
     var reservedCard = clone(card);
     reservedCard.reserved_from = type === "reserveDeck" ? "deck" : "market";
     reservedCard.reserved_public = type !== "reserveDeck";
+    reservedCard.market_id = args.market_id || BASE_MARKET_ID;
+    if (args.market_slot_id) reservedCard.market_slot_id = args.market_slot_id;
+    if (args.deck_slot_id) reservedCard.deck_slot_id = args.deck_slot_id;
     player.reserved.push(reservedCard);
     var tookGold = false;
     if (state.bank.gold > 0) {
@@ -4208,6 +4507,8 @@ Object.assign(I18N.de, {
     if (context.type === "buyMarket") {
       args.tier = context.tier;
       args.market_index = context.index;
+      args.market_id = BASE_MARKET_ID;
+      args.market_slot_id = marketSlotId(state, BASE_MARKET_ID, context.tier, context.index);
       args.card = card;
       fillMarketSlot(state, context.tier, context.index);
     } else {
@@ -4215,6 +4516,9 @@ Object.assign(I18N.de, {
       args.reserved_index = context.index;
       args.card = card;
       args.reserved_from = card.reserved_from || "market";
+      args.market_id = card.market_id || BASE_MARKET_ID;
+      if (card.market_slot_id) args.market_slot_id = card.market_slot_id;
+      if (card.deck_slot_id) args.deck_slot_id = card.deck_slot_id;
       context.player.reserved.splice(context.index, 1);
     }
     queueFlightFromElement(flightSource, card.color, t("buy"), playerPanelTarget(".purchased-summary"));
@@ -4546,6 +4850,44 @@ Object.assign(I18N.de, {
     return t("logWinner", { player: best.player.name });
   }
 
+  function moveEventRefs(args, player) {
+    var refs = {
+      player_id: player && player.id || null,
+      card_id: args && args.card_id || null,
+      market_id: args && args.market_id || null,
+      market_slot_id: args && args.market_slot_id || null,
+      deck_slot_id: args && args.deck_slot_id || null,
+      noble_id: args && args.noble_id || null
+    };
+    Object.keys(refs).forEach(function (key) {
+      if (refs[key] === null || refs[key] === undefined) delete refs[key];
+    });
+    return refs;
+  }
+
+  function buildMoveEvents(moveId, type, args, player) {
+    var refs = moveEventRefs(args || {}, player);
+    var events = [{
+      schema: MOVE_EVENT_SCHEMA,
+      event_id: "m" + moveId + ":core",
+      channel: "core",
+      type: type,
+      status: "resolved",
+      refs: clone(refs)
+    }];
+    if (state && orientEnabledForRuleset(state.ruleset)) {
+      events.push({
+        schema: MOVE_EVENT_SCHEMA,
+        event_id: "m" + moveId + ":orient-ability-window",
+        channel: ORIENT_MARKET_ID,
+        type: "abilityWindow",
+        status: "placeholder",
+        refs: clone(refs)
+      });
+    }
+    return events;
+  }
+
   function recordMove(type, args, actor) {
     if (!state || state.mode === "replay") return;
     var player = actor || state.players[state.current] || state.players[0];
@@ -4560,6 +4902,7 @@ Object.assign(I18N.de, {
         log: state.log[0] || "",
         args: Object.assign({ player_id: player.id, player_name: player.name }, args || {})
       },
+      events: buildMoveEvents(state.next_move_id, type, args || {}, player),
       state_after: toGamedatas(state, { includeSourceState: true })
     };
     state.moves.push(move);
@@ -4569,6 +4912,7 @@ Object.assign(I18N.de, {
 
   function toGamedatas(game, options) {
     var includeSourceState = options && options.includeSourceState;
+    ensureStateRuleset(game);
     var ruleset = normalizeRuleset(game.ruleset);
     var players = {};
     game.players.forEach(function (player, index) {
@@ -4598,6 +4942,7 @@ Object.assign(I18N.de, {
         ruleset_id: ruleset.id
       },
       ruleset: clone(ruleset),
+      module_state: clone(game.module_state || createModuleState(ruleset)),
       gamestate: {
         name: game.gameOver ? "gameEnd" : game.awaitingDiscard ? "discard" : game.awaitingNobleChoice ? "chooseNoble" : "playerTurn",
         description: gameStateTextFor(game),
@@ -4607,11 +4952,18 @@ Object.assign(I18N.de, {
       playerorder: game.players.map(function (player) { return player.id; }),
       bank: clone(game.bank),
       market: clone(game.market),
+      market_slots: clone(game.market_slots || createMarketSlots()),
+      orient_market: clone(game.orient_market || emptyTieredMarket()),
       nobles: clone(game.nobles),
       decks_remaining: {
         1: game.decks[1].length,
         2: game.decks[2].length,
         3: game.decks[3].length
+      },
+      orient_decks_remaining: {
+        1: game.orient_decks && game.orient_decks[1] ? game.orient_decks[1].length : 0,
+        2: game.orient_decks && game.orient_decks[2] ? game.orient_decks[2].length : 0,
+        3: game.orient_decks && game.orient_decks[3] ? game.orient_decks[3].length : 0
       },
       awaiting: {
         discard: !!game.awaitingDiscard,
@@ -4645,15 +4997,20 @@ Object.assign(I18N.de, {
 
   function compactSourceState(game) {
     if (!game || !Array.isArray(game.players)) return null;
+    ensureStateRuleset(game);
     return {
       schema: SCHEMA,
       ruleset: normalizeRuleset(game.ruleset),
+      module_state: clone(game.module_state || createModuleState(game.ruleset)),
       table_seed: game.table_seed,
       next_move_id: game.next_move_id,
       players: clone(game.players),
       bank: clone(game.bank),
       decks: clone(game.decks),
       market: clone(game.market),
+      market_slots: clone(game.market_slots || createMarketSlots()),
+      orient_decks: clone(game.orient_decks || emptyTieredMarket()),
+      orient_market: clone(game.orient_market || emptyTieredMarket()),
       seen_cards: clone(collectSeenCardsByTier(game)),
       bga_deck_unknown: !!game.bga_deck_unknown,
       bga_continued_deck_seed: game.bga_continued_deck_seed,
@@ -4680,13 +5037,17 @@ Object.assign(I18N.de, {
       schema: SCHEMA,
       table: cloneOr(gamedatas.table, {}),
       ruleset: normalizeRuleset(gamedatas.ruleset || gamedatas.source_state && gamedatas.source_state.ruleset),
+      module_state: cloneOr(gamedatas.module_state, gamedatas.source_state && gamedatas.source_state.module_state || {}),
       gamestate: cloneOr(gamedatas.gamestate, {}),
       players: cloneOr(gamedatas.players, {}),
       playerorder: Array.isArray(gamedatas.playerorder) ? gamedatas.playerorder.slice() : [],
       bank: cloneOr(gamedatas.bank, {}),
       market: cloneOr(gamedatas.market, {}),
+      market_slots: cloneOr(gamedatas.market_slots, gamedatas.source_state && gamedatas.source_state.market_slots || {}),
+      orient_market: cloneOr(gamedatas.orient_market, gamedatas.source_state && gamedatas.source_state.orient_market || {}),
       nobles: cloneOr(gamedatas.nobles, []),
       decks_remaining: cloneOr(gamedatas.decks_remaining, {}),
+      orient_decks_remaining: cloneOr(gamedatas.orient_decks_remaining, {}),
       awaiting: cloneOr(gamedatas.awaiting, {}),
       end: cloneOr(gamedatas.end, {}),
       log: Array.isArray(gamedatas.log) ? gamedatas.log.slice() : []
@@ -4704,6 +5065,7 @@ Object.assign(I18N.de, {
       player_id: move.player_id,
       args: clone(move.args || {}),
       notification: clone(move.notification || {}),
+      events: Array.isArray(move.events) ? clone(move.events) : [],
       state_after: compactGamedatasForExport(move.state_after) || (move.state_after ? clone(move.state_after) : null)
     };
   }
@@ -4719,6 +5081,7 @@ Object.assign(I18N.de, {
       schema: SCHEMA,
       next_move_id: payload.next_move_id,
       ruleset: normalizeRuleset(rulesetFromReplayPayload(payload)),
+      module_state: cloneOr(payload.module_state, payload.gamedatas && payload.gamedatas.module_state || {}),
       gamedatas: compactGamedatasForExport(payload.gamedatas),
       moves: compactMovesForExport(payload.moves)
     };
@@ -4741,6 +5104,7 @@ Object.assign(I18N.de, {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
       ruleset: normalizeRuleset(game.ruleset),
+      module_state: clone(game.module_state || createModuleState(game.ruleset)),
       gamedatas: compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
@@ -4754,6 +5118,7 @@ Object.assign(I18N.de, {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
       ruleset: normalizeRuleset(game.ruleset),
+      module_state: clone(game.module_state || createModuleState(game.ruleset)),
       gamedatas: compactGamedatasForExport(game.initial_gamedatas) || compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
@@ -4897,8 +5262,10 @@ Object.assign(I18N.de, {
       return;
     }
     imported.mode = "live";
+    ensureStateRuleset(imported);
     closeDinoBoardSession();
     state = imported;
+    activeMarketPage = BASE_MARKET_ID;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
@@ -5745,6 +6112,7 @@ Object.assign(I18N.de, {
     setReplayAutoplay(false, true);
     state = initial;
     state.mode = "replay";
+    activeMarketPage = BASE_MARKET_ID;
     pendingTake = [];
     pendingPayment = null;
     showStartMessage("");
@@ -5797,6 +6165,7 @@ Object.assign(I18N.de, {
       state = stateFromGamedatas(replayData.moves[replayIndex].state_after);
     }
     state.mode = "replay";
+    if (activeMarketPage === ORIENT_MARKET_ID && !orientEnabledForRuleset(state.ruleset)) activeMarketPage = BASE_MARKET_ID;
     var moveText = replayIndex === -1 ? t("msgInitialReplayPosition") : t("msgReplayAtMove", { move: replayData.moves[replayIndex].move_id, type: replayData.moves[replayIndex].type });
     showMessage(moveText, "ok");
     render();
@@ -5913,8 +6282,14 @@ Object.assign(I18N.de, {
       var level = normalizeAiLevel(aiLevels[index] && aiLevels[index].value);
       return { enabled: input.checked, mode: level, level: level, selected_order: Number(input.dataset.aiSelectedOrder) || null };
     });
+    var rulesetOptions = {
+      modules: {
+        orient: !!(el.rulesetOrient && el.rulesetOrient.checked)
+      }
+    };
     closeDinoBoardSession();
-    state = createGame(count, names, aiSettings);
+    state = createGame(count, names, aiSettings, rulesetOptions);
+    activeMarketPage = BASE_MARKET_ID;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
@@ -5944,6 +6319,8 @@ Object.assign(I18N.de, {
     clearTurnAdvanceTimer();
     pendingTake = [];
     pendingPayment = null;
+    activeMarketPage = BASE_MARKET_ID;
+    if (el.rulesetOrient) el.rulesetOrient.checked = false;
     messageText = "";
     messageKind = "";
     clearSavedState();
@@ -6263,6 +6640,14 @@ Object.assign(I18N.de, {
         updateBoardProgress();
       });
     }
+    if (el.marketTabs) {
+      el.marketTabs.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-market-page]");
+        if (!button || button.disabled) return;
+        activeMarketPage = button.dataset.marketPage === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+        render();
+      });
+    }
     el.languageSelect.addEventListener("change", function () {
       currentLocale = I18N[el.languageSelect.value] ? el.languageSelect.value : "en";
       saveLanguagePreference();
@@ -6316,7 +6701,9 @@ Object.assign(I18N.de, {
         return;
       }
       closeDinoBoardSession();
+      ensureStateRuleset(saved);
       state = saved;
+      activeMarketPage = BASE_MARKET_ID;
       pendingTake = [];
       pendingPayment = null;
       showMessage(t("msgSavedResumed"), "ok");
@@ -6531,6 +6918,7 @@ Object.assign(I18N.de, {
       "start-message",
       "player-count",
       "player-name-fields",
+      "ruleset-orient",
       "resume-game",
       "clear-save",
       "game-panel",
@@ -6567,6 +6955,9 @@ Object.assign(I18N.de, {
       "confirm-take",
       "clear-take",
       "nobles",
+      "market-tabs",
+      "market-tab-base",
+      "market-tab-orient",
       "market",
       "players",
       "active-hand-panel",
@@ -6608,8 +6999,9 @@ Object.assign(I18N.de, {
     window.__gemTableDebug = {
       createGame: createGame,
       getState: function () { return state; },
-      startGame: function (count, names, aiSettings) {
-        state = createGame(count, names || [], aiSettings || []);
+      startGame: function (count, names, aiSettings, options) {
+        state = createGame(count, names || [], aiSettings || [], options || {});
+        activeMarketPage = BASE_MARKET_ID;
         pendingTake = [];
         pendingPayment = null;
         render();
@@ -6617,7 +7009,9 @@ Object.assign(I18N.de, {
       },
       setState: function (nextState) {
         if (validateState(nextState)) {
+          ensureStateRuleset(nextState);
           state = nextState;
+          activeMarketPage = BASE_MARKET_ID;
           pendingPayment = null;
           render();
         }

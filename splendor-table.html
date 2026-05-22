@@ -67,6 +67,17 @@
 
             <div id="player-name-fields" class="name-fields"></div>
 
+            <section class="ruleset-panel" aria-labelledby="ruleset-title">
+              <div>
+                <h3 id="ruleset-title" data-i18n="rulesetModules">Modules</h3>
+                <p class="muted compact" data-i18n="rulesetModulesHint">Base game starts with every module off.</p>
+              </div>
+              <label class="module-toggle">
+                <input id="ruleset-orient" type="checkbox" />
+                <span data-i18n="orientModule">Orient</span>
+              </label>
+            </section>
+
             <div class="form-actions">
               <button id="start-game" type="submit" class="primary" data-i18n="startGame">Start game</button>
               <button id="resume-game" type="button" hidden data-i18n="resumeSave">Resume save</button>
@@ -229,6 +240,11 @@
               <div class="panel-heading">
                 <h2 id="market-title" data-i18n="market">Market</h2>
                 <span class="muted compact" data-i18n="marketHint">Buy, reserve, or reserve blind from a deck.</span>
+              </div>
+
+              <div id="market-tabs" class="market-tabs" role="tablist" aria-label="Market sections">
+                <button id="market-tab-base" type="button" class="active" data-market-page="base" data-i18n="baseMarketTab">Base</button>
+                <button id="market-tab-orient" type="button" data-market-page="orient" data-i18n="orientMarketTab">Orient</button>
               </div>
 
               <section id="nobles-panel" class="market-subpanel market-nobles" aria-labelledby="nobles-title">
