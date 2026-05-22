@@ -2797,21 +2797,45 @@ Object.assign(I18N.de, {
     };
   }
 
-  function stickyViewportAnchor() {
+  function stickyUsesBoundaryAnchor(rect) {
+    return compactViewport() && rect && rect.height > window.innerHeight * 0.92;
+  }
+
+  function stickyBoundaryAnchor() {
+    var topPanel = byId("table-top-panel");
+    var panelBottom = 0;
+    if (topPanel && topPanel.getBoundingClientRect) {
+      var panelRect = topPanel.getBoundingClientRect();
+      if (panelRect.top <= 2 && panelRect.bottom > 0) {
+        panelBottom = Math.min(panelRect.bottom, window.innerHeight * 0.4);
+      }
+    }
+    return Math.max(82, Math.min(window.innerHeight * 0.38, panelBottom + 10));
+  }
+
+  function stickyViewportAnchor(rect) {
+    if (stickyUsesBoundaryAnchor(rect)) return stickyBoundaryAnchor();
     return window.innerHeight * (compactViewport() ? 0.56 : 0.43);
   }
 
-  function marketHasViewportCenter() {
+  function stickyMarketPoint(rect) {
+    return stickyUsesBoundaryAnchor(rect) ? rect.top : rect.center || rect.top + rect.height / 2;
+  }
+
+  function marketIsInStickyZone() {
     if (!state || reducedMotionPreferred()) return false;
     if (Date.now() < marketStickyReleaseUntil) return false;
     var rect = stickyFrameRect();
     if (!rect) return false;
-    var viewportCenter = stickyViewportAnchor();
-    var centerBand = compactViewport()
-      ? Math.min(window.innerHeight * 0.1, Math.max(44, rect.height * 0.05))
-      : Math.min(window.innerHeight * 0.09, Math.max(48, rect.height * 0.045));
-    var centered = Math.abs(rect.center - viewportCenter) <= centerBand;
-    if (!centered) {
+    var usesBoundary = stickyUsesBoundaryAnchor(rect);
+    var viewportAnchor = stickyViewportAnchor(rect);
+    var anchorBand = usesBoundary
+      ? Math.min(window.innerHeight * 0.11, Math.max(48, rect.height * 0.025))
+      : compactViewport()
+        ? Math.min(window.innerHeight * 0.1, Math.max(44, rect.height * 0.05))
+        : Math.min(window.innerHeight * 0.09, Math.max(48, rect.height * 0.045));
+    var inZone = Math.abs(stickyMarketPoint(rect) - viewportAnchor) <= anchorBand;
+    if (!inZone) {
       marketStickyDisabledUntilExit = false;
       return false;
     }
@@ -2822,13 +2846,16 @@ Object.assign(I18N.de, {
     var rect = stickyFrameRect() || market.getBoundingClientRect();
     var current = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
     var maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
-    var target = current + rect.top + rect.height / 2 - stickyViewportAnchor();
+    var target = current + stickyMarketPoint(rect) - stickyViewportAnchor(rect);
     return Math.max(0, Math.min(maxScroll, target));
   }
 
   function marketStickyThreshold() {
     var rect = stickyFrameRect();
     if (!rect) return 320;
+    if (stickyUsesBoundaryAnchor(rect)) {
+      return Math.max(92, Math.min(window.innerHeight * 0.28, 172));
+    }
     if (compactViewport()) {
       return Math.max(110, Math.min(window.innerHeight * 0.34, rect.height * 0.34));
     }
@@ -2963,7 +2990,7 @@ Object.assign(I18N.de, {
   }
 
   function handleMarketWheel(event) {
-    if (!marketHasViewportCenter() || shouldLetNativeMarketScroll(event.target, event.deltaX || 0, event.deltaY || 0)) return;
+    if (!marketIsInStickyZone() || shouldLetNativeMarketScroll(event.target, event.deltaX || 0, event.deltaY || 0)) return;
     if (Math.abs(event.deltaY || 0) < 1 || Math.abs(event.deltaX || 0) > Math.abs(event.deltaY || 0)) return;
     event.preventDefault();
     applyMarketStickyScroll(event.deltaY);
@@ -2976,7 +3003,7 @@ Object.assign(I18N.de, {
 
   function handleMarketTouchMove(event) {
     var touch = event.touches && event.touches[0];
-    if (!touch || !marketTouchPoint || !marketHasViewportCenter()) return;
+    if (!touch || !marketTouchPoint || !marketIsInStickyZone()) return;
     if (shouldLetNativeMarketScroll(event.target, touch.clientX - marketTouchPoint.x, touch.clientY - marketTouchPoint.y)) return;
     var deltaX = marketTouchPoint.x - touch.clientX;
     var deltaY = marketTouchPoint.y - touch.clientY;
