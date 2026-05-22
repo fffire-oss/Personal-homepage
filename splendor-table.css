@@ -374,6 +374,42 @@ body.game-active main {
   gap: 14px;
 }
 
+.ruleset-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(174, 244, 255, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(174, 244, 255, 0.045), transparent),
+    rgba(255, 255, 255, 0.03);
+}
+
+.ruleset-panel h3 {
+  color: #eef8f8;
+  font-size: 0.86rem;
+}
+
+.module-toggle {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: max-content;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+.module-toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 .start-form label,
 .start-replay-panel label {
   display: grid;
@@ -386,6 +422,11 @@ body.game-active main {
 .start-form label > span,
 .start-replay-panel label > span {
   min-width: 0;
+}
+
+.start-form .module-toggle {
+  display: inline-flex;
+  color: var(--text);
 }
 
 .start-replay-panel textarea {
@@ -1262,6 +1303,34 @@ body.replay-mode .top-replay-controls {
   gap: 8px;
 }
 
+.market-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 5px;
+  border: 1px solid rgba(174, 244, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.032);
+}
+
+.market-tabs button {
+  min-height: 32px;
+  border-color: transparent;
+  background: transparent;
+  font-size: 0.74rem;
+  font-weight: 840;
+}
+
+.market-tabs button.active {
+  color: #061015;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
+.market-tabs button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
 .tier {
   display: grid;
   grid-template-columns: 108px minmax(0, 1fr);
@@ -1430,6 +1499,39 @@ body.replay-mode .top-replay-controls {
   font-size: 0.62rem;
 }
 
+.card-module-badge,
+.orient-ability-chip,
+.orient-slot-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0 6px;
+  border: 1px solid color-mix(in srgb, var(--gem), white 20%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  color: #eef8f8;
+  font-size: 0.58rem;
+  font-weight: 820;
+  line-height: 1.1;
+}
+
+.orient-ability-chip,
+.orient-slot-chip {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dev-card[data-card-module="orient"] {
+  min-height: 118px;
+}
+
+.dev-card[data-card-module="orient"] .card-actions {
+  grid-template-columns: 1fr;
+}
+
 .card-affordability {
   position: absolute;
   right: 6px;
@@ -1543,7 +1645,7 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   top: calc(100% + 8px);
   left: 0;
   z-index: 95;
-  display: grid;
+  display: none;
   gap: 6px;
   width: max-content;
   min-width: 154px;
@@ -1610,6 +1712,7 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
 .bonus-pill.preview-open .bonus-preview,
 .bonus-pill:focus-within .bonus-preview {
+  display: grid;
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
@@ -2825,6 +2928,21 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     display: grid;
   }
 
+  .ruleset-panel {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .module-toggle {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  .market-tabs button {
+    min-height: 30px;
+    font-size: 0.66rem;
+  }
+
   .market-subheading {
     display: grid;
   }
@@ -2928,6 +3046,10 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     scroll-snap-align: start;
   }
 
+  .dev-card[data-card-module="orient"] {
+    min-height: 104px;
+  }
+
   .dev-card h3 {
     gap: 4px;
     font-size: 0.62rem;
@@ -2940,6 +3062,14 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
   .card-id {
     font-size: 0.52rem;
+  }
+
+  .card-module-badge,
+  .orient-ability-chip,
+  .orient-slot-chip {
+    min-height: 16px;
+    padding: 0 4px;
+    font-size: 0.5rem;
   }
 
   .cost-row {
