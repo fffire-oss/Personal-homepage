@@ -1611,9 +1611,9 @@ body.market-sticky-active .market-panel {
 
 .player-resource-panel {
   display: grid;
-  grid-template-columns: minmax(42px, max-content) repeat(6, 30px);
+  grid-template-columns: minmax(92px, max-content) repeat(6, 27px);
   justify-content: start;
-  gap: 6px 4px;
+  gap: 6px 3px;
   align-items: center;
   min-width: 0;
   max-width: 100%;
@@ -1642,21 +1642,21 @@ body.market-sticky-active .market-panel {
 }
 
 .player-resource-panel .token {
-  min-width: 28px;
-  min-height: 28px;
+  min-width: 27px;
+  min-height: 27px;
   padding: 0 4px;
   font-size: 0.62rem;
 }
 
 .token.token-compact {
-  width: 28px;
-  min-width: 28px;
+  width: 27px;
+  min-width: 27px;
   padding: 0;
   line-height: 1;
 }
 
 .player-resource-panel .bonus-pill {
-  width: 28px;
+  width: 27px;
   min-height: 34px;
   font-size: 0.64rem;
 }
