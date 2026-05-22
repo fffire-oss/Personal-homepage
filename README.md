@@ -26,3 +26,13 @@ Then visit `http://localhost:8000`.
 3. Select the `main` branch and the repository root as the Pages source.
 
 The page is implemented with plain HTML, CSS, and JavaScript for simple deployment.
+
+## Optional BGA Replay Server
+
+The static page can import local replay JSON files directly. BGA table-id import
+requires a small Node service because the browser cannot safely use BGA login
+cookies from this domain.
+
+See `server/README.md` for the optional API server. The frontend posts a table
+ID to `/api/bga/replay`, shows progress, and exposes a generated JSON download
+when the server-side crawler finishes.

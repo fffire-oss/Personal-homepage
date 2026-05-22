@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css?v=20260522-bga-capture1" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260522-bga-table-import1" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -81,6 +81,26 @@
           </form>
 
           <section id="start-replay-panel" class="start-replay-panel start-mode-panel" hidden>
+            <section class="bga-capture-panel" aria-labelledby="start-bga-import-title">
+              <div>
+                <h3 id="start-bga-import-title" data-i18n="bgaTableImportTitle">Import by BGA table ID</h3>
+                <p class="muted compact" data-i18n="bgaTableImportBody">
+                  Enter a table ID to try direct import. If the browser cannot access BGA, run the GitHub crawler and import its JSON file.
+                </p>
+              </div>
+              <label class="bga-table-field">
+                <span data-i18n="bgaTableIdLabel">BGA table ID</span>
+                <input id="start-bga-table-id" inputmode="numeric" autocomplete="off" placeholder="123456789" data-i18n-placeholder="bgaTableIdPlaceholder" />
+              </label>
+              <div class="bga-actions">
+                <button id="start-import-bga-table" type="button" class="primary" data-i18n="importBgaTable">Import table ID</button>
+                <a class="button-link" href="https://github.com/fffire-oss/Personal-homepage/blob/main/tools/bga-replay-crawler.mjs" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler script</a>
+                <a id="start-bga-download" class="button-link" href="#" hidden download data-i18n="downloadCapturedJson">Download captured JSON</a>
+              </div>
+              <p id="start-bga-import-status" class="muted compact" data-i18n="bgaTableImportStatus">
+                Expansion tables and unsupported BGA captures will fail instead of loading incorrect data.
+              </p>
+            </section>
             <div class="file-panel">
               <span data-i18n="replayFileLabel">Replay JSON file</span>
               <p id="start-replay-file-status" class="muted compact" data-i18n="startReplayBody">
@@ -89,7 +109,7 @@
             </div>
             <textarea id="start-replay-json" hidden spellcheck="false" placeholder="Paste a replay JSON payload here." data-i18n-placeholder="startReplayPlaceholder"></textarea>
             <div class="form-actions">
-              <button id="start-load-replay" type="button" class="primary" data-i18n="loadReplay">Load replay</button>
+              <button id="start-load-replay" type="button" data-i18n="importReplayFile">Import JSON file</button>
               <button id="start-clear-replay" type="button" data-i18n="clear">Clear</button>
             </div>
           </section>
@@ -318,6 +338,7 @@
             <div class="bga-actions">
               <button id="open-bga-review" type="button" data-i18n="openBgaReview">Open BGA review</button>
               <a class="button-link" href="tools/bga-replay-capture.user.js" download data-i18n="downloadBgaCaptureScript">Download capture script</a>
+              <a class="button-link" href="https://github.com/fffire-oss/Personal-homepage/blob/main/tools/bga-replay-crawler.mjs" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler script</a>
             </div>
             <p id="bga-capture-status" class="muted compact" data-i18n="bgaCaptureStatus">
               Credentials stay on BGA. This site does not ask for or store your BGA password.
@@ -328,6 +349,6 @@
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260522-bga-capture1"></script>
+    <script src="splendor-table.js?v=20260522-bga-table-import1"></script>
   </body>
 </html>
