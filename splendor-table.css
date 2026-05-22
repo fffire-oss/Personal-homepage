@@ -719,7 +719,7 @@ body:not(.game-active) .board-progress {
 .top-replay-controls {
   display: none;
   grid-column: 1 / -1;
-  grid-template-columns: minmax(92px, 1fr) repeat(4, auto);
+  grid-template-columns: minmax(92px, 1fr) repeat(7, auto);
   gap: 7px;
   align-items: center;
   padding: 6px;
@@ -737,6 +737,27 @@ body.replay-mode .top-replay-controls {
   padding: 0 9px;
   font-size: 0.66rem;
   white-space: nowrap;
+}
+
+.replay-jump {
+  display: inline-grid;
+  grid-template-columns: auto 54px;
+  gap: 5px;
+  align-items: center;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 780;
+  white-space: nowrap;
+}
+
+.replay-jump input {
+  width: 54px;
+  min-height: 30px;
+  padding: 0 6px;
+  border-radius: 7px;
+  font-size: 0.66rem;
+  text-align: center;
 }
 
 #replay-status {
@@ -2579,6 +2600,20 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     font-size: clamp(0.52rem, 2.35vw, 0.62rem);
   }
 
+  .replay-jump {
+    grid-column: span 2;
+    grid-template-columns: auto minmax(42px, 1fr);
+    gap: 4px;
+    font-size: clamp(0.5rem, 2.25vw, 0.58rem);
+  }
+
+  .replay-jump input {
+    width: 100%;
+    min-height: 27px;
+    padding: 0 4px;
+    font-size: clamp(0.52rem, 2.35vw, 0.62rem);
+  }
+
   #replay-status {
     font-size: clamp(0.54rem, 2.35vw, 0.66rem);
   }
@@ -2940,7 +2975,7 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   .players {
     grid-template-columns: none;
     grid-auto-flow: column;
-    grid-auto-columns: minmax(238px, 82vw);
+    grid-auto-columns: minmax(318px, 94vw);
     gap: 8px;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
@@ -2967,26 +3002,29 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   }
 
   .player-resource-panel {
-    grid-template-columns: max-content repeat(6, 24px);
-    gap: 4px 2px;
-    padding: 5px;
+    grid-template-columns: minmax(60px, 72px) repeat(6, 30px);
+    gap: 4px 3px;
+    padding: 6px;
   }
 
   .player-resource-panel .label {
+    overflow: hidden;
     font-size: 0.58rem;
+    text-overflow: ellipsis;
   }
 
   .player-resource-panel .token {
-    min-width: 24px;
-    min-height: 24px;
+    width: 30px;
+    min-width: 30px;
+    min-height: 26px;
     padding: 0 2px;
-    font-size: 0.55rem;
+    font-size: 0.58rem;
   }
 
   .player-resource-panel .bonus-pill {
-    width: 24px;
-    min-height: 30px;
-    font-size: 0.58rem;
+    width: 30px;
+    min-height: 32px;
+    font-size: 0.6rem;
   }
 
   .player-resource-panel .bonus-label {
