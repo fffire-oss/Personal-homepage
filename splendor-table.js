@@ -255,6 +255,7 @@
       msgRandomAiEnabled: "DinoBoard smart AI supports 2-player tables; unsupported AI seats use random legal AI.",
       msgDinoBoardAiEnabled: "DinoBoard AI connected for {player}.",
       msgDinoBoardUnavailable: "DinoBoard AI unavailable: {message}",
+      msgCannotDisableActiveAi: "AI takeover cannot be disabled during that AI player's turn.",
       msgNoValidSavedTable: "No valid saved table found.",
       msgSavedResumed: "Saved table resumed.",
       msgSavedCleared: "Saved data cleared.",
@@ -1001,6 +1002,7 @@
     msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
     msgSelectLegalTake: "\u8bf7\u9009\u62e9 3 \u79cd\u4e0d\u540c\u7684\u975e\u91d1\u5e01\u5b9d\u77f3\uff1b\u5982\u679c\u94f6\u884c\u53ea\u5269\u5c11\u4e8e 3 \u79cd\u989c\u8272\uff0c\u5219\u9009\u5b8c\u6240\u6709\u53ef\u7528\u989c\u8272\uff1b\u6216\u4ece\u6570\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u91cc\u9009 2 \u679a\u3002",
     msgRandomAiEnabled: "\u5df2\u542f\u7528 AI \u63a5\u7ba1\uff1a2 \u4eba\u5c40\u4e2d\u5148\u9009\u4e2d\u7684 AI \u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6 AI \u4f7f\u7528\u968f\u673a\u7b56\u7565\u3002",
+    msgCannotDisableActiveAi: "\u8be5 AI \u73a9\u5bb6\u7684\u56de\u5408\u8fdb\u884c\u4e2d\uff0c\u6682\u65f6\u4e0d\u80fd\u5173\u95ed AI \u63a5\u7ba1\u3002",
     msgNoValidSavedTable: "没有找到有效存档。",
     msgSavedResumed: "已恢复存档桌面。",
     msgSavedCleared: "存档已清除。",
@@ -1054,6 +1056,7 @@
     msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
     msgSelectLegalTake: "\u8acb\u9078\u64c7 3 \u7a2e\u4e0d\u540c\u7684\u975e\u91d1\u5e63\u5bf6\u77f3\uff1b\u5982\u679c\u9280\u884c\u53ea\u5269\u5c11\u65bc 3 \u7a2e\u984f\u8272\uff0c\u5247\u9078\u5b8c\u6240\u6709\u53ef\u7528\u984f\u8272\uff1b\u6216\u5f9e\u6578\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u88e1\u9078 2 \u679a\u3002",
     msgRandomAiEnabled: "\u5df2\u555f\u7528 AI \u63a5\u7ba1\uff1a2 \u4eba\u5c40\u4e2d\u5148\u9078\u4e2d\u7684 AI \u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6 AI \u4f7f\u7528\u96a8\u6a5f\u7b56\u7565\u3002",
+    msgCannotDisableActiveAi: "\u8a72 AI \u73a9\u5bb6\u7684\u56de\u5408\u9032\u884c\u4e2d\uff0c\u66ab\u6642\u4e0d\u80fd\u95dc\u9589 AI \u63a5\u7ba1\u3002",
     returnTokens: "歸還寶石",
     returnTokensBody: "當前玩家必須把寶石歸還到 10 枚或更少，之後才會結算貴族或進入下一回合。",
     chooseOneNoble: "選擇一位貴族",
@@ -2257,6 +2260,11 @@ Object.assign(I18N.de, {
 
   function isAiPlayer(player) {
     return !!(player && player.ai && player.ai.enabled);
+  }
+
+  function aiToggleLockedForPlayer(playerIndex) {
+    var player = state && state.players && state.players[playerIndex];
+    return !!(state && state.mode !== "replay" && !state.gameOver && state.current === playerIndex && isAiPlayer(player));
   }
 
   function fallbackVisiblePlayerIndex() {
@@ -3871,10 +3879,13 @@ Object.assign(I18N.de, {
   function playerAiControlsHtml(player, playerIndex) {
     var ai = player.ai || { enabled: false, level: "balanced" };
     var level = normalizeAiLevel(ai.level || ai.mode);
+    var locked = ai.enabled && aiToggleLockedForPlayer(playerIndex);
+    var lockTitle = locked ? ' title="' + escapeHtml(t("msgCannotDisableActiveAi")) + '"' : "";
+    var lockAttrs = locked ? ' disabled aria-disabled="true"' : "";
     return [
-      '<div class="player-ai-control ' + (ai.enabled ? "active" : "") + '">',
+      '<div class="player-ai-control ' + (ai.enabled ? "active" : "") + '"' + lockTitle + '>',
       '<label class="ai-toggle compact-toggle">',
-      '<input type="checkbox" data-player-ai-toggle="' + playerIndex + '" ' + (ai.enabled ? "checked" : "") + ">",
+      '<input type="checkbox" data-player-ai-toggle="' + playerIndex + '" ' + (ai.enabled ? "checked" : "") + lockAttrs + ">",
       '<span data-i18n="aiTakeover">' + t("aiTakeover") + "</span>",
       "</label>",
       '<label class="ai-level compact-level">',
@@ -6070,6 +6081,11 @@ Object.assign(I18N.de, {
   function updatePlayerAi(playerIndex, enabled, level) {
     if (!state || !state.players[playerIndex]) return;
     var player = state.players[playerIndex];
+    if (!enabled && aiToggleLockedForPlayer(playerIndex)) {
+      showMessage(t("msgCannotDisableActiveAi"));
+      render();
+      return;
+    }
     var selectedLevel = normalizeAiLevel(level || player.ai && (player.ai.level || player.ai.mode));
     var selectedOrder = enabled
       ? player.ai && player.ai.selected_order || nextAiSelectionOrder()
