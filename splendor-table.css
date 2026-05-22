@@ -565,6 +565,12 @@ textarea {
   backdrop-filter: blur(18px);
 }
 
+.table-top-sentinel {
+  display: block;
+  height: 0;
+  pointer-events: none;
+}
+
 body:not(.game-active) .board-progress {
   display: none;
 }
@@ -2494,8 +2500,8 @@ body:not(.game-active) .board-progress {
   }
 
   .table-top-panel {
-    position: sticky;
-    top: max(6px, env(safe-area-inset-top));
+    position: relative;
+    top: auto;
     left: auto;
     z-index: 94;
     width: 100%;
@@ -2506,6 +2512,14 @@ body:not(.game-active) .board-progress {
     box-shadow:
       0 0 0 1px rgba(49, 215, 255, 0.08),
       0 18px 46px rgba(0, 0, 0, 0.48);
+  }
+
+  .table-top-panel.mobile-top-stuck {
+    position: fixed;
+    top: max(6px, env(safe-area-inset-top));
+    left: 50%;
+    width: min(100vw - 12px, 760px);
+    transform: translateX(-50%);
   }
 
   .step-panel {
