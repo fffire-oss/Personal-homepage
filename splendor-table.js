@@ -2850,6 +2850,34 @@ Object.assign(I18N.de, {
     root.style.setProperty("--table-top-dock-height", offset + "px");
   }
 
+  function clearMobileTopStick() {
+    var topPanel = byId("table-top-panel");
+    if (topPanel) topPanel.classList.remove("mobile-top-stuck");
+    if (el.tableTopSentinel) el.tableTopSentinel.style.height = "0px";
+  }
+
+  function syncMobileTopStick() {
+    var topPanel = byId("table-top-panel");
+    var sentinel = el.tableTopSentinel;
+    var gamePanel = el.gamePanel;
+    var isMobile = window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+    if (!state || !isMobile || !topPanel || !sentinel || !gamePanel || gamePanel.hidden || !topPanel.getBoundingClientRect) {
+      clearMobileTopStick();
+      return;
+    }
+    var doc = document.documentElement;
+    var scrollTop = window.pageYOffset || doc.scrollTop || document.body.scrollTop || 0;
+    var topOffset = 6;
+    var sentinelRect = sentinel.getBoundingClientRect();
+    var panelHeight = Math.ceil(topPanel.getBoundingClientRect().height || topPanel.offsetHeight || 0);
+    var gameRect = gamePanel.getBoundingClientRect();
+    var start = scrollTop + sentinelRect.top - topOffset;
+    var end = scrollTop + gameRect.bottom - panelHeight - topOffset - 14;
+    var shouldStick = scrollTop >= start && scrollTop <= end && panelHeight > 0;
+    topPanel.classList.toggle("mobile-top-stuck", shouldStick);
+    sentinel.style.height = shouldStick ? panelHeight + 8 + "px" : "0px";
+  }
+
   function updateBoardProgress() {
     var nav = byId("board-progress");
     if (!nav) return;
@@ -2909,6 +2937,7 @@ Object.assign(I18N.de, {
   }
 
   function handleWindowScroll() {
+    syncMobileTopStick();
     updateBoardProgress();
   }
 
@@ -2962,6 +2991,7 @@ Object.assign(I18N.de, {
     renderHandoffOverlay();
     syncDockWidth();
     syncTopDockOffset();
+    syncMobileTopStick();
     flushPendingFlight();
     updateBoardProgress();
     scheduleTurnTransitionTimer();
@@ -4756,6 +4786,7 @@ Object.assign(I18N.de, {
     window.addEventListener("resize", function () {
       syncDockWidth();
       syncTopDockOffset();
+      syncMobileTopStick();
       updateBoardProgress();
       closeTapPreviews();
       closeBonusPreviews();
@@ -4763,6 +4794,7 @@ Object.assign(I18N.de, {
     if (el.bankPanel) {
       el.bankPanel.addEventListener("toggle", function () {
         syncTopDockOffset();
+        syncMobileTopStick();
         updateBoardProgress();
       });
     }
@@ -5000,6 +5032,7 @@ Object.assign(I18N.de, {
       "resume-game",
       "clear-save",
       "game-panel",
+      "table-top-sentinel",
       "current-player",
       "round-label",
       "game-state-label",
