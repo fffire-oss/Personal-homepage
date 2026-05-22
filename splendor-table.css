@@ -1074,8 +1074,7 @@ body.market-sticky-active .market-panel {
   overflow: visible;
 }
 
-.side-panel section,
-.bga-panel {
+.side-panel section {
   padding: 12px;
 }
 
@@ -2233,11 +2232,27 @@ body.market-sticky-active .market-panel {
 }
 
 .bga-panel {
-  display: block;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+
+.bga-panel .panel-heading {
+  margin-bottom: 0;
+}
+
+.bga-panel > p.muted:not(.file-panel) {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(157, 184, 220, 0.14);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(174, 244, 255, 0.045), transparent),
+    rgba(255, 255, 255, 0.026);
 }
 
 .bga-actions {
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 @media (max-width: 1180px) {
