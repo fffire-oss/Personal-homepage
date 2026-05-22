@@ -102,6 +102,9 @@
       logRandomAi: "Random AI",
       logBlindReserve: "Blind reserve",
       logFaceUpReserve: "Face-up reserve",
+      handoffAction: "Action",
+      bonusCardsTitle: "{color} cards",
+      bonusCardsEmpty: "No purchased cards in this color.",
       showHide: "Show / hide",
       ruleGuardrails: "Rule guardrails",
       ruleGuardrailsBody: "One action per turn: take exactly 3 different non-gold tokens, take exactly 2 matching non-gold tokens from a stack that had at least 4, reserve one card with gold if available, or buy one market/reserved card. The first player to 15 prestige triggers the final round so all players get equal turns. Ties use fewer purchased cards only; remaining ties are shared.",
@@ -1361,6 +1364,12 @@ Object.assign(I18N.de, {
     msgContinueFromReplay: "\u5df2\u5c06\u5f53\u524d\u56de\u653e\u8282\u70b9\u8f6c\u4e3a\u53ef\u7ee7\u7eed\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8bf7\u91cd\u65b0\u4ece\u5934\u8f7d\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
+  Object.assign(I18N["zh-Hans"], {
+    handoffAction: "\u52a8\u4f5c",
+    bonusCardsTitle: "{color} \u5361\u724c",
+    bonusCardsEmpty: "\u8fd8\u6ca1\u6709\u8fd9\u4e2a\u989c\u8272\u7684\u5df2\u8d2d\u5361\u3002"
+  });
+
   Object.assign(I18N["zh-Hant"], {
     buyShort: "\u8cb7",
     reserveShort: "\u7d04",
@@ -1371,6 +1380,12 @@ Object.assign(I18N.de, {
     startReplayBody: "\u532f\u5165\u5b8c\u6574\u56de\u653e\u93c8\u5f8c\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u500b\u8a18\u9304\u9ede\u7e7c\u7e8c\u904a\u6232\u3002",
     continueFromReplay: "\u5f9e\u6b64\u7e7c\u7e8c",
     msgContinueFromReplay: "\u5df2\u5c07\u7576\u524d\u56de\u653e\u7bc0\u9ede\u8f49\u70ba\u53ef\u7e7c\u7e8c\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8acb\u91cd\u65b0\u5f9e\u982d\u8f09\u5165\u4fdd\u7559\u7684 JSON\u3002"
+  });
+
+  Object.assign(I18N["zh-Hant"], {
+    handoffAction: "\u52d5\u4f5c",
+    bonusCardsTitle: "{color} \u5361\u724c",
+    bonusCardsEmpty: "\u9084\u6c92\u6709\u9019\u500b\u984f\u8272\u7684\u5df2\u8cfc\u5361\u3002"
   });
 
   Object.assign(I18N.ja, {
@@ -2021,6 +2036,21 @@ Object.assign(I18N.de, {
     };
   }
 
+  function queueFlightFromSelector(selector, color, label, targetSelector) {
+    queueFlightFromElement(selector ? document.querySelector(selector) : null, color, label, targetSelector);
+  }
+
+  function cardElementForFlight(card) {
+    if (!card) return null;
+    return Array.from(document.querySelectorAll("[data-card-id]")).find(function (node) {
+      return node.dataset.cardId === card.id;
+    }) || null;
+  }
+
+  function playerPanelTarget(suffix) {
+    return '.player-card[data-player-index="' + state.current + '"] ' + suffix;
+  }
+
   function flushPendingFlight() {
     if (!pendingFlight || !document.body) return;
     var flight = pendingFlight;
@@ -2039,8 +2069,8 @@ Object.assign(I18N.de, {
       node.style.setProperty("--from-y", flight.from.y + "px");
       node.style.setProperty("--to-x", rect.left + rect.width / 2 + "px");
       node.style.setProperty("--to-y", rect.top + rect.height / 2 + "px");
-      node.style.setProperty("--w", Math.max(54, flight.from.width * 0.7) + "px");
-      node.style.setProperty("--h", Math.max(74, flight.from.height * 0.7) + "px");
+      node.style.setProperty("--w", Math.max(62, flight.from.width * 0.82) + "px");
+      node.style.setProperty("--h", Math.max(82, flight.from.height * 0.82) + "px");
       node.textContent = flight.label;
       document.body.append(node);
       node.addEventListener("animationend", function () {
@@ -2048,7 +2078,7 @@ Object.assign(I18N.de, {
       }, { once: true });
       window.setTimeout(function () {
         if (node.parentNode) node.remove();
-      }, 900);
+      }, 1600);
     });
   }
 
@@ -2079,17 +2109,33 @@ Object.assign(I18N.de, {
     return parts.length ? parts.join("") : '<span class="muted">Free</span>';
   }
 
-  function bonusesHtml(counts) {
+  function bonusCardsPreviewHtml(player, color) {
+    if (!player) return "";
+    var cards = player.purchased.filter(function (card) {
+      return card.color === color;
+    });
+    var title = t("bonusCardsTitle", { color: TOKEN_LABEL[color] });
+    var body = cards.length ? cards.map(function (card) {
+      return '<span class="bonus-card-row"><strong>' + escapeHtml(card.id) + '</strong><span>' + t("tier") + " " + card.tier + " / " + card.points + " " + t("prestige") + "</span></span>";
+    }).join("") : '<span class="muted compact">' + t("bonusCardsEmpty") + "</span>";
+    return '<span class="bonus-preview" role="tooltip"><span class="bonus-preview-title">' + escapeHtml(title) + "</span>" + body + "</span>";
+  }
+
+  function bonusesHtml(counts, player) {
     return COLORS.map(function (color) {
-      return '<span class="bonus-pill" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + (counts[color] || 0) + '"><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span>' + (counts[color] || 0) + "</span></span>";
+      var previewAttrs = player ? ' data-bonus-preview-toggle="true" tabindex="0" role="button"' : "";
+      return '<span class="bonus-pill" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + (counts[color] || 0) + '"' + previewAttrs + '><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span>' + (counts[color] || 0) + "</span>" + bonusCardsPreviewHtml(player, color) + "</span>";
     }).join("");
   }
 
-  function tokensHtml(counts, asButtons, actionName) {
+  function tokensHtml(counts, asButtons, actionName, compact) {
     return ALL_TOKENS.map(function (color) {
       var value = Number(counts[color]) || 0;
       if (asButtons) {
         return '<button class="token-button" type="button" data-' + actionName + '="' + color + '" data-color="' + color + '" style="' + gemStyle(color) + '" ' + (value <= 0 ? "disabled" : "") + ">" + TOKEN_LABEL[color] + " " + value + "</button>";
+      }
+      if (compact) {
+        return '<span class="token token-compact" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " token " + value + '"><span>' + value + "</span></span>";
       }
       return '<span class="token" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + " " + value + "</span>";
     }).join("");
@@ -2333,8 +2379,8 @@ Object.assign(I18N.de, {
     var playerIndex = displayCurrentIndex();
     if (!player) return;
     el.activeHandMeta.textContent = player.name + " (" + player.reserved.length + "/3)";
-    el.activeTokenRow.innerHTML = tokensHtml(player.tokens, false);
-    el.activeBonusRow.innerHTML = bonusesHtml(player.bonuses);
+    el.activeTokenRow.innerHTML = tokensHtml(player.tokens, false, null, true);
+    el.activeBonusRow.innerHTML = bonusesHtml(player.bonuses, player);
     if (!player.reserved.length) {
       el.activeReserved.innerHTML = '<span class="muted">' + t("noActiveReserved") + "</span>";
       return;
@@ -2362,12 +2408,12 @@ Object.assign(I18N.de, {
       var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : t("none");
       var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t("aiBadgeFormat", { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
-        '<article class="player-card ' + (playerIndex === visibleIndex ? "active" : "") + '">',
+        '<article class="player-card ' + (playerIndex === visibleIndex ? "active" : "") + '" data-player-index="' + playerIndex + '">',
         '<div class="player-top"><div><h3>' + escapeHtml(player.name) + "</h3>" + aiBadge + '</div><strong class="score-line">' + scoreFor(player) + " " + t("prestige") + "</strong></div>",
         playerAiControlsHtml(player, playerIndex),
         '<div class="player-resource-panel">',
-        '<span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false) + "</div>",
-        '<span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses) + "</div>",
+        '<span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false, null, true) + "</div>",
+        '<span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses, player) + "</div>",
         "</div>",
         '<div><span class="label">' + t("reserved") + " (" + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
         '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: nobleText })) + "</span></div>",
@@ -2558,6 +2604,10 @@ Object.assign(I18N.de, {
   }
 
   function renderLogMoveBody(move) {
+    return renderMoveBody(move, logMode);
+  }
+
+  function renderMoveBody(move, mode) {
     var args = move.args || {};
     if (move.type === "takeTokens") {
       return logTokenSet((args.colors || []).reduce(function (counts, color) {
@@ -2569,7 +2619,7 @@ Object.assign(I18N.de, {
       return logTokenChip(args.color, 1, false);
     }
     if (move.type === "reserveMarket" || move.type === "reserveDeck") {
-      var hiddenReserve = logMode === "safe" && move.type === "reserveDeck";
+      var hiddenReserve = mode === "safe" && move.type === "reserveDeck";
       return [
         '<span class="log-source-chip">' + escapeHtml(t(move.type === "reserveDeck" ? "logBlindReserve" : "logFaceUpReserve")) + "</span>",
         logCardBadge(args.card_id, { hidden: hiddenReserve, tier: args.tier }),
@@ -2577,7 +2627,7 @@ Object.assign(I18N.de, {
       ].filter(Boolean).join("");
     }
     if (move.type === "buyMarket" || move.type === "buyReserved") {
-      var hiddenBuy = logMode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
+      var hiddenBuy = mode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
       return [
         logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier }),
         args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
@@ -2588,6 +2638,23 @@ Object.assign(I18N.de, {
       return '<span class="log-source-chip">' + escapeHtml(args.noble_id || t("logNobleTitle")) + "</span>";
     }
     return move.notification && move.notification.log ? escapeHtml(move.notification.log) : escapeHtml(t("logGameTitle"));
+  }
+
+  function renderTransitionAction(transition) {
+    if (!transition || !transition.type) return "";
+    var move = {
+      type: transition.type,
+      player_id: transition.actor && transition.actor.id,
+      args: transition.args || {},
+      notification: {
+        args: transition.actor ? { player_name: transition.actor.name } : {}
+      }
+    };
+    return [
+      '<span class="handoff-action-label">' + escapeHtml(t("handoffAction")) + "</span>",
+      '<span class="handoff-action-title">' + escapeHtml(moveTitle(move)) + "</span>",
+      renderMoveBody(move, "safe")
+    ].filter(Boolean).join("");
   }
 
   function renderLogMove(move) {
@@ -3023,6 +3090,12 @@ Object.assign(I18N.de, {
     });
   }
 
+  function closeBonusPreviews(except) {
+    Array.from(document.querySelectorAll(".bonus-pill.preview-open")).forEach(function (pill) {
+      if (pill !== except) pill.classList.remove("preview-open");
+    });
+  }
+
   function aiLevelLabel(level) {
     var keyByLevel = {
       easy: "aiLevelEasy",
@@ -3147,6 +3220,7 @@ Object.assign(I18N.de, {
     }
     var player = activePlayer();
     var taken = pendingTake.slice();
+    queueFlightFromSelector(".bank-tokens", taken[0] || "gold", t("tokens"), playerPanelTarget(".player-resource-panel"));
     taken.forEach(function (color) {
       state.bank[color] -= 1;
       player.tokens[color] += 1;
@@ -3173,7 +3247,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), ".active-hand-panel");
+    queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), playerPanelTarget(".reserved-list"));
     state.market[tier].splice(index, 1);
     refillMarket(state, tier);
     reserveCard(player, card, "reserveMarket", { card_id: card.id, tier: tier });
@@ -3193,7 +3267,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    queueFlightFromElement(trigger && trigger.closest(".deck-box"), "gold", t("blind"), ".active-hand-panel");
+    queueFlightFromElement(trigger && trigger.closest(".deck-box"), "gold", t("blind"), playerPanelTarget(".reserved-list"));
     reserveCard(player, card, "reserveDeck", { card_id: card.id, tier: tier });
   }
 
@@ -3292,6 +3366,7 @@ Object.assign(I18N.de, {
 
   function completePurchase(context, payment, sourceElement, options) {
     var card = context.card;
+    var flightSource = sourceElement || cardElementForFlight(card) || el.market;
     var args = {
       card_id: card.id,
       payment: paymentMoveArgs(payment)
@@ -3310,7 +3385,7 @@ Object.assign(I18N.de, {
       args.reserved_from = card.reserved_from || "market";
       context.player.reserved.splice(context.index, 1);
     }
-    queueFlightFromElement(sourceElement, card.color, t("buy"), ".player-card.active .purchased-summary");
+    queueFlightFromElement(flightSource, card.color, t("buy"), playerPanelTarget(".purchased-summary"));
     pendingPayment = null;
     showMessage("");
     afterAction(context.type, args);
@@ -3460,6 +3535,7 @@ Object.assign(I18N.de, {
     if (!mode) {
       el.handoffOverlay.hidden = true;
       el.handoffOverlay.classList.remove("ai-thinking");
+      if (el.handoffAction) el.handoffAction.innerHTML = "";
       clearOverlayRefreshTimer();
       return;
     }
@@ -3467,6 +3543,9 @@ Object.assign(I18N.de, {
     var player = mode === "ai" && state.players[state.current] ? state.players[state.current].name : "";
     el.handoffTitle.textContent = mode === "ai" ? t("gameAiThinking") : t("gameTurnTransition");
     el.handoffBody.textContent = mode === "ai" ? t("msgAiThinking", { player: player }) : t("msgSwitchingPlayer", { seconds: seconds });
+    if (el.handoffAction) {
+      el.handoffAction.innerHTML = mode === "turn" ? renderTransitionAction(state.turnTransition) : "";
+    }
     el.handoffCountdown.textContent = String(seconds);
     el.handoffOverlay.hidden = false;
     el.handoffOverlay.classList.toggle("ai-thinking", mode === "ai");
@@ -4072,12 +4151,14 @@ Object.assign(I18N.de, {
     window.addEventListener("scroll", handleWindowScroll, { passive: true });
     window.addEventListener("scroll", function () {
       if (reservePreviewTapMode()) closeTapPreviews();
+      closeBonusPreviews();
     }, { passive: true });
     window.addEventListener("resize", function () {
       syncDockWidth();
       updateBoardProgress();
       clearMarketStickyFeedback();
       closeTapPreviews();
+      closeBonusPreviews();
     });
     window.addEventListener("wheel", handleMarketWheel, { passive: false });
     window.addEventListener("touchstart", handleMarketTouchStart, { passive: true });
@@ -4186,6 +4267,15 @@ Object.assign(I18N.de, {
       }
     });
     el.players.addEventListener("click", function (event) {
+      var bonusPreview = event.target.closest("[data-bonus-preview-toggle]");
+      if (bonusPreview) {
+        var bonusOpen = bonusPreview.classList.contains("preview-open");
+        closeBonusPreviews(bonusPreview);
+        closeTapPreviews();
+        bonusPreview.classList.toggle("preview-open", !bonusOpen);
+        event.stopPropagation();
+        return;
+      }
       var reservePreview = event.target.closest("[data-reserve-preview-toggle]");
       if (reservePreview && reservePreviewTapMode()) {
         var alreadyOpen = reservePreview.classList.contains("preview-open");
@@ -4199,6 +4289,7 @@ Object.assign(I18N.de, {
     });
     document.addEventListener("click", function () {
       if (reservePreviewTapMode()) closeTapPreviews();
+      closeBonusPreviews();
     });
     [el.logSafeMode, el.logFullMode].forEach(function (button) {
       if (!button) return;
@@ -4232,6 +4323,15 @@ Object.assign(I18N.de, {
     el.activeReserved.addEventListener("click", function (event) {
       var button = event.target.closest("[data-buy-reserved]");
       if (button) buyReserved(button.dataset.buyReserved, button);
+    });
+    el.activeBonusRow.addEventListener("click", function (event) {
+      var bonusPreview = event.target.closest("[data-bonus-preview-toggle]");
+      if (!bonusPreview) return;
+      var bonusOpen = bonusPreview.classList.contains("preview-open");
+      closeBonusPreviews(bonusPreview);
+      closeTapPreviews();
+      bonusPreview.classList.toggle("preview-open", !bonusOpen);
+      event.stopPropagation();
     });
     el.discardTokens.addEventListener("click", function (event) {
       var button = event.target.closest("[data-discard-color]");
@@ -4279,6 +4379,7 @@ Object.assign(I18N.de, {
       "handoff-overlay",
       "handoff-title",
       "handoff-body",
+      "handoff-action",
       "handoff-countdown",
       "message",
       "discard-panel",
