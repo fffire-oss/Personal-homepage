@@ -143,6 +143,13 @@
               <span class="label" data-i18n="move">Move</span>
               <strong id="move-label">0</strong>
             </div>
+            <div id="top-replay-controls" class="top-replay-controls">
+              <span id="replay-status" class="muted compact">Live table</span>
+              <button id="prev-move" type="button" data-i18n="prevMove">Prev move</button>
+              <button id="next-move" type="button" data-i18n="nextMove">Next move</button>
+              <button id="continue-replay" type="button" data-i18n="continueFromReplay">Continue from here</button>
+              <button id="exit-replay" type="button" data-i18n="exitReplay">Exit replay</button>
+            </div>
             <div class="status-actions">
               <button id="restart-game" type="button" data-i18n="restartGame">Restart</button>
             </div>
@@ -310,7 +317,6 @@
               <p class="eyebrow" data-i18n="bgaTools">BGA-style tools</p>
               <h2 id="bga-title" data-i18n="exportImportReplay">Export, import, and replay</h2>
             </div>
-            <span id="replay-status" class="muted compact">Live table</span>
           </div>
           <p class="muted" data-i18n="bgaDescription">
             This uses a stable ZephyrLabs schema inspired by public BGA Studio
@@ -324,10 +330,6 @@
             <button id="import-state" type="button" data-i18n="importState">Import state</button>
             <button id="export-replay" type="button" data-i18n="exportReplay">Export replay</button>
             <button id="load-replay" type="button" data-i18n="loadReplay">Load replay</button>
-            <button id="prev-move" type="button" data-i18n="prevMove">Prev move</button>
-            <button id="next-move" type="button" data-i18n="nextMove">Next move</button>
-            <button id="continue-replay" type="button" data-i18n="continueFromReplay">Continue from here</button>
-            <button id="exit-replay" type="button" data-i18n="exitReplay">Exit replay</button>
           </div>
           <p id="bga-file-status" class="file-panel muted compact" data-i18n="fileIoHint">
             Exports download as .json files. Import buttons read a selected .json file directly.
