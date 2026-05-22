@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css?v=20260522-ja-wrap1" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260522-bga-capture1" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -304,11 +304,30 @@
           <p id="bga-file-status" class="file-panel muted compact" data-i18n="fileIoHint">
             Exports download as .json files. Import buttons read a selected .json file directly.
           </p>
+          <section class="bga-capture-panel" aria-labelledby="bga-capture-title">
+            <div>
+              <h3 id="bga-capture-title" data-i18n="bgaCaptureTitle">BGA replay capture</h3>
+              <p class="muted compact" data-i18n="bgaCaptureBody">
+                Install the userscript, open the official BGA review page with your own account, then export the browser-visible replay data as JSON.
+              </p>
+            </div>
+            <label class="bga-table-field">
+              <span data-i18n="bgaTableIdLabel">BGA table ID</span>
+              <input id="bga-table-id" inputmode="numeric" autocomplete="off" placeholder="123456789" data-i18n-placeholder="bgaTableIdPlaceholder" />
+            </label>
+            <div class="bga-actions">
+              <button id="open-bga-review" type="button" data-i18n="openBgaReview">Open BGA review</button>
+              <a class="button-link" href="tools/bga-replay-capture.user.js" download data-i18n="downloadBgaCaptureScript">Download capture script</a>
+            </div>
+            <p id="bga-capture-status" class="muted compact" data-i18n="bgaCaptureStatus">
+              Credentials stay on BGA. This site does not ask for or store your BGA password.
+            </p>
+          </section>
           <textarea id="bga-json" hidden spellcheck="false" placeholder="Exported JSON appears here. Paste state or replay JSON here before importing/loading." data-i18n-placeholder="jsonPlaceholder"></textarea>
         </section>
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260522-ja-wrap1"></script>
+    <script src="splendor-table.js?v=20260522-bga-capture1"></script>
   </body>
 </html>
