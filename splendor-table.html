@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css?v=20260522-mobile-boundary-sticky1" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260522-file-io1" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -81,13 +81,13 @@
           </form>
 
           <section id="start-replay-panel" class="start-replay-panel start-mode-panel" hidden>
-            <label>
-              <span data-i18n="replayJsonLabel">Replay JSON</span>
-              <textarea id="start-replay-json" spellcheck="false" placeholder="Paste a replay JSON payload here." data-i18n-placeholder="startReplayPlaceholder"></textarea>
-            </label>
-            <p class="muted compact" data-i18n="startReplayBody">
-              Load a complete replay chain, step through it, then continue from any visible record if needed.
-            </p>
+            <div class="file-panel">
+              <span data-i18n="replayFileLabel">Replay JSON file</span>
+              <p id="start-replay-file-status" class="muted compact" data-i18n="startReplayBody">
+                Load a complete replay chain, step through it, then continue from any visible record if needed.
+              </p>
+            </div>
+            <textarea id="start-replay-json" hidden spellcheck="false" placeholder="Paste a replay JSON payload here." data-i18n-placeholder="startReplayPlaceholder"></textarea>
             <div class="form-actions">
               <button id="start-load-replay" type="button" class="primary" data-i18n="loadReplay">Load replay</button>
               <button id="start-clear-replay" type="button" data-i18n="clear">Clear</button>
@@ -301,11 +301,14 @@
             <button id="continue-replay" type="button" data-i18n="continueFromReplay">Continue from here</button>
             <button id="exit-replay" type="button" data-i18n="exitReplay">Exit replay</button>
           </div>
-          <textarea id="bga-json" spellcheck="false" placeholder="Exported JSON appears here. Paste state or replay JSON here before importing/loading." data-i18n-placeholder="jsonPlaceholder"></textarea>
+          <p id="bga-file-status" class="file-panel muted compact" data-i18n="fileIoHint">
+            Exports download as .json files. Import buttons read a selected .json file directly.
+          </p>
+          <textarea id="bga-json" hidden spellcheck="false" placeholder="Exported JSON appears here. Paste state or replay JSON here before importing/loading." data-i18n-placeholder="jsonPlaceholder"></textarea>
         </section>
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260522-mobile-boundary-sticky1"></script>
+    <script src="splendor-table.js?v=20260522-file-io1"></script>
   </body>
 </html>
