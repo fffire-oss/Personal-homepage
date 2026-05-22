@@ -1098,6 +1098,7 @@ body.replay-mode .top-replay-controls {
 }
 
 .market-subpanel {
+  min-width: 0;
   padding: 10px;
   border: 1px solid rgba(174, 244, 255, 0.12);
   border-radius: 8px;
@@ -1111,6 +1112,7 @@ body.replay-mode .top-replay-controls {
   justify-content: space-between;
   gap: 10px;
   align-items: flex-start;
+  min-width: 0;
   margin-bottom: 8px;
 }
 
@@ -2819,6 +2821,9 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   }
 
   .market-subpanel {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
     padding: 8px;
   }
 
@@ -2970,10 +2975,17 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   }
 
   .noble-row {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     flex-wrap: nowrap;
     gap: 6px;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
     padding-bottom: 4px;
   }
 
@@ -2982,6 +2994,7 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     width: 116px;
     gap: 6px;
     padding: 8px;
+    scroll-snap-align: start;
   }
 
   .noble-card strong {
