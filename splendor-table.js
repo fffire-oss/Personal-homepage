@@ -38,6 +38,11 @@
       setupEyebrow: "Hot-seat setup",
       startTitle: "Start a local game",
       startDescription: "Generic, rules-compatible cards and tiles are used. No official artwork, logos, card scans, or Board Game Arena assets are included.",
+      startModeNew: "New game",
+      startModeReplay: "Import replay",
+      replayJsonLabel: "Replay JSON",
+      startReplayPlaceholder: "Paste a complete replay JSON payload here.",
+      startReplayBody: "Load a complete replay chain, step through it, then continue from any visible record if needed.",
       players: "Players",
       players2: "2 players",
       players3: "3 players",
@@ -113,6 +118,7 @@
       loadReplay: "Load replay",
       prevMove: "Prev move",
       nextMove: "Next move",
+      continueFromReplay: "Continue from here",
       exitReplay: "Exit replay",
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
       affordable: "Affordable",
@@ -191,6 +197,7 @@
       msgLoadReplayExpected: "Load replay failed: expected { schema, gamedatas, moves }.",
       msgLoadReplaySource: "Load replay failed: gamedatas.source_state is required for this static viewer.",
       msgReplayLoaded: "Replay loaded. Use Next move and Prev move to inspect snapshots.",
+      msgContinueFromReplay: "Replay snapshot converted to a live table. Reload the saved JSON to replay from the beginning.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReturnedLiveTable: "Returned to live table.",
@@ -1344,12 +1351,26 @@ Object.assign(I18N.de, {
 
   Object.assign(I18N["zh-Hans"], {
     buyShort: "\u4e70",
-    reserveShort: "\u7ea6"
+    reserveShort: "\u7ea6",
+    startModeNew: "\u65b0\u6e38\u620f",
+    startModeReplay: "\u5bfc\u5165\u56de\u653e",
+    replayJsonLabel: "\u56de\u653e JSON",
+    startReplayPlaceholder: "\u5728\u8fd9\u91cc\u7c98\u8d34\u5b8c\u6574\u7684\u56de\u653e JSON\u3002",
+    startReplayBody: "\u5bfc\u5165\u5b8c\u6574\u56de\u653e\u94fe\u540e\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u4e2a\u8bb0\u5f55\u70b9\u7ee7\u7eed\u6e38\u620f\u3002",
+    continueFromReplay: "\u4ece\u6b64\u7ee7\u7eed",
+    msgContinueFromReplay: "\u5df2\u5c06\u5f53\u524d\u56de\u653e\u8282\u70b9\u8f6c\u4e3a\u53ef\u7ee7\u7eed\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8bf7\u91cd\u65b0\u4ece\u5934\u8f7d\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
   Object.assign(I18N["zh-Hant"], {
     buyShort: "\u8cb7",
-    reserveShort: "\u7d04"
+    reserveShort: "\u7d04",
+    startModeNew: "\u65b0\u904a\u6232",
+    startModeReplay: "\u532f\u5165\u56de\u653e",
+    replayJsonLabel: "\u56de\u653e JSON",
+    startReplayPlaceholder: "\u5728\u9019\u88e1\u8cbc\u4e0a\u5b8c\u6574\u7684\u56de\u653e JSON\u3002",
+    startReplayBody: "\u532f\u5165\u5b8c\u6574\u56de\u653e\u93c8\u5f8c\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u500b\u8a18\u9304\u9ede\u7e7c\u7e8c\u904a\u6232\u3002",
+    continueFromReplay: "\u5f9e\u6b64\u7e7c\u7e8c",
+    msgContinueFromReplay: "\u5df2\u5c07\u7576\u524d\u56de\u653e\u7bc0\u9ede\u8f49\u70ba\u53ef\u7e7c\u7e8c\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8acb\u91cd\u65b0\u5f9e\u982d\u8f09\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
   Object.assign(I18N.ja, {
@@ -1399,6 +1420,7 @@ Object.assign(I18N.de, {
   var pendingTake = [];
   var pendingPayment = null;
   var logMode = "safe";
+  var startMode = "new";
   var messageText = "";
   var startMessageText = "";
   var messageKind = "";
@@ -1799,6 +1821,20 @@ Object.assign(I18N.de, {
     if (el.startMessage) {
       el.startMessage.textContent = startMessageText;
       el.startMessage.classList.toggle("ok", kind === "ok");
+    }
+  }
+
+  function setStartMode(mode) {
+    startMode = mode === "replay" ? "replay" : "new";
+    if (el.startForm) el.startForm.hidden = startMode !== "new";
+    if (el.startReplayPanel) el.startReplayPanel.hidden = startMode !== "replay";
+    if (el.startModeNew) {
+      el.startModeNew.classList.toggle("active", startMode === "new");
+      el.startModeNew.setAttribute("aria-selected", startMode === "new" ? "true" : "false");
+    }
+    if (el.startModeReplay) {
+      el.startModeReplay.classList.toggle("active", startMode === "replay");
+      el.startModeReplay.setAttribute("aria-selected", startMode === "replay" ? "true" : "false");
     }
   }
 
@@ -2589,6 +2625,7 @@ Object.assign(I18N.de, {
       el.replayStatus.textContent = t("liveTable");
       el.prevMove.disabled = true;
       el.nextMove.disabled = true;
+      if (el.continueReplay) el.continueReplay.disabled = true;
       el.exitReplay.disabled = true;
       return;
     }
@@ -2596,6 +2633,7 @@ Object.assign(I18N.de, {
     el.replayStatus.textContent = t("replayMove", { current: Math.max(0, replayIndex + 1), total: total });
     el.prevMove.disabled = replayIndex < 0;
     el.nextMove.disabled = !replayData || replayIndex >= total - 1;
+    if (el.continueReplay) el.continueReplay.disabled = !replayData;
     el.exitReplay.disabled = false;
   }
 
@@ -2679,20 +2717,16 @@ Object.assign(I18N.de, {
     var market = byId("market-panel");
     if (!market) return null;
     var marketRect = market.getBoundingClientRect();
-    var topPanel = byId("table-top-panel");
-    var topRect = topPanel ? topPanel.getBoundingClientRect() : marketRect;
-    var top = Math.min(topRect.top, marketRect.top);
-    var bottom = Math.max(topRect.bottom, marketRect.bottom);
     return {
-      top: top,
-      bottom: bottom,
-      height: Math.max(bottom - top, marketRect.height),
-      center: top + Math.max(bottom - top, marketRect.height) / 2
+      top: marketRect.top,
+      bottom: marketRect.bottom,
+      height: marketRect.height,
+      center: marketRect.top + marketRect.height / 2
     };
   }
 
   function stickyViewportAnchor() {
-    return window.innerHeight * 0.43;
+    return window.innerHeight * (compactViewport() ? 0.56 : 0.43);
   }
 
   function marketHasViewportCenter() {
@@ -2701,7 +2735,9 @@ Object.assign(I18N.de, {
     var rect = stickyFrameRect();
     if (!rect) return false;
     var viewportCenter = stickyViewportAnchor();
-    var centerBand = Math.min(window.innerHeight * 0.16, Math.max(76, rect.height * 0.08));
+    var centerBand = compactViewport()
+      ? Math.min(window.innerHeight * 0.1, Math.max(44, rect.height * 0.05))
+      : Math.min(window.innerHeight * 0.09, Math.max(48, rect.height * 0.045));
     var centered = Math.abs(rect.center - viewportCenter) <= centerBand;
     if (!centered) {
       marketStickyDisabledUntilExit = false;
@@ -2724,7 +2760,7 @@ Object.assign(I18N.de, {
     if (compactViewport()) {
       return Math.max(110, Math.min(window.innerHeight * 0.34, rect.height * 0.34));
     }
-    return Math.max(260, rect.height * 0.8);
+    return Math.max(180, rect.height * 0.44);
   }
 
   function setMarketStickyFeedback() {
@@ -2909,6 +2945,7 @@ Object.assign(I18N.de, {
     if (!state) {
       el.startPanel.hidden = false;
       el.gamePanel.hidden = true;
+      setStartMode(startMode);
       renderHandoffOverlay();
       renderReplayStatus();
       return;
@@ -3730,16 +3767,28 @@ Object.assign(I18N.de, {
   }
 
   function loadReplayJson() {
-    var payload = parseJsonTextarea();
+    var payload = parseJsonTextarea(el.bgaJson, false);
     if (!payload) return;
+    loadReplayPayload(payload, el.bgaJson.value, false);
+  }
+
+  function loadReplayFromStart() {
+    var payload = parseJsonTextarea(el.startReplayJson, true);
+    if (!payload) return;
+    loadReplayPayload(payload, el.startReplayJson.value, true);
+  }
+
+  function loadReplayPayload(payload, rawText, fromStart) {
     if (payload.schema !== SCHEMA || !payload.gamedatas || !Array.isArray(payload.moves)) {
-      showMessage(t("msgLoadReplayExpected"));
+      if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
+      else showMessage(t("msgLoadReplayExpected"));
       render();
       return;
     }
     var initial = stateFromGamedatas(payload.gamedatas);
     if (!initial) {
-      showMessage(t("msgLoadReplaySource"));
+      if (fromStart) showStartMessage(t("msgLoadReplaySource"));
+      else showMessage(t("msgLoadReplaySource"));
       render();
       return;
     }
@@ -3753,8 +3802,13 @@ Object.assign(I18N.de, {
     state.mode = "replay";
     pendingTake = [];
     pendingPayment = null;
+    if (el.bgaJson) {
+      el.bgaJson.value = rawText || JSON.stringify(payload, null, 2);
+    }
+    showStartMessage("");
     showMessage(t("msgReplayLoaded"), "ok");
     render();
+    scrollToGameTable();
   }
 
   function stepReplay(delta) {
@@ -3785,11 +3839,34 @@ Object.assign(I18N.de, {
     render();
   }
 
-  function parseJsonTextarea() {
+  function continueReplayFromHere() {
+    if (!state || state.mode !== "replay" || !replayData) return;
+    var preservedReplay = clone(replayData);
+    var continued = clone(state);
+    continued.mode = "live";
+    continued.imported_replay = preservedReplay;
+    continued.imported_replay_resume_index = replayIndex;
+    state = continued;
+    liveStateBeforeReplay = null;
+    replayData = null;
+    replayIndex = -1;
+    pendingTake = [];
+    pendingPayment = null;
+    if (el.bgaJson) {
+      el.bgaJson.value = JSON.stringify(preservedReplay, null, 2);
+    }
+    showMessage(t("msgContinueFromReplay"), "ok");
+    saveState();
+    render();
+  }
+
+  function parseJsonTextarea(source, startScope) {
     try {
-      return JSON.parse(el.bgaJson.value);
+      return JSON.parse((source || el.bgaJson).value);
     } catch (error) {
-      showMessage(t("msgJsonParseFailed", { message: error.message }));
+      var message = t("msgJsonParseFailed", { message: error.message });
+      if (startScope) showStartMessage(message);
+      else showMessage(message);
       render();
       return null;
     }
@@ -4013,6 +4090,20 @@ Object.assign(I18N.de, {
       applyTranslations();
       render();
     });
+    document.querySelectorAll("[data-start-mode]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        setStartMode(button.dataset.startMode);
+      });
+    });
+    if (el.startLoadReplay) {
+      el.startLoadReplay.addEventListener("click", loadReplayFromStart);
+    }
+    if (el.startClearReplay) {
+      el.startClearReplay.addEventListener("click", function () {
+        el.startReplayJson.value = "";
+        showStartMessage("");
+      });
+    }
     el.playerCount.addEventListener("change", renderNameFields);
     el.startForm.addEventListener("submit", function (event) {
       event.preventDefault();
@@ -4156,12 +4247,21 @@ Object.assign(I18N.de, {
     el.loadReplay.addEventListener("click", loadReplayJson);
     el.prevMove.addEventListener("click", function () { stepReplay(-1); });
     el.nextMove.addEventListener("click", function () { stepReplay(1); });
+    if (el.continueReplay) {
+      el.continueReplay.addEventListener("click", continueReplayFromHere);
+    }
     el.exitReplay.addEventListener("click", exitReplay);
   }
 
   function collectElements() {
     [
       "start-panel",
+      "start-mode-new",
+      "start-mode-replay",
+      "start-replay-panel",
+      "start-replay-json",
+      "start-load-replay",
+      "start-clear-replay",
       "language-select",
       "start-form",
       "start-game",
@@ -4217,6 +4317,7 @@ Object.assign(I18N.de, {
       "load-replay",
       "prev-move",
       "next-move",
+      "continue-replay",
       "exit-replay",
       "replay-status"
     ].forEach(function (id) {

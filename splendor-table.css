@@ -311,13 +311,44 @@ body.game-active main {
   line-height: 0.98;
 }
 
+.start-workspace {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.start-mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  padding: 5px;
+  border: 1px solid rgba(174, 244, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.start-mode-tabs button {
+  min-height: 36px;
+  border-color: transparent;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+.start-mode-tabs button.active {
+  color: #061015;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+}
+
 .start-form,
-.name-fields {
+.name-fields,
+.start-replay-panel {
   display: grid;
   gap: 14px;
 }
 
-.start-form label {
+.start-form label,
+.start-replay-panel label {
   display: grid;
   gap: 7px;
   color: var(--muted);
@@ -325,8 +356,14 @@ body.game-active main {
   min-width: 0;
 }
 
-.start-form label > span {
+.start-form label > span,
+.start-replay-panel label > span {
   min-width: 0;
+}
+
+.start-replay-panel textarea {
+  min-height: 260px;
+  margin-top: 0;
 }
 
 .player-setup-row {
@@ -2116,12 +2153,10 @@ body.market-sticky-active .market-panel {
     max-width: 100%;
   }
 
-  .status-bar {
-    position: static;
-  }
-
   .table-top-panel {
-    position: static;
+    position: sticky;
+    top: 0;
+    z-index: 76;
   }
 
   .status-bar {
