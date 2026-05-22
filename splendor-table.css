@@ -1393,6 +1393,13 @@ body:not(.game-active) .board-progress {
   transform: translateY(0) scale(1);
 }
 
+body.turn-locked .dev-card:hover .card-affordability,
+body.turn-locked .dev-card:focus-within .card-affordability {
+  opacity: 0;
+  filter: none;
+  transform: translateY(5px) scale(0.98);
+}
+
 .card-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1904,6 +1911,34 @@ body:not(.game-active) .board-progress {
   display: block;
   color: #eef8f8;
   font-size: 0.95rem;
+}
+
+#active-hand-meta {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.active-hand-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.055);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.active-hand-chip.token-count {
+  color: var(--gold);
+  border-color: rgba(255, 191, 69, 0.32);
+  background: rgba(255, 191, 69, 0.08);
 }
 
 .active-hand-toggle {
@@ -2681,6 +2716,16 @@ body:not(.game-active) .board-progress {
 
   .active-hand-summary {
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  #active-hand-meta {
+    justify-content: flex-end;
+  }
+
+  .active-hand-chip {
+    min-height: 24px;
+    padding: 3px 6px;
+    font-size: 0.64rem;
   }
 
   .active-hand-toggle {
