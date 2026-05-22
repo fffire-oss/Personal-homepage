@@ -58,6 +58,7 @@
       aiLevelBalanced: "Balanced",
       aiLevelExpert: "Expert",
       aiBadgeFormat: "DinoBoard AI: {level}",
+      randomAiBadgeFormat: "Random AI: {level}",
       startGame: "Start game",
       resumeSave: "Resume save",
       clearSave: "Clear save",
@@ -71,7 +72,7 @@
       move: "Move",
       aiPlayers: "AI players",
       aiUnavailableTitle: "DinoBoard AI",
-      aiUnavailableBody: "DinoBoard AI is enabled for 2-player tables with exactly one Smart AI seat.",
+      aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
       returnTokens: "Return tokens",
       returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
       chooseOneNoble: "Choose one noble",
@@ -102,7 +103,8 @@
       logUnknownCard: "Unknown card",
       logGoldTaken: "Gold taken",
       logPayment: "Payment",
-      logRandomAi: "DinoBoard AI",
+      logRandomAi: "Random AI",
+      logDinoBoardAi: "DinoBoard AI",
       logBlindReserve: "Blind reserve",
       logFaceUpReserve: "Face-up reserve",
       handoffAction: "Action",
@@ -250,7 +252,7 @@
       msgSwitchingPlayer: "Turn ends. Next player in {seconds}s.",
       msgAiThinking: "{player} is thinking.",
       msgReplayStepAnimating: "Replaying move {move} ({seconds}s).",
-      msgRandomAiEnabled: "Smart AI will connect to DinoBoard for supported 2-player games.",
+      msgRandomAiEnabled: "DinoBoard smart AI supports 2-player tables; unsupported AI seats use random legal AI.",
       msgDinoBoardAiEnabled: "DinoBoard AI connected for {player}.",
       msgDinoBoardUnavailable: "DinoBoard AI unavailable: {message}",
       msgNoValidSavedTable: "No valid saved table found.",
@@ -299,7 +301,7 @@
     move: "步数",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI \u4ec5\u652f\u6301 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u4e2a\u667a\u80fd AI \u5ea7\u4f4d\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须归还宝石，直到持有数量不超过 10 个，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -378,7 +380,7 @@
     clearSave: "清除存檔",
     currentPlayer: "當前玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI \u50c5\u652f\u63f4 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u500b\u667a\u6167 AI \u5ea7\u4f4d\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
     noTakeSelected: "尚未選擇拿取。",
     selectedTokens: "已選擇：{tokens}。合法拿取為 3 個不同顏色，或從數量不少於 4 的同色堆拿 2 個。",
     confirmTake: "確認拿取",
@@ -426,7 +428,7 @@
     move: "手番",
     aiPlayers: "AI プレイヤー",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI is enabled for 2-player tables with exactly one Smart AI seat.",
+    aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは所持トークンが10個以下になるまで返してから、貴族または次の手番を解決します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -512,7 +514,7 @@
     move: "Coup",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs avec exactement un siege Smart AI.",
+    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs. Si plusieurs sieges utilisent l'IA, le premier siege choisi utilise DinoBoard et les autres utilisent l'IA aleatoire.",
     returnTokens: "Rendre des jetons",
     chooseOneNoble: "Choisir un noble",
     bank: "Banque",
@@ -591,7 +593,7 @@
     move: "Zug",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische mit genau einem Smart-AI-Sitz aktiv.",
+    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische aktiv. Wenn mehrere Sitze KI verwenden, nutzt der zuerst ausgewaehlte Sitz DinoBoard und die anderen nutzen Zufalls-KI.",
     returnTokens: "Marker zurückgeben",
     chooseOneNoble: "Einen Adligen wählen",
     bank: "Bank",
@@ -663,7 +665,7 @@
     move: "Movimiento",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores con exactamente un asiento Smart AI.",
+    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores. Si varios asientos usan IA, el primer asiento elegido usa DinoBoard y los demas usan IA aleatoria.",
     returnTokens: "Devolver fichas",
     chooseOneNoble: "Elegir un noble",
     bank: "Banco",
@@ -769,7 +771,7 @@
     move: "\u6b65\u6570",
     aiPlayers: "AI \u73a9\u5bb6",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI \u4ec5\u652f\u6301 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u4e2a\u667a\u80fd AI \u5ea7\u4f4d\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
     bank: "\u94f6\u884c",
     confirmTake: "\u786e\u8ba4\u62ff\u53d6",
     clear: "\u6e05\u9664",
@@ -803,7 +805,7 @@
     currentPlayer: "\u7576\u524d\u73a9\u5bb6",
     restartGame: "\u91cd\u65b0\u958b\u59cb",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI \u50c5\u652f\u63f4 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u500b\u667a\u6167 AI \u5ea7\u4f4d\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
     actionLog: "\u884c\u52d5\u65e5\u8a8c",
     privateHand: "\u79c1\u4eba\u624b\u724c",
     buy: "\u8cfc\u8cb7",
@@ -903,8 +905,9 @@
     aiLevelBalanced: "均衡",
     aiLevelExpert: "高阶",
     aiBadgeFormat: "DinoBoard AI\uff1a{level}",
+    randomAiBadgeFormat: "\u968f\u673a AI\uff1a{level}",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI \u4ec5\u652f\u6301 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u4e2a\u667a\u80fd AI \u5ea7\u4f4d\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须把宝石归还到 10 枚或更少，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -997,7 +1000,7 @@
     msgSwitchingPlayer: "\u672c\u56de\u5408\u7ed3\u675f\uff0c{seconds} \u79d2\u540e\u5207\u6362\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
     msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
     msgSelectLegalTake: "\u8bf7\u9009\u62e9 3 \u79cd\u4e0d\u540c\u7684\u975e\u91d1\u5e01\u5b9d\u77f3\uff1b\u5982\u679c\u94f6\u884c\u53ea\u5269\u5c11\u4e8e 3 \u79cd\u989c\u8272\uff0c\u5219\u9009\u5b8c\u6240\u6709\u53ef\u7528\u989c\u8272\uff1b\u6216\u4ece\u6570\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u91cc\u9009 2 \u679a\u3002",
-    msgRandomAiEnabled: "DinoBoard AI \u5df2\u542f\u7528\uff0c\u652f\u6301 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u4e2a\u667a\u80fd AI \u5ea7\u4f4d\u3002",
+    msgRandomAiEnabled: "\u5df2\u542f\u7528 AI \u63a5\u7ba1\uff1a2 \u4eba\u5c40\u4e2d\u5148\u9009\u4e2d\u7684 AI \u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6 AI \u4f7f\u7528\u968f\u673a\u7b56\u7565\u3002",
     msgNoValidSavedTable: "没有找到有效存档。",
     msgSavedResumed: "已恢复存档桌面。",
     msgSavedCleared: "存档已清除。",
@@ -1038,18 +1041,19 @@
     aiLevelBalanced: "均衡",
     aiLevelExpert: "高階",
     aiBadgeFormat: "DinoBoard AI\uff1a{level}",
+    randomAiBadgeFormat: "\u96a8\u6a5f AI\uff1a{level}",
     round: "回合",
     state: "狀態",
     move: "步數",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI \u50c5\u652f\u63f4 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u500b\u667a\u6167 AI \u5ea7\u4f4d\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
     gameAiThinking: "AI \u601d\u8003\u4e2d",
     gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
     msgSwitchingPlayer: "\u672c\u56de\u5408\u7d50\u675f\uff0c{seconds} \u79d2\u5f8c\u5207\u63db\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
     msgAiThinking: "{player} \u6b63\u5728\u601d\u8003\u3002",
     msgSelectLegalTake: "\u8acb\u9078\u64c7 3 \u7a2e\u4e0d\u540c\u7684\u975e\u91d1\u5e63\u5bf6\u77f3\uff1b\u5982\u679c\u9280\u884c\u53ea\u5269\u5c11\u65bc 3 \u7a2e\u984f\u8272\uff0c\u5247\u9078\u5b8c\u6240\u6709\u53ef\u7528\u984f\u8272\uff1b\u6216\u5f9e\u6578\u91cf\u81f3\u5c11 4 \u7684\u540c\u8272\u5806\u88e1\u9078 2 \u679a\u3002",
-    msgRandomAiEnabled: "DinoBoard AI \u5df2\u555f\u7528\uff0c\u652f\u63f4 2 \u4eba\u5c40\u4e14\u6b63\u597d 1 \u500b\u667a\u6167 AI \u5ea7\u4f4d\u3002",
+    msgRandomAiEnabled: "\u5df2\u555f\u7528 AI \u63a5\u7ba1\uff1a2 \u4eba\u5c40\u4e2d\u5148\u9078\u4e2d\u7684 AI \u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6 AI \u4f7f\u7528\u96a8\u6a5f\u7b56\u7565\u3002",
     returnTokens: "歸還寶石",
     returnTokensBody: "當前玩家必須把寶石歸還到 10 枚或更少，之後才會結算貴族或進入下一回合。",
     chooseOneNoble: "選擇一位貴族",
@@ -1132,7 +1136,7 @@
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "AIプレイヤー",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI is enabled for 2-player tables with exactly one Smart AI seat.",
+    aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは、貴族判定または次の手番に進む前にトークンを10個以下まで返します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -1204,7 +1208,7 @@
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs avec exactement un siege Smart AI.",
+    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs. Si plusieurs sieges utilisent l'IA, le premier siege choisi utilise DinoBoard et les autres utilisent l'IA aleatoire.",
     returnTokens: "Rendre des jetons",
     returnTokensBody: "Le joueur actif doit revenir a 10 jetons ou moins avant les nobles ou le prochain tour.",
     chooseOneNoble: "Choisir un noble",
@@ -1265,7 +1269,7 @@ Object.assign(I18N.de, {
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische mit genau einem Smart-AI-Sitz aktiv.",
+    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische aktiv. Wenn mehrere Sitze KI verwenden, nutzt der zuerst ausgewaehlte Sitz DinoBoard und die anderen nutzen Zufalls-KI.",
     returnTokens: "Marker zurueckgeben",
     returnTokensBody: "Der aktive Spieler muss auf 10 oder weniger Marker zurueckgeben, bevor Adlige oder der naechste Zug abgewickelt werden.",
     chooseOneNoble: "Einen Adligen waehlen",
@@ -1322,7 +1326,7 @@ Object.assign(I18N.de, {
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores con exactamente un asiento Smart AI.",
+    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores. Si varios asientos usan IA, el primer asiento elegido usa DinoBoard y los demas usan IA aleatoria.",
     returnTokens: "Devolver fichas",
     returnTokensBody: "El jugador activo debe devolver fichas hasta tener 10 o menos antes de resolver nobles o el siguiente turno.",
     chooseOneNoble: "Elegir un noble",
@@ -1370,7 +1374,8 @@ Object.assign(I18N.de, {
     logUnknownCard: "\u672a\u77e5\u5361\u724c",
     logGoldTaken: "\u83b7\u5f97\u9ec4\u91d1",
     logPayment: "\u652f\u4ed8",
-    logRandomAi: "DinoBoard AI",
+    logRandomAi: "\u968f\u673a AI",
+    logDinoBoardAi: "DinoBoard AI",
     logBlindReserve: "\u6697\u724c\u9884\u7ea6",
     logFaceUpReserve: "\u660e\u724c\u9884\u7ea6"
   });
@@ -1390,7 +1395,8 @@ Object.assign(I18N.de, {
     logUnknownCard: "\u672a\u77e5\u5361\u724c",
     logGoldTaken: "\u7372\u5f97\u9ec3\u91d1",
     logPayment: "\u652f\u4ed8",
-    logRandomAi: "DinoBoard AI",
+    logRandomAi: "\u96a8\u6a5f AI",
+    logDinoBoardAi: "DinoBoard AI",
     logBlindReserve: "\u6697\u724c\u9810\u7d04",
     logFaceUpReserve: "\u660e\u724c\u9810\u7d04"
   });
@@ -1574,6 +1580,8 @@ Object.assign(I18N.de, {
   var aiTurnTimer = null;
   var dinoboardAi = null;
   var aiTurnInProgress = false;
+  var activeAiProvider = null;
+  var aiSelectionSequence = 0;
   var aiDisplayCurrentOverride = null;
   var lastHumanPlayerIndex = 0;
   var turnAdvanceTimer = null;
@@ -2148,6 +2156,11 @@ Object.assign(I18N.de, {
     return AI_LEVELS.indexOf(level) >= 0 ? level : "balanced";
   }
 
+  function nextAiSelectionOrder() {
+    aiSelectionSequence += 1;
+    return aiSelectionSequence;
+  }
+
   function createGame(playerCount, names, aiSettings) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
@@ -2178,6 +2191,8 @@ Object.assign(I18N.de, {
             enabled: !!(aiConfig[index] && aiConfig[index].enabled),
             mode: aiConfig[index] && aiConfig[index].enabled ? aiLevel : null,
             level: aiLevel,
+            selected_order: aiConfig[index] && aiConfig[index].selected_order || (aiConfig[index] && aiConfig[index].enabled ? nextAiSelectionOrder() : null),
+            provider: "random",
             available: false
           }
         };
@@ -2286,19 +2301,54 @@ Object.assign(I18N.de, {
     return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment;
   }
 
-  function dinoBoardAiSeatFor(game) {
-    if (!game || game.players.length !== 2) return -1;
+  function aiSelectionOrder(player, index) {
+    var order = Number(player && player.ai && player.ai.selected_order);
+    return Number.isFinite(order) && order > 0 ? order : index + 1;
+  }
+
+  function enabledAiSeats(game) {
     var seats = [];
-    game.players.forEach(function (player, index) {
+    (game && game.players || []).forEach(function (player, index) {
       if (player.ai && player.ai.enabled) seats.push(index);
     });
-    return seats.length === 1 ? seats[0] : -1;
+    return seats;
+  }
+
+  function dinoBoardAiSeatFor(game) {
+    if (!game || game.players.length !== 2) return -1;
+    var seats = enabledAiSeats(game);
+    if (!seats.length) return -1;
+    seats.sort(function (a, b) {
+      return aiSelectionOrder(game.players[a], a) - aiSelectionOrder(game.players[b], b) || a - b;
+    });
+    return seats[0];
+  }
+
+  function aiProviderForPlayer(game, playerIndex) {
+    var player = game && game.players && game.players[playerIndex];
+    if (!player || !player.ai || !player.ai.enabled) return "";
+    return dinoBoardAiSeatFor(game) === playerIndex ? "dinoboard" : "random";
+  }
+
+  function activeAiProviderName() {
+    return state ? aiProviderForPlayer(state, state.current) : "";
+  }
+
+  function aiMoveArgs(args) {
+    if (!aiTurnInProgress) return args || {};
+    return Object.assign({}, args || {}, {
+      ai: true,
+      ai_provider: activeAiProvider || activeAiProviderName() || "random"
+    });
   }
 
   function syncDinoBoardAiAvailability(game) {
     var aiSeat = dinoBoardAiSeatFor(game);
     (game && game.players || []).forEach(function (player, index) {
-      if (player.ai) player.ai.available = index === aiSeat;
+      if (!player.ai) return;
+      if (player.ai.enabled && !player.ai.selected_order) player.ai.selected_order = aiSelectionOrder(player, index);
+      player.ai.provider = player.ai.enabled ? (index === aiSeat ? "dinoboard" : "random") : "random";
+      player.ai.available = player.ai.enabled && index === aiSeat;
     });
     return aiSeat;
   }
@@ -2523,7 +2573,7 @@ Object.assign(I18N.de, {
   }
 
   function ensureDinoBoardSession() {
-    if (!state || dinoBoardAiSeatFor(state) < 0) return Promise.reject(new Error("DinoBoard AI requires a 2-player table with exactly one Smart AI seat."));
+    if (!state || dinoBoardAiSeatFor(state) < 0) return Promise.reject(new Error("DinoBoard AI requires a 2-player table; unsupported AI seats use random AI."));
     if (dinoboardAi && dinoboardAi.disabled) return Promise.reject(new Error("DinoBoard AI is unavailable."));
     if (dinoboardAi && dinoboardAi.sessionId && !dinoboardAi.disabled) return Promise.resolve();
     if (dinoboardAi && dinoboardAi.pending) return dinoboardAi.pending;
@@ -2729,6 +2779,11 @@ Object.assign(I18N.de, {
         aiControl.classList.toggle("active", checkbox.checked);
       }
       function handleSetupAiToggle() {
+        if (checkbox.checked && !checkbox.dataset.aiSelectedOrder) {
+          checkbox.dataset.aiSelectedOrder = String(nextAiSelectionOrder());
+        } else if (!checkbox.checked) {
+          delete checkbox.dataset.aiSelectedOrder;
+        }
         syncAiLevel();
         if (checkbox.checked) showStartMessage(t("msgRandomAiEnabled"), "ok");
       }
@@ -3164,11 +3219,13 @@ Object.assign(I18N.de, {
   }
 
   function renderPlayers() {
+    syncDinoBoardAiAvailability(state);
     var visibleIndex = displayCurrentIndex();
     el.players.innerHTML = state.players.map(function (player, playerIndex) {
       var reservedCards = renderReservedSummary(player);
       var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : t("none");
-      var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t("aiBadgeFormat", { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
+      var aiBadgeKey = player.ai && player.ai.provider === "dinoboard" ? "aiBadgeFormat" : "randomAiBadgeFormat";
+      var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t(aiBadgeKey, { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
         '<article class="player-card ' + (playerIndex === visibleIndex ? "active" : "") + '" data-player-index="' + playerIndex + '">',
         '<div class="player-top"><div><h3>' + escapeHtml(player.name) + "</h3>" + aiBadge + '</div><strong class="score-line">' + scoreFor(player) + " " + t("prestige") + "</strong></div>",
@@ -3415,13 +3472,16 @@ Object.assign(I18N.de, {
   }
 
   function renderLogMove(move) {
+    var moveArgs = move.notification && move.notification.args || {};
+    var aiLabel = "";
+    if (moveArgs.ai) aiLabel = t(moveArgs.ai_provider === "dinoboard" ? "logDinoBoardAi" : "logRandomAi");
     return [
       '<li><article class="log-entry">',
       '<div class="log-entry-head">',
       '<span class="log-entry-title">' + escapeHtml(moveTitle(move)) + "</span>",
       '<span class="log-entry-meta">' + escapeHtml(t("logMove", { move: move.move_id })) + "</span>",
       "</div>",
-      '<div class="log-entry-actor">' + escapeHtml(playerNameForMove(move)) + (move.notification && move.notification.args && move.notification.args.ai ? ' · ' + escapeHtml(t("logRandomAi")) : "") + "</div>",
+      '<div class="log-entry-actor">' + escapeHtml(playerNameForMove(move)) + (aiLabel ? ' · ' + escapeHtml(aiLabel) : "") + "</div>",
       '<div class="log-entry-body">' + renderLogMoveBody(move) + "</div>",
       "</article></li>"
     ].join("");
@@ -3744,7 +3804,7 @@ Object.assign(I18N.de, {
     flushPendingFlight();
     updateBoardProgress();
     scheduleTurnTransitionTimer();
-    scheduleDinoBoardAiTurn();
+    scheduleAiTurn();
   }
 
   function scrollToGameTable() {
@@ -4136,9 +4196,7 @@ Object.assign(I18N.de, {
   function afterAction(type, args) {
     var player = activePlayer();
     var actor = { id: player.id, name: player.name };
-    if (aiTurnInProgress && args && !args.ai) {
-      args = Object.assign({}, args, { ai: true });
-    }
+    if (aiTurnInProgress) args = aiMoveArgs(args);
     if (totalTokens(player) > 10) {
       state.awaitingDiscard = true;
       showMessage(t("msgMustDiscard", { player: player.name, count: totalTokens(player) }));
@@ -4162,11 +4220,11 @@ Object.assign(I18N.de, {
     if (totalTokens(player) <= 10) {
       state.awaitingDiscard = false;
       showMessage("");
-      resolveNoblesOrTurn("discardToken", aiTurnInProgress ? { color: color, ai: true } : { color: color }, actor);
+      resolveNoblesOrTurn("discardToken", aiTurnInProgress ? aiMoveArgs({ color: color }) : { color: color }, actor);
       return;
     }
     showMessage(t("msgStillMustDiscard", { player: player.name, count: totalTokens(player) }));
-    recordMove("discardToken", aiTurnInProgress ? { color: color, ai: true } : { color: color }, actor);
+    recordMove("discardToken", aiTurnInProgress ? aiMoveArgs({ color: color }) : { color: color }, actor);
     saveState();
     render();
   }
@@ -4366,7 +4424,7 @@ Object.assign(I18N.de, {
     awardNoble(player, nobleId);
     state.awaitingNobleChoice = null;
     showMessage("");
-    scheduleTurnSwitch("chooseNoble", aiTurnInProgress ? { noble_id: nobleId, noble_slot: nobleSlot, ai: true } : { noble_id: nobleId, noble_slot: nobleSlot }, actor);
+    scheduleTurnSwitch("chooseNoble", aiTurnInProgress ? aiMoveArgs({ noble_id: nobleId, noble_slot: nobleSlot }) : { noble_id: nobleId, noble_slot: nobleSlot }, actor);
   }
 
   function proceedToNextTurn() {
@@ -5715,7 +5773,7 @@ Object.assign(I18N.de, {
     var aiLevels = Array.from(el.playerNameFields.querySelectorAll('select[name="playerAiLevel"]'));
     var aiSettings = Array.from(el.playerNameFields.querySelectorAll('input[name="playerAi"]')).map(function (input, index) {
       var level = normalizeAiLevel(aiLevels[index] && aiLevels[index].value);
-      return { enabled: input.checked, mode: level, level: level };
+      return { enabled: input.checked, mode: level, level: level, selected_order: Number(input.dataset.aiSelectedOrder) || null };
     });
     closeDinoBoardSession();
     state = createGame(count, names, aiSettings);
@@ -5885,9 +5943,14 @@ Object.assign(I18N.de, {
     if (!state || state.mode === "replay" || state.gameOver) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
+    if (activeAiProviderName() !== "dinoboard") {
+      scheduleRandomAiTurn();
+      return;
+    }
     aiDisplayCurrentOverride = state.aiThinking && typeof state.aiThinking.display_current === "number"
       ? state.aiThinking.display_current
       : fallbackVisiblePlayerIndex();
+    activeAiProvider = "dinoboard";
     aiTurnInProgress = true;
     ensureDinoBoardSession().then(function () {
       return dinoboardAi.pending;
@@ -5900,6 +5963,7 @@ Object.assign(I18N.de, {
     }).then(function () {
       if (state) state.aiThinking = null;
       aiTurnInProgress = false;
+      activeAiProvider = null;
       aiDisplayCurrentOverride = null;
       saveState();
       render();
@@ -5912,8 +5976,8 @@ Object.assign(I18N.de, {
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (dinoboardAi && dinoboardAi.disabled) return;
-    if (dinoBoardAiSeatFor(state) < 0) {
-      setDinoBoardUnavailable(t("aiUnavailableBody"));
+    if (activeAiProviderName() !== "dinoboard") {
+      scheduleRandomAiTurn();
       return;
     }
     if (!state.aiThinking) {
@@ -5940,6 +6004,7 @@ Object.assign(I18N.de, {
       ? state.aiThinking.display_current
       : fallbackVisiblePlayerIndex();
     state.aiThinking = null;
+    activeAiProvider = "random";
     aiTurnInProgress = true;
     try {
       if (state.awaitingDiscard) {
@@ -5971,6 +6036,7 @@ Object.assign(I18N.de, {
       }
     } finally {
       aiTurnInProgress = false;
+      activeAiProvider = null;
       aiDisplayCurrentOverride = null;
     }
   }
@@ -5995,14 +6061,25 @@ Object.assign(I18N.de, {
     aiTurnTimer = window.setTimeout(runRandomAiTurn, Math.max(0, (state.aiThinking.until || Date.now()) - Date.now()));
   }
 
+  function scheduleAiTurn() {
+    if (!state || !isAiPlayer(activePlayer())) return;
+    if (activeAiProviderName() === "dinoboard") scheduleDinoBoardAiTurn();
+    else scheduleRandomAiTurn();
+  }
+
   function updatePlayerAi(playerIndex, enabled, level) {
     if (!state || !state.players[playerIndex]) return;
     var player = state.players[playerIndex];
     var selectedLevel = normalizeAiLevel(level || player.ai && (player.ai.level || player.ai.mode));
+    var selectedOrder = enabled
+      ? player.ai && player.ai.selected_order || nextAiSelectionOrder()
+      : null;
     player.ai = {
       enabled: !!enabled,
       mode: enabled ? selectedLevel : null,
       level: selectedLevel,
+      selected_order: selectedOrder,
+      provider: "random",
       available: false
     };
     if (enabled) showMessage(t("msgRandomAiEnabled"), "ok");
