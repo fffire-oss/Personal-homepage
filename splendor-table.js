@@ -128,15 +128,15 @@
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
       fileIoHint: "Exports download as .json files. Import buttons read a selected .json file directly.",
       bgaCaptureTitle: "BGA replay capture",
-      bgaCaptureBody: "Open the official BGA review page, or use BGAtoFreeboard to crawl and convert browser-visible replay data as JSON.",
+      bgaCaptureBody: "Open the official BGA review page, or use BoardReplayLab to crawl and convert browser-visible replay data as JSON.",
       bgaTableImportTitle: "Import by BGA table ID",
-      bgaTableImportBody: "Enter a table ID to try direct import. If the server cannot access BGA, use the BGAtoFreeboard crawler project and import its JSON file.",
+      bgaTableImportBody: "Enter a table ID to try direct import. If the server cannot access BGA, use the BoardReplayLab crawler project and import its JSON file.",
       bgaTableIdLabel: "BGA table ID",
       bgaTableIdPlaceholder: "123456789",
       importBgaTable: "Import table ID",
       openBgaReview: "Open BGA review",
       downloadBgaCaptureScript: "Download capture script",
-      openBgaCrawlerGithub: "BGAtoFreeboard",
+      openBgaCrawlerGithub: "BoardReplayLab",
       downloadCapturedJson: "Download captured JSON",
       bgaCaptureStatus: "Credentials stay on BGA. This site does not ask for or store your BGA password.",
       bgaTableImportStatus: "Expansion tables and unsupported BGA captures will fail instead of loading incorrect data.",
@@ -221,10 +221,10 @@
       msgReplayLoaded: "Replay loaded. Use Next move and Prev move to inspect snapshots.",
       msgContinueFromReplay: "Replay snapshot converted to a live table. Reload the saved JSON to replay from the beginning.",
       msgBgaTableIdRequired: "Enter a numeric BGA table ID first.",
-      msgBgaReviewOpened: "BGA review opened. Log in on BGA if prompted, then use BGAtoFreeboard if you need an external JSON capture.",
+      msgBgaReviewOpened: "BGA review opened. Log in on BGA if prompted, then use BoardReplayLab if you need an external JSON capture.",
       msgBgaTableFetching: "Trying to import BGA table {table}.",
-      msgBgaDirectImportFailed: "Direct BGA table import failed. Use the BGAtoFreeboard crawler project, then import the generated JSON file.",
-      msgBgaServerUnavailable: "Replay server is not available. Use the BGAtoFreeboard crawler project and import the generated JSON file.",
+      msgBgaDirectImportFailed: "Direct BGA table import failed. Use the BoardReplayLab crawler project, then import the generated JSON file.",
+      msgBgaServerUnavailable: "Replay server is not available. Use the BoardReplayLab crawler project and import the generated JSON file.",
       msgBgaServerQueued: "Server is crawling BGA table {table}. Keep this page open.",
       msgBgaServerDone: "Server captured the replay JSON. Download is ready.",
       msgBgaServerFailed: "Server crawl failed: {message}",
@@ -1393,13 +1393,13 @@ Object.assign(I18N.de, {
     fileIoHint: "\u5bfc\u51fa\u4f1a\u76f4\u63a5\u4e0b\u8f7d .json \u6587\u4ef6\uff0c\u5bfc\u5165\u6309\u94ae\u4f1a\u76f4\u63a5\u8bfb\u53d6\u9009\u62e9\u7684 .json \u6587\u4ef6\u3002",
     importReplayFile: "\u5bfc\u5165 JSON \u6587\u4ef6",
     bgaTableImportTitle: "\u901a\u8fc7 BGA table ID \u5bfc\u5165",
-    bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u670d\u52a1\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9879\u76ee\u540e\u518d\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
+    bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u670d\u52a1\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\u540e\u518d\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
     importBgaTable: "\u5bfc\u5165 table ID",
-    openBgaCrawlerGithub: "BGAtoFreeboard",
+    openBgaCrawlerGithub: "BoardReplayLab",
     downloadCapturedJson: "\u4e0b\u8f7d\u91c7\u96c6 JSON",
     bgaTableImportStatus: "\u6269\u5c55\u724c\u5c40\u548c\u4e0d\u652f\u6301\u7684 BGA \u6570\u636e\u4f1a\u663e\u793a\u5bfc\u5165\u5931\u8d25\uff0c\u4e0d\u4f1a\u8f7d\u5165\u9519\u8bef\u6570\u636e\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u91c7\u96c6",
-    bgaCaptureBody: "\u6253\u5f00 BGA \u5b98\u65b9\u56de\u653e\u9875\uff0c\u6216\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u5e76\u8f6c\u6362\u56de\u653e JSON\u3002",
+    bgaCaptureBody: "\u6253\u5f00 BGA \u5b98\u65b9\u56de\u653e\u9875\uff0c\u6216\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u5e76\u8f6c\u6362\u56de\u653e JSON\u3002",
     bgaTableIdLabel: "BGA \u724c\u684c ID",
     openBgaReview: "\u6253\u5f00 BGA \u56de\u653e",
     downloadBgaCaptureScript: "\u4e0b\u8f7d\u91c7\u96c6\u811a\u672c",
@@ -1411,8 +1411,8 @@ Object.assign(I18N.de, {
     msgBgaTableIdRequired: "\u8bf7\u5148\u8f93\u5165\u6570\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
     msgBgaReviewOpened: "\u5df2\u6253\u5f00 BGA \u56de\u653e\u9875\u3002\u5982\u679c\u8981\u6c42\u767b\u5f55\uff0c\u8bf7\u5728 BGA \u9875\u9762\u5b8c\u6210\u767b\u5f55\uff0c\u7136\u540e\u4f7f\u7528\u91c7\u96c6\u811a\u672c\u5bfc\u51fa\u3002",
     msgBgaTableFetching: "\u6b63\u5728\u5c1d\u8bd5\u5bfc\u5165 BGA \u724c\u684c {table}\u3002",
-    msgBgaDirectImportFailed: "\u76f4\u63a5\u5bfc\u5165 BGA table \u5931\u8d25\u3002\u8bf7\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9879\u76ee\uff0c\u518d\u5bfc\u5165\u751f\u6210\u7684 JSON \u6587\u4ef6\u3002",
-    msgBgaServerUnavailable: "\u56de\u653e\u670d\u52a1\u5668\u4e0d\u53ef\u7528\u3002\u8bf7\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9879\u76ee\u540e\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
+    msgBgaDirectImportFailed: "\u76f4\u63a5\u5bfc\u5165 BGA table \u5931\u8d25\u3002\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\uff0c\u518d\u5bfc\u5165\u751f\u6210\u7684 JSON \u6587\u4ef6\u3002",
+    msgBgaServerUnavailable: "\u56de\u653e\u670d\u52a1\u5668\u4e0d\u53ef\u7528\u3002\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\u540e\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
     msgBgaServerQueued: "\u670d\u52a1\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8bf7\u4fdd\u6301\u9875\u9762\u6253\u5f00\u3002",
     msgBgaServerDone: "\u670d\u52a1\u5668\u5df2\u751f\u6210\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f7d\u3002",
     msgBgaServerFailed: "\u670d\u52a1\u5668\u722c\u53d6\u5931\u8d25\uff1a{message}",
@@ -1439,13 +1439,13 @@ Object.assign(I18N.de, {
     fileIoHint: "\u532f\u51fa\u6703\u76f4\u63a5\u4e0b\u8f09 .json \u6a94\u6848\uff0c\u532f\u5165\u6309\u9215\u6703\u76f4\u63a5\u8b80\u53d6\u9078\u64c7\u7684 .json \u6a94\u6848\u3002",
     importReplayFile: "\u532f\u5165 JSON \u6a94\u6848",
     bgaTableImportTitle: "\u901a\u904e BGA table ID \u532f\u5165",
-    bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u4f3a\u670d\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9805\u76ee\u5f8c\u518d\u532f\u5165 JSON \u6a94\u6848\u3002",
+    bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u4f3a\u670d\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\u5f8c\u518d\u532f\u5165 JSON \u6a94\u6848\u3002",
     importBgaTable: "\u532f\u5165 table ID",
-    openBgaCrawlerGithub: "BGAtoFreeboard",
+    openBgaCrawlerGithub: "BoardReplayLab",
     downloadCapturedJson: "\u4e0b\u8f09\u63a1\u96c6 JSON",
     bgaTableImportStatus: "\u64f4\u5145\u724c\u5c40\u548c\u4e0d\u652f\u63f4\u7684 BGA \u8cc7\u6599\u6703\u986f\u793a\u532f\u5165\u5931\u6557\uff0c\u4e0d\u6703\u8f09\u5165\u932f\u8aa4\u8cc7\u6599\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u63a1\u96c6",
-    bgaCaptureBody: "\u6253\u958b BGA \u5b98\u65b9\u56de\u653e\u9801\uff0c\u6216\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u4e26\u8f49\u63db\u56de\u653e JSON\u3002",
+    bgaCaptureBody: "\u6253\u958b BGA \u5b98\u65b9\u56de\u653e\u9801\uff0c\u6216\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u4e26\u8f49\u63db\u56de\u653e JSON\u3002",
     bgaTableIdLabel: "BGA \u724c\u684c ID",
     openBgaReview: "\u6253\u958b BGA \u56de\u653e",
     downloadBgaCaptureScript: "\u4e0b\u8f09\u63a1\u96c6\u8173\u672c",
@@ -1457,8 +1457,8 @@ Object.assign(I18N.de, {
     msgBgaTableIdRequired: "\u8acb\u5148\u8f38\u5165\u6578\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
     msgBgaReviewOpened: "\u5df2\u6253\u958b BGA \u56de\u653e\u9801\u3002\u5982\u679c\u8981\u6c42\u767b\u5165\uff0c\u8acb\u5728 BGA \u9801\u9762\u5b8c\u6210\u767b\u5165\uff0c\u7136\u5f8c\u4f7f\u7528\u63a1\u96c6\u8173\u672c\u532f\u51fa\u3002",
     msgBgaTableFetching: "\u6b63\u5728\u5617\u8a66\u532f\u5165 BGA \u724c\u684c {table}\u3002",
-    msgBgaDirectImportFailed: "\u76f4\u63a5\u532f\u5165 BGA table \u5931\u6557\u3002\u8acb\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9805\u76ee\uff0c\u518d\u532f\u5165\u7522\u751f\u7684 JSON \u6a94\u6848\u3002",
-    msgBgaServerUnavailable: "\u56de\u653e\u4f3a\u670d\u5668\u4e0d\u53ef\u7528\u3002\u8acb\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9805\u76ee\u5f8c\u532f\u5165 JSON \u6a94\u6848\u3002",
+    msgBgaDirectImportFailed: "\u76f4\u63a5\u532f\u5165 BGA table \u5931\u6557\u3002\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\uff0c\u518d\u532f\u5165\u7522\u751f\u7684 JSON \u6a94\u6848\u3002",
+    msgBgaServerUnavailable: "\u56de\u653e\u4f3a\u670d\u5668\u4e0d\u53ef\u7528\u3002\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\u5f8c\u532f\u5165 JSON \u6a94\u6848\u3002",
     msgBgaServerQueued: "\u4f3a\u670d\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8acb\u4fdd\u6301\u9801\u9762\u958b\u555f\u3002",
     msgBgaServerDone: "\u4f3a\u670d\u5668\u5df2\u7522\u751f\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f09\u3002",
     msgBgaServerFailed: "\u4f3a\u670d\u5668\u722c\u53d6\u5931\u6557\uff1a{message}",
@@ -1477,7 +1477,7 @@ Object.assign(I18N.de, {
     buyShort: "\u8cb7",
     reserveShort: "\u4e88",
     bgaCaptureTitle: "BGA \u30ea\u30d7\u30ec\u30a4\u53d6\u5f97",
-    bgaCaptureBody: "BGA \u516c\u5f0f\u30ec\u30d3\u30e5\u30fc\u30da\u30fc\u30b8\u3092\u958b\u304f\u304b\u3001BGAtoFreeboard \u3067\u56de\u653e JSON \u3092\u53d6\u5f97\u3057\u307e\u3059\u3002",
+    bgaCaptureBody: "BGA \u516c\u5f0f\u30ec\u30d3\u30e5\u30fc\u30da\u30fc\u30b8\u3092\u958b\u304f\u304b\u3001BoardReplayLab \u3067\u56de\u653e JSON \u3092\u53d6\u5f97\u3057\u307e\u3059\u3002",
     bgaTableIdLabel: "BGA table ID",
     openBgaReview: "BGA \u56de\u653e\u3092\u958b\u304f",
     downloadBgaCaptureScript: "\u53d6\u5f97\u30b9\u30af\u30ea\u30d7\u30c8",
@@ -2390,14 +2390,28 @@ Object.assign(I18N.de, {
   }
 
   function renderBank() {
+    var awaitingDiscard = !!state.awaitingDiscard;
+    var player = activePlayer();
+    if (el.bankDiscard) {
+      el.bankDiscard.hidden = !awaitingDiscard;
+      if (awaitingDiscard && player) {
+        el.bankDiscardSummary.textContent = t("msgMustDiscard", { player: player.name, count: totalTokens(player) });
+        el.bankDiscardTokens.innerHTML = tokensHtml(player.tokens, true, "discard-color");
+        if (el.bankPanel) el.bankPanel.open = true;
+      } else {
+        el.bankDiscardSummary.textContent = "";
+        el.bankDiscardTokens.innerHTML = "";
+      }
+    }
+    if (el.bankTakeActions) el.bankTakeActions.hidden = awaitingDiscard;
     el.bankTokens.innerHTML = ALL_TOKENS.map(function (color) {
-      var disabled = color === "gold" || !canAct() || state.bank[color] <= 0;
+      var disabled = awaitingDiscard || color === "gold" || !canAct() || state.bank[color] <= 0;
       return '<button class="token-button" type="button" data-bank-color="' + color + '" data-color="' + color + '" style="' + gemStyle(color) + '" ' + (disabled ? "disabled" : "") + ">" + TOKEN_LABEL[color] + " " + state.bank[color] + "</button>";
     }).join("");
 
-    el.takeSummary.textContent = takeSummaryText();
-    el.confirmTake.disabled = !canAct() || !pendingTakeIsLegal();
-    el.clearTake.disabled = !canAct() || pendingTake.length === 0;
+    el.takeSummary.textContent = awaitingDiscard && player ? t("msgMustDiscard", { player: player.name, count: totalTokens(player) }) : takeSummaryText();
+    el.confirmTake.disabled = awaitingDiscard || !canAct() || !pendingTakeIsLegal();
+    el.clearTake.disabled = awaitingDiscard || !canAct() || pendingTake.length === 0;
   }
 
   function takeSummaryText() {
@@ -2529,13 +2543,8 @@ Object.assign(I18N.de, {
   }
 
   function renderDiscard() {
-    var player = activePlayer();
-    el.discardPanel.hidden = !state.awaitingDiscard;
-    if (!state.awaitingDiscard) {
-      el.discardTokens.innerHTML = "";
-      return;
-    }
-    el.discardTokens.innerHTML = tokensHtml(player.tokens, true, "discard-color");
+    el.discardPanel.hidden = true;
+    el.discardTokens.innerHTML = "";
   }
 
   function renderNobleChoice() {
@@ -3928,8 +3937,16 @@ Object.assign(I18N.de, {
   }
 
   function bgaCaptureHasExpansionHint(payload) {
-    if (payload && payload.compatibility && payload.compatibility.has_expansion_hint) return true;
+    var compatibility = payload && payload.compatibility || {};
+    var detection = compatibility.expansion_detection || {};
+    if (Array.isArray(detection.active)) return detection.active.length > 0;
     return bgaActiveExpansionFlags(payload).length > 0;
+  }
+
+  function bgaCompatibilityHasActiveExpansion(compatibility) {
+    var detection = compatibility && compatibility.expansion_detection || {};
+    if (Array.isArray(detection.active)) return detection.active.length > 0;
+    return false;
   }
 
   function bgaCaptureExpansionDetails(payload) {
@@ -3981,6 +3998,7 @@ Object.assign(I18N.de, {
       Object.keys(value).forEach(function (key) {
         var child = value[key];
         var path = pathName ? pathName + "." + key : key;
+        if (path === "compatibility" || path.indexOf("compatibility.") === 0) return;
         var label = labelFor(key);
         if (label && (typeof child !== "object" || child === null) && isActiveValue(child)) {
           push({ label: label, path: path, value: child });
@@ -4371,7 +4389,7 @@ Object.assign(I18N.de, {
         setStartBgaDownload(job.downloadUrl || "");
         var compatibility = job.compatibility || {};
         clearActiveBgaReplayJob();
-        if (job.importable || !compatibility.has_expansion_hint) {
+        if (job.importable || !bgaCompatibilityHasActiveExpansion(compatibility)) {
           fetch(job.downloadUrl).then(function (response) { return response.json(); }).then(function (payload) {
             loadReplayPayload(payload, "", true);
           }).catch(function () {
@@ -4931,6 +4949,10 @@ Object.assign(I18N.de, {
       var button = event.target.closest("[data-discard-color]");
       if (button) discardToken(button.dataset.discardColor);
     });
+    el.bankDiscardTokens.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-discard-color]");
+      if (button) discardToken(button.dataset.discardColor);
+    });
     el.nobleChoiceList.addEventListener("click", function (event) {
       var button = event.target.closest("[data-choose-noble]");
       if (button) chooseNoble(button.dataset.chooseNoble);
@@ -4991,6 +5013,10 @@ Object.assign(I18N.de, {
       "message",
       "discard-panel",
       "discard-tokens",
+      "bank-discard",
+      "bank-discard-summary",
+      "bank-discard-tokens",
+      "bank-take-actions",
       "noble-choice-panel",
       "noble-choice-list",
       "payment-panel",
