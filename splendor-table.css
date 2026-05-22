@@ -712,10 +712,6 @@ body:not(.game-active) .board-progress {
   text-shadow: 0 0 24px rgba(174, 244, 255, 0.14);
 }
 
-.status-actions {
-  justify-self: end;
-}
-
 .top-replay-controls {
   display: none;
   grid-column: 1 / -1;
@@ -791,13 +787,6 @@ body.replay-mode .top-replay-controls {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.status-actions button {
-  min-height: 32px;
-  padding: 0 10px;
-  font-size: 0.68rem;
   white-space: nowrap;
 }
 
@@ -2604,17 +2593,6 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     line-height: 1.05;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-
-  .status-actions {
-    justify-self: end;
-  }
-
-  .status-actions button {
-    width: auto;
-    min-height: 28px;
-    padding: 0 8px;
-    font-size: 0.58rem;
   }
 
   .top-replay-controls {
