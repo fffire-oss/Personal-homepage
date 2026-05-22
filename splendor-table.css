@@ -1420,21 +1420,39 @@ body.market-sticky-active .market-panel {
 
 .bonus-card-row {
   display: grid;
-  gap: 2px;
+  gap: 5px;
   padding: 6px;
   border: 1px solid rgba(174, 244, 255, 0.12);
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.04);
 }
 
+.bonus-card-main {
+  display: grid;
+  gap: 2px;
+}
+
 .bonus-card-row strong {
   font-size: 0.72rem;
 }
 
-.bonus-card-row span {
+.bonus-card-main span {
   color: var(--muted);
   font-size: 0.62rem;
   font-weight: 760;
+}
+
+.bonus-card-cost {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.bonus-card-cost .cost-pill {
+  min-height: 17px;
+  padding: 0 5px;
+  font-size: 0.58rem;
 }
 
 .bonus-pill.preview-open .bonus-preview,
@@ -1950,12 +1968,23 @@ body.market-sticky-active .market-panel {
   grid-template-columns: 1fr;
 }
 
+.log-panel {
+  position: relative;
+  z-index: 18;
+  padding: 12px;
+  overflow: visible;
+}
+
+.log-panel:has(.preview-open) {
+  z-index: 130;
+}
+
 .action-log {
   display: grid;
   gap: 8px;
   max-height: none;
   margin: 0;
-  padding: 0;
+  padding: 2px 2px 4px;
   overflow: visible;
   list-style: none;
 }
@@ -2021,6 +2050,14 @@ body.market-sticky-active .market-panel {
   font-size: 0.72rem;
   font-weight: 800;
   overflow: visible;
+}
+
+.log-card-badge.preview-open {
+  z-index: 140;
+}
+
+.log-card-badge .reserve-preview {
+  z-index: 150;
 }
 
 .log-card-badge.blind {
