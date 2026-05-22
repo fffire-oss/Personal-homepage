@@ -20,7 +20,7 @@ Static personal homepage for ZephyrLabs projects.
 ## Related Work
 
 - [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): public crawler/converter project for downloading BGA replay JSON data and converting supported captures for Gem Table.
-- DinoBoard: earlier board-game tooling reference and experiment.
+- [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard): upstream board-game AI framework reference used by the Gem Table Smart AI deployment.
 
 ## Local Preview
 
@@ -38,7 +38,7 @@ Then visit `http://localhost:8000`.
 
 The homepage is designed as static HTML/CSS/JS. The production domain may also run a separate private BGA replay API behind `/api/bga/replay`; that runtime is intentionally not part of this public homepage repository and should be deployed separately.
 
-Gem Table Smart AI uses DinoBoard behind the same-origin `/api/dinoboard` reverse proxy. The server-side AI runtime is separate from this static homepage:
+Gem Table Smart AI uses [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard) behind the same-origin `/api/dinoboard` reverse proxy. The server-side AI runtime is separate from this static homepage:
 
 - Homepage static files are served from `<site-root>`; production should continue syncing this repository's `main` branch after the PR is merged.
 - DinoBoard is deployed separately at `<dinoboard-root>`.
