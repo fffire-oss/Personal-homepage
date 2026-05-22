@@ -2828,6 +2828,19 @@ Object.assign(I18N.de, {
     }
   }
 
+  function syncTopDockOffset() {
+    var root = document.documentElement;
+    var topPanel = byId("table-top-panel");
+    var isMobile = window.matchMedia && window.matchMedia("(max-width: 760px)").matches;
+    if (!state || !isMobile || !topPanel || topPanel.hidden || !topPanel.getBoundingClientRect) {
+      root.style.removeProperty("--table-top-dock-height");
+      return;
+    }
+    var rect = topPanel.getBoundingClientRect();
+    var offset = Math.ceil(rect.height + Math.max(rect.top, 0) + 8);
+    root.style.setProperty("--table-top-dock-height", offset + "px");
+  }
+
   function updateBoardProgress() {
     var nav = byId("board-progress");
     if (!nav) return;
@@ -2903,6 +2916,7 @@ Object.assign(I18N.de, {
       setStartMode(startMode);
       renderHandoffOverlay();
       renderReplayStatus();
+      syncTopDockOffset();
       return;
     }
 
@@ -2938,6 +2952,7 @@ Object.assign(I18N.de, {
     renderReplayStatus();
     renderHandoffOverlay();
     syncDockWidth();
+    syncTopDockOffset();
     flushPendingFlight();
     updateBoardProgress();
     scheduleTurnTransitionTimer();
@@ -4722,10 +4737,17 @@ Object.assign(I18N.de, {
     }, { passive: true });
     window.addEventListener("resize", function () {
       syncDockWidth();
+      syncTopDockOffset();
       updateBoardProgress();
       closeTapPreviews();
       closeBonusPreviews();
     });
+    if (el.bankPanel) {
+      el.bankPanel.addEventListener("toggle", function () {
+        syncTopDockOffset();
+        updateBoardProgress();
+      });
+    }
     el.languageSelect.addEventListener("change", function () {
       currentLocale = I18N[el.languageSelect.value] ? el.languageSelect.value : "en";
       saveLanguagePreference();

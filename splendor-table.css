@@ -2365,6 +2365,10 @@ body:not(.game-active) .board-progress {
 }
 
 @media (max-width: 760px) {
+  html.game-active-root {
+    scroll-padding-top: var(--table-top-dock-height, 164px);
+  }
+
   html,
   body {
     max-width: 100%;
@@ -2389,6 +2393,7 @@ body:not(.game-active) .board-progress {
 
   body.game-active main {
     width: min(100% - 12px, 760px);
+    padding-top: calc(var(--table-top-dock-height, 164px) + 4px);
     padding-bottom: 108px;
   }
 
@@ -2419,6 +2424,8 @@ body:not(.game-active) .board-progress {
 
   .status-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 8px;
   }
 
   .status-actions {
@@ -2429,12 +2436,48 @@ body:not(.game-active) .board-progress {
     width: 100%;
   }
 
+  .table-top-panel {
+    position: fixed;
+    top: max(6px, env(safe-area-inset-top));
+    left: 50%;
+    z-index: 94;
+    width: min(100vw - 12px, 760px);
+    max-height: min(48vh, 360px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    transform: translateX(-50%);
+    box-shadow:
+      0 0 0 1px rgba(49, 215, 255, 0.08),
+      0 18px 46px rgba(0, 0, 0, 0.48);
+  }
+
   .table-bank-panel {
-    top: 10px;
+    padding: 8px;
   }
 
   .bank-body {
     grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 7px;
+  }
+
+  .bank-tokens {
+    min-height: 34px;
+  }
+
+  .bank-summary h3 {
+    font-size: 0.82rem;
+  }
+
+  .bank-summary .compact {
+    font-size: 0.68rem;
+    line-height: 1.25;
+  }
+
+  .bank-toggle {
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 0.62rem;
   }
 
   .table-layout {
