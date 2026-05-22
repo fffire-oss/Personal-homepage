@@ -2997,12 +2997,16 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     grid-auto-columns: minmax(318px, 94vw);
     gap: 8px;
     overflow-x: auto;
+    overflow-y: hidden;
     overscroll-behavior-inline: contain;
+    overscroll-behavior-block: none;
+    touch-action: pan-x;
     padding-bottom: 4px;
   }
 
   .player-card {
     gap: 6px;
+    align-self: start;
     padding: 8px;
   }
 
@@ -3048,6 +3052,21 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
   .player-resource-panel .bonus-label {
     font-size: 0.42rem;
+  }
+
+  .player-card .reserved-list {
+    display: flex;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
+    padding-bottom: 3px;
+    white-space: nowrap;
+  }
+
+  .player-card .reserve-badge {
+    flex: 0 0 auto;
+    max-width: 78vw;
   }
 
   .active-reserved {
