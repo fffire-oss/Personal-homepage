@@ -107,6 +107,9 @@
       orientMarketHint: "Generic placeholder cards for later Orient abilities.",
       orientAbilityPlaceholder: "Ability slot",
       orientActionsPending: "Actions pending",
+      orientAbilityPending: "Ability pending",
+      orientDoubleBonus: "Double bonus",
+      orientVirtualGold: "Virtual gold later",
       orientSlotLabel: "Slot {slot}",
       actionLog: "Action log",
       logSafeMode: "Masked",
@@ -220,6 +223,7 @@
       msgMarketGone: "That market card is no longer available.",
       msgDeckEmpty: "That deck is empty.",
       msgNotEnoughForCard: "Not enough tokens or gold for that card.",
+      msgOrientAbilityPending: "That Orient ability needs a choice that is not implemented yet.",
       msgChoosePayment: "Choose the payment for {card}.",
       msgPaymentInvalid: "This payment does not exactly cover the card cost.",
       msgPaymentCleared: "Payment selection cleared.",
@@ -1896,20 +1900,39 @@ Object.assign(I18N.de, {
       COLORS.forEach(function (color, colorIndex) {
         [0, 1].forEach(function (variant) {
           var number = colorIndex * 2 + variant + 1;
+          var isVirtualGold = variant === 1;
+          var ability = isVirtualGold ? {
+            id: "orient-virtual-gold-placeholder",
+            timing: "on_acquire",
+            effect: "virtual_gold_placeholder",
+            status: "metadata",
+            immediate_choice: false
+          } : {
+            id: "orient-double-bonus",
+            timing: "on_acquire",
+            effect: "double_bonus",
+            status: "implemented",
+            bonus_color: color,
+            bonus_count: 2,
+            immediate_choice: false
+          };
           cardsByTier[tier].push({
             id: "orient-t" + tier + "-" + String(number).padStart(2, "0"),
             tier: tier,
-            color: color,
+            color: isVirtualGold ? "gold" : color,
+            printed_color: color,
             points: tier === 1 ? 0 : tier - 1,
             cost: orientPlaceholderCost(tier, colorIndex, variant),
             module: ORIENT_MARKET_ID,
             catalog_schema: ORIENT_CATALOG_SCHEMA,
-            abilities: [{
-              id: "orient-placeholder-window",
-              timing: "on_acquire",
-              effect: "placeholder",
-              status: "pending"
-            }]
+            orient_effective: isVirtualGold ? {
+              bonus: {},
+              virtual_gold: true,
+              payment_feature_pending: true
+            } : {
+              bonus: Object.assign({}, emptyCounts(false), { [color]: 2 })
+            },
+            abilities: [ability]
           });
         });
       });
@@ -2543,6 +2566,39 @@ Object.assign(I18N.de, {
     return null;
   }
 
+  function fillOrientMarketSlot(game, tier, index) {
+    if (!game || !game.orient_market || !game.orient_market[tier]) return null;
+    var replacement = game.orient_decks[tier] && game.orient_decks[tier].length ? game.orient_decks[tier].pop() : null;
+    if (replacement) {
+      game.orient_market[tier][index] = replacement;
+      rememberSeenCard(game, replacement);
+      return replacement;
+    }
+    game.orient_market[tier].splice(index, 1);
+    removeMarketSlotId(game, ORIENT_MARKET_ID, tier, index);
+    return null;
+  }
+
+  function parseMarketActionValue(value) {
+    var parts = String(value || "").split(":");
+    var marketId = parts.length === 3 ? parts[0] : BASE_MARKET_ID;
+    return {
+      marketId: marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+      tier: Number(parts.length === 3 ? parts[1] : parts[0]),
+      index: Number(parts.length === 3 ? parts[2] : parts[1])
+    };
+  }
+
+  function marketCardAt(game, ref) {
+    var market = ref.marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    return market && market[ref.tier] && market[ref.tier][ref.index];
+  }
+
+  function fillMarketSlotById(game, ref) {
+    if (ref.marketId === ORIENT_MARKET_ID) return fillOrientMarketSlot(game, ref.tier, ref.index);
+    return fillMarketSlot(game, ref.tier, ref.index);
+  }
+
   function activePlayer() {
     return state && state.players[state.current];
   }
@@ -2585,6 +2641,107 @@ Object.assign(I18N.de, {
     }, 0) + player.nobles.reduce(function (sum, noble) {
       return sum + noble.points;
     }, 0);
+  }
+
+  function cardIsOrient(card) {
+    return !!(card && card.module === ORIENT_MARKET_ID);
+  }
+
+  function orientAbilityBuyStatus(card) {
+    if (!cardIsOrient(card)) return { ok: true, reason: "" };
+    var abilities = Array.isArray(card.abilities) ? card.abilities : [];
+    var safeEffects = ["double_bonus", "virtual_gold_placeholder", "no_bonus_placeholder", "metadata"];
+    for (var index = 0; index < abilities.length; index += 1) {
+      var ability = abilities[index] || {};
+      var effect = String(ability.effect || "");
+      var status = String(ability.status || "");
+      var safe = status === "implemented" || status === "metadata" || ability.immediate_choice === false || safeEffects.indexOf(effect) >= 0;
+      var pendingChoice = ability.requires_choice === true || (status === "pending" && ability.immediate_choice !== false && safeEffects.indexOf(effect) < 0);
+      if (!safe || pendingChoice) {
+        return { ok: false, reason: t("orientAbilityPending") };
+      }
+    }
+    return { ok: true, reason: "" };
+  }
+
+  function effectiveCardBonuses(card) {
+    var bonuses = emptyCounts(false);
+    if (!card) return bonuses;
+    if (cardIsOrient(card)) {
+      var explicit = card.orient_effective && card.orient_effective.bonus || card.effective_bonuses;
+      COLORS.forEach(function (color) {
+        bonuses[color] = Math.max(0, Number(explicit && explicit[color]) || 0);
+      });
+      (card.abilities || []).forEach(function (ability) {
+        if (!ability || ability.effect !== "double_bonus") return;
+        var color = ability.bonus_color || card.printed_color || card.color;
+        if (COLORS.indexOf(color) >= 0 && bonuses[color] === 0) {
+          bonuses[color] = Math.max(1, Number(ability.bonus_count) || 2);
+        }
+      });
+      return bonuses;
+    }
+    if (COLORS.indexOf(card.color) >= 0) bonuses[card.color] = 1;
+    return bonuses;
+  }
+
+  function orientVirtualGoldMetadata(card) {
+    if (!cardIsOrient(card)) return null;
+    var hasVirtualGold = !!(card.orient_effective && card.orient_effective.virtual_gold);
+    (card.abilities || []).forEach(function (ability) {
+      if (ability && ability.effect === "virtual_gold_placeholder") hasVirtualGold = true;
+    });
+    return hasVirtualGold ? {
+      card_id: card.id,
+      status: "payment_feature_pending",
+      source: ORIENT_MARKET_ID
+    } : null;
+  }
+
+  function ensurePlayerOrientEffects(player) {
+    if (!player.orient_effects || typeof player.orient_effects !== "object") {
+      player.orient_effects = { virtual_gold_cards: [] };
+    }
+    if (!Array.isArray(player.orient_effects.virtual_gold_cards)) player.orient_effects.virtual_gold_cards = [];
+    return player.orient_effects;
+  }
+
+  function applyCardBonuses(player, card) {
+    var bonuses = effectiveCardBonuses(card);
+    COLORS.forEach(function (color) {
+      player.bonuses[color] = (Number(player.bonuses[color]) || 0) + (bonuses[color] || 0);
+    });
+    var virtualGold = orientVirtualGoldMetadata(card);
+    if (virtualGold) {
+      var effects = ensurePlayerOrientEffects(player);
+      if (!effects.virtual_gold_cards.some(function (entry) { return entry.card_id === virtualGold.card_id; })) {
+        effects.virtual_gold_cards.push(virtualGold);
+      }
+    }
+    return bonuses;
+  }
+
+  function removeCardBonuses(player, card) {
+    var bonuses = effectiveCardBonuses(card);
+    COLORS.forEach(function (color) {
+      player.bonuses[color] = Math.max(0, (Number(player.bonuses[color]) || 0) - (bonuses[color] || 0));
+    });
+    var virtualGold = orientVirtualGoldMetadata(card);
+    if (virtualGold && player.orient_effects && Array.isArray(player.orient_effects.virtual_gold_cards)) {
+      player.orient_effects.virtual_gold_cards = player.orient_effects.virtual_gold_cards.filter(function (entry) {
+        return entry.card_id !== virtualGold.card_id;
+      });
+    }
+    return bonuses;
+  }
+
+  function purchaseRecordCard(card) {
+    if (!cardIsOrient(card)) return card;
+    var record = clone(card);
+    record.effective_bonuses = effectiveCardBonuses(card);
+    var virtualGold = orientVirtualGoldMetadata(card);
+    if (virtualGold) record.orient_payment_effect = virtualGold;
+    return record;
   }
 
   function totalTokens(player) {
@@ -3206,7 +3363,7 @@ Object.assign(I18N.de, {
   function bonusCardsPreviewHtml(player, color) {
     if (!player) return "";
     var cards = player.purchased.filter(function (card) {
-      return card.color === color;
+      return effectiveCardBonuses(card)[color] > 0;
     });
     var title = t("bonusCardsTitle", { color: TOKEN_LABEL[color] });
     var body = cards.length ? cards.map(function (card) {
@@ -3355,19 +3512,29 @@ Object.assign(I18N.de, {
     state.bank.gold += pay.gold || 0;
   }
 
+  function orientAbilityLabel(card) {
+    if (!cardIsOrient(card)) return "";
+    var ability = Array.isArray(card.abilities) && card.abilities[0] || {};
+    if (ability.effect === "double_bonus") return t("orientDoubleBonus");
+    if (ability.effect === "virtual_gold_placeholder") return t("orientVirtualGold");
+    if (!orientAbilityBuyStatus(card).ok) return t("orientAbilityPending");
+    return t("orientAbilityPlaceholder");
+  }
+
   function renderCard(card, controls) {
     controls = controls || {};
     var buyAttr = controls.buy ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
     var reserveAttr = controls.reserve ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
     var afford = controls.afford;
-    var affordText = afford ? (afford.ok ? t("affordable") : t("needTokens")) : "";
+    var affordText = controls.statusText || (afford ? (afford.ok ? t("affordable") : t("needTokens")) : "");
     var cardModule = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
     var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(t("orientModule")) + "</span>" : "";
-    var abilityBadge = cardModule === ORIENT_MARKET_ID ? '<span class="orient-ability-chip">' + escapeHtml(t("orientAbilityPlaceholder")) + "</span>" : "";
+    var abilityBadge = cardModule === ORIENT_MARKET_ID ? '<span class="orient-ability-chip">' + escapeHtml(orientAbilityLabel(card)) + "</span>" : "";
     var slotBadge = controls.slotId ? '<span class="orient-slot-chip">' + escapeHtml(t("orientSlotLabel", { slot: controls.slotId })) + "</span>" : "";
     var actions = [];
     if (controls.buy) {
-      actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
+      var buyTitle = controls.buyDisabledReason ? ' title="' + escapeHtml(controls.buyDisabledReason) + '"' : "";
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '"' + buyTitle + " " + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
     }
     if (controls.reserve) {
       actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
@@ -3476,11 +3643,22 @@ Object.assign(I18N.de, {
 
   function renderOrientMarket() {
     ensureStateRuleset(state);
+    var active = displayPlayer();
     el.market.innerHTML = [3, 2, 1].map(function (tier) {
       var cards = (state.orient_market[tier] || []).map(function (card, index) {
+        var afford = affordability(active, card);
+        var abilityStatus = orientAbilityBuyStatus(card);
+        var buyReason = abilityStatus.ok ? "" : t("msgOrientAbilityPending");
         return renderCard(card, {
-          value: tier + ":" + index,
-          slotId: marketSlotId(state, ORIENT_MARKET_ID, tier, index)
+          buy: "buy-market",
+          reserve: "reserve-market",
+          value: ORIENT_MARKET_ID + ":" + tier + ":" + index,
+          slotId: marketSlotId(state, ORIENT_MARKET_ID, tier, index),
+          afford: afford,
+          statusText: abilityStatus.ok ? "" : abilityStatus.reason,
+          buyDisabled: !canAct() || !afford.ok || !abilityStatus.ok,
+          buyDisabledReason: buyReason,
+          reserveDisabled: !canAct() || active.reserved.length >= 3
         });
       }).join("");
       var deckCount = state.orient_decks && state.orient_decks[tier] ? state.orient_decks[tier].length : 0;
@@ -3631,10 +3809,9 @@ Object.assign(I18N.de, {
     var card = null;
     var context = null;
     if (pendingPayment.source === "market") {
-      var tier = Number(parts[0]);
-      var marketIndex = Number(parts[1]);
-      card = state.market[tier] && state.market[tier][marketIndex];
-      context = { type: "buyMarket", player: player, card: card, tier: tier, index: marketIndex };
+      var marketRef = parseMarketActionValue(pendingPayment.value);
+      card = marketCardAt(state, marketRef);
+      context = { type: "buyMarket", player: player, card: card, tier: marketRef.tier, index: marketRef.index, market_id: marketRef.marketId };
     } else if (pendingPayment.source === "reserved") {
       var playerIndex = Number(parts[0]);
       var reservedIndex = Number(parts[1]);
@@ -3703,6 +3880,8 @@ Object.assign(I18N.de, {
     var id = String(cardId || "");
     for (var tier = 1; tier <= 3; tier += 1) {
       var found = (DEVELOPMENT_CARDS[tier] || []).find(function (card) {
+        return card.id === id;
+      }) || (ORIENT_CARDS[tier] || []).find(function (card) {
         return card.id === id;
       });
       if (found) return found;
@@ -4357,25 +4536,23 @@ Object.assign(I18N.de, {
 
   function reserveMarket(value, trigger) {
     if (!canAct()) return;
-    var parts = value.split(":");
-    var tier = Number(parts[0]);
-    var index = Number(parts[1]);
+    var ref = parseMarketActionValue(value);
     var player = activePlayer();
     if (player.reserved.length >= 3) {
       showMessage(t("msgReserveLimit"));
       render();
       return;
     }
-    var card = state.market[tier][index];
+    var card = marketCardAt(state, ref);
     if (!card) {
       showMessage(t("msgMarketGone"));
       render();
       return;
     }
-    var slotId = marketSlotId(state, BASE_MARKET_ID, tier, index);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
     queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), playerPanelTarget(".reserved-list"));
-    fillMarketSlot(state, tier, index);
-    reserveCard(player, card, "reserveMarket", { card_id: card.id, card: card, tier: tier, market_index: index, market_id: BASE_MARKET_ID, market_slot_id: slotId });
+    fillMarketSlotById(state, ref);
+    reserveCard(player, card, "reserveMarket", { card_id: card.id, card: card, tier: ref.tier, market_index: ref.index, market_id: ref.marketId, market_slot_id: slotId });
   }
 
   function reserveDeck(tier, trigger) {
@@ -4494,6 +4671,7 @@ Object.assign(I18N.de, {
 
   function completePurchase(context, payment, sourceElement, options) {
     var card = context.card;
+    var purchasedCard = purchaseRecordCard(card);
     var flightSource = sourceElement || cardElementForFlight(card) || el.market;
     var args = {
       card_id: card.id,
@@ -4501,20 +4679,20 @@ Object.assign(I18N.de, {
     };
     if (options && options.ai) args.ai = true;
     spendForCard(context.player, paymentSpend(payment));
-    context.player.purchased.push(card);
-    context.player.bonuses[card.color] += 1;
+    context.player.purchased.push(purchasedCard);
+    applyCardBonuses(context.player, purchasedCard);
     logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
     if (context.type === "buyMarket") {
       args.tier = context.tier;
       args.market_index = context.index;
-      args.market_id = BASE_MARKET_ID;
-      args.market_slot_id = marketSlotId(state, BASE_MARKET_ID, context.tier, context.index);
-      args.card = card;
-      fillMarketSlot(state, context.tier, context.index);
+      args.market_id = context.market_id || BASE_MARKET_ID;
+      args.market_slot_id = marketSlotId(state, args.market_id, context.tier, context.index);
+      args.card = purchasedCard;
+      fillMarketSlotById(state, { marketId: args.market_id, tier: context.tier, index: context.index });
     } else {
       args.tier = card.tier;
       args.reserved_index = context.index;
-      args.card = card;
+      args.card = purchasedCard;
       args.reserved_from = card.reserved_from || "market";
       args.market_id = card.market_id || BASE_MARKET_ID;
       if (card.market_slot_id) args.market_slot_id = card.market_slot_id;
@@ -4548,12 +4726,16 @@ Object.assign(I18N.de, {
 
   function buyMarket(value) {
     if (!canAct()) return;
-    var parts = value.split(":");
-    var tier = Number(parts[0]);
-    var index = Number(parts[1]);
-    var card = state.market[tier][index];
+    var ref = parseMarketActionValue(value);
+    var card = marketCardAt(state, ref);
     if (!card) {
       showMessage(t("msgMarketGone"));
+      render();
+      return;
+    }
+    var abilityStatus = orientAbilityBuyStatus(card);
+    if (!abilityStatus.ok) {
+      showMessage(t("msgOrientAbilityPending"));
       render();
       return;
     }
@@ -4570,6 +4752,12 @@ Object.assign(I18N.de, {
     var card = player.reserved[index];
     if (!card) {
       showMessage(t("msgMarketGone"));
+      render();
+      return;
+    }
+    var abilityStatus = orientAbilityBuyStatus(card);
+    if (!abilityStatus.ok) {
+      showMessage(t("msgOrientAbilityPending"));
       render();
       return;
     }
@@ -4867,6 +5055,7 @@ Object.assign(I18N.de, {
 
   function buildMoveEvents(moveId, type, args, player) {
     var refs = moveEventRefs(args || {}, player);
+    var orientCardAction = args && (args.market_id === ORIENT_MARKET_ID || cardIsOrient(args.card)) && (type === "buyMarket" || type === "buyReserved" || type === "reserveMarket");
     var events = [{
       schema: MOVE_EVENT_SCHEMA,
       event_id: "m" + moveId + ":core",
@@ -4881,6 +5070,16 @@ Object.assign(I18N.de, {
         event_id: "m" + moveId + ":orient-ability-window",
         channel: ORIENT_MARKET_ID,
         type: "abilityWindow",
+        status: "placeholder",
+        refs: clone(refs)
+      });
+    }
+    if (orientCardAction) {
+      events.push({
+        schema: MOVE_EVENT_SCHEMA,
+        event_id: "m" + moveId + ":orient-card-action",
+        channel: ORIENT_MARKET_ID,
+        type: type,
         status: "placeholder",
         refs: clone(refs)
       });
@@ -5796,15 +5995,16 @@ Object.assign(I18N.de, {
         var buySlot = removeBgaMarketCard(game, buyCard);
         revealBgaMarketCard(game, items, buyCard.tier, gamedatas, buySlot);
       }
-      if (COLORS.indexOf(buyCard.color) >= 0) player.bonuses[buyCard.color] += 1;
-      player.purchased.push(buyCard);
+      var bgaPurchasedCard = purchaseRecordCard(buyCard);
+      applyCardBonuses(player, bgaPurchasedCard);
+      player.purchased.push(bgaPurchasedCard);
       var claimedAfterBuy = applyBgaClaimNoble(game, player, claim, gamedatas);
       return {
         type: fromHand ? "buyReserved" : "buyMarket",
         player: player,
         args: {
           card_id: buyCard.id,
-          card: buyCard,
+          card: bgaPurchasedCard,
           tier: buyCard.tier,
           reserved_from: buyCard.reserved_from || "market",
           payment: { tokens: bgaCoinsFromGap(coins, -1), gold_as: emptyCounts(false) },
@@ -6336,7 +6536,7 @@ Object.assign(I18N.de, {
     [1, 2, 3].forEach(function (tier) {
       state.market[tier].forEach(function (card, index) {
         var payment = autoPaymentPlan(player, card);
-        if (paymentIsLegal(player, card, payment)) {
+        if (orientAbilityBuyStatus(card).ok && paymentIsLegal(player, card, payment)) {
           actions.push({
             type: "buy",
             context: { type: "buyMarket", player: player, card: card, tier: tier, index: index },
@@ -6347,7 +6547,7 @@ Object.assign(I18N.de, {
     });
     player.reserved.forEach(function (card, index) {
       var payment = autoPaymentPlan(player, card);
-      if (paymentIsLegal(player, card, payment)) {
+      if (orientAbilityBuyStatus(card).ok && paymentIsLegal(player, card, payment)) {
         actions.push({
           type: "buy",
           context: { type: "buyReserved", player: player, card: card, index: index },
@@ -6420,6 +6620,7 @@ Object.assign(I18N.de, {
       if (!marketCard) throw new Error("AI selected an empty market slot.");
       var marketContext = { type: "buyMarket", player: player, card: marketCard, tier: action.tier, index: action.index };
       var marketPayment = autoPaymentPlan(player, marketCard);
+      if (!orientAbilityBuyStatus(marketCard).ok) throw new Error("AI selected an Orient card with a pending ability choice.");
       if (!paymentIsLegal(player, marketCard, marketPayment)) throw new Error("AI selected an unaffordable market card.");
       completePurchase(marketContext, marketPayment, null, { ai: true });
       return;
@@ -6429,6 +6630,7 @@ Object.assign(I18N.de, {
       if (!reservedCard) throw new Error("AI selected an empty reserved slot.");
       var reservedContext = { type: "buyReserved", player: player, card: reservedCard, index: action.index };
       var reservedPayment = autoPaymentPlan(player, reservedCard);
+      if (!orientAbilityBuyStatus(reservedCard).ok) throw new Error("AI selected an Orient card with a pending ability choice.");
       if (!paymentIsLegal(player, reservedCard, reservedPayment)) throw new Error("AI selected an unaffordable reserved card.");
       completePurchase(reservedContext, reservedPayment, null, { ai: true });
       return;
