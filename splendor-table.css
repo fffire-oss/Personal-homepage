@@ -2352,6 +2352,9 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
 .bga-actions .button-link {
   flex: 0 1 auto;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-size: clamp(0.66rem, 2.7vw, 0.86rem);
 }
 
 .bga-capture-panel {
@@ -2685,6 +2688,13 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   .bga-actions button,
   .bga-actions .button-link {
     flex: 1 1 130px;
+  }
+
+  .bga-actions .button-link {
+    flex: 0 1 max-content;
+    padding: 0 clamp(5px, 2vw, 8px);
+    font-size: clamp(0.58rem, 2.55vw, 0.7rem);
+    letter-spacing: 0;
   }
 
   .panel-heading {
