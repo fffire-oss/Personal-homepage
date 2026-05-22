@@ -6,6 +6,7 @@ Gem Table uses DinoBoard as the Splendor Smart AI framework.
 
 - Default API base is `/api/dinoboard`.
 - Local testing can override it with `?dinoboardApi=http://127.0.0.1:8001`.
+- Before ICP approval, production testing should use the server IP origin, for example `http://101.34.210.13`.
 - DinoBoard smart AI is assigned only on 2-player tables.
 - If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the other AI seats use random legal AI.
 - In 3-player and 4-player tables, AI takeover uses random legal AI.
@@ -15,16 +16,19 @@ Gem Table uses DinoBoard as the Splendor Smart AI framework.
 Deploy DinoBoard as a private local service on the server:
 
 ```bash
+sudo apt-get update
+sudo apt-get install -y python3-pip python3-dev python3-venv python3-setuptools fail2ban
+
 cd /opt/dinoboard-ai/DinoBoard
 python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-pip install -e .
+.venv/bin/python -m pip install --upgrade pip setuptools wheel
+.venv/bin/python -m pip install fastapi "uvicorn[standard]" pybind11 numpy onnxruntime
+.venv/bin/python -m pip install -e . --no-build-isolation --no-deps
 cd platform
-uvicorn app:app --host 127.0.0.1 --port 8001 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
+../.venv/bin/uvicorn app:app --host 127.0.0.1 --port 8001 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
 ```
 
-The service must not expose an independent public port.
+The service must not expose an independent public port. For inference-only deploys, install only the runtime dependencies above; do not install training-only packages such as PyTorch unless training is needed on the server.
 
 ## systemd
 
@@ -50,7 +54,20 @@ WantedBy=multi-user.target
 
 ## Caddy
 
-Add the same-origin reverse proxy to the homepage site:
+Before ICP approval, run the homepage on the server IP over HTTP and add the same-origin reverse proxy:
+
+```caddy
+http://101.34.210.13 {
+    root * /var/www/personal-homepage
+    file_server
+
+    handle_path /api/dinoboard/* {
+        reverse_proxy 127.0.0.1:8001
+    }
+}
+```
+
+After the domain is available, move the same handler into the domain site:
 
 ```caddy
 handle_path /api/dinoboard/* {
@@ -61,7 +78,23 @@ handle_path /api/dinoboard/* {
 The public endpoint becomes:
 
 ```bash
+curl http://101.34.210.13/api/dinoboard/api/games/available
+```
+
+After ICP approval and DNS cutover, verify the domain endpoint instead:
+
+```bash
 curl https://zephyrlabs.cloud/api/dinoboard/api/games/available
+```
+
+## Verification
+
+```bash
+curl http://127.0.0.1:8001/api/games/available
+curl http://101.34.210.13/api/dinoboard/api/games/available
+systemctl status dinoboard-ai --no-pager
+systemctl status caddy --no-pager
+fail2ban-client status dinoboard-ai
 ```
 
 ## Rate Limiting

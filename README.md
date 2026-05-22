@@ -38,4 +38,13 @@ Then visit `http://localhost:8000`.
 
 The homepage is designed as static HTML/CSS/JS. The production domain may also run a separate private BGA replay API behind `/api/bga/replay`; that runtime is intentionally not part of this public homepage repository and should be deployed separately.
 
-Gem Table Smart AI uses DinoBoard behind the same-origin `/api/dinoboard` reverse proxy. See [DinoBoard AI deployment](docs/dinoboard-ai-deployment.md) for the server layout, rate limits, fail2ban rules, and AI strength tiers.
+Gem Table Smart AI uses DinoBoard behind the same-origin `/api/dinoboard` reverse proxy. The server-side AI runtime is separate from this static homepage:
+
+- Homepage static files are served from `/var/www/personal-homepage`; production should continue syncing this repository's `main` branch after the PR is merged.
+- DinoBoard is deployed separately at `/opt/dinoboard-ai/DinoBoard`.
+- The DinoBoard FastAPI process runs privately on `127.0.0.1:8001` through `dinoboard-ai.service`.
+- Caddy exposes only the same-origin route `/api/dinoboard/*` and proxies it to `127.0.0.1:8001`.
+- Before ICP approval, test through `http://101.34.210.13`; after the domain is available, keep the same reverse-proxy handler under the domain site.
+- AI abuse protection is implemented in DinoBoard FastAPI rate limits plus a `fail2ban` jail that watches `RATE_LIMIT` journal lines.
+
+See [DinoBoard AI deployment](docs/dinoboard-ai-deployment.md) for the exact systemd unit, Caddy block, runtime dependency install, rate limits, fail2ban rules, and AI strength tiers.
