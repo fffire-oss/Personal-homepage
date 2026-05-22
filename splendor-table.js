@@ -134,7 +134,7 @@
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
       fileIoHint: "Exports download as .json files. Import buttons read a selected .json file directly.",
       bgaCaptureTitle: "BGA replay capture",
-      bgaCaptureBody: "Open the official BGA review page, or use BoardReplayLab to crawl and convert browser-visible replay data as JSON.",
+      bgaCaptureBody: "Use the tool provided in BoardReplayLab to crawl and convert replay JSON.",
       bgaTableImportTitle: "Import by BGA table ID",
       bgaTableImportBody: "Enter a table ID to try direct import. If the server cannot access BGA, use the BoardReplayLab crawler project and import its JSON file.",
       bgaTableIdLabel: "BGA table ID",
@@ -1411,7 +1411,7 @@ Object.assign(I18N.de, {
     downloadCapturedJson: "\u4e0b\u8f7d\u91c7\u96c6 JSON",
     bgaTableImportStatus: "\u6269\u5c55\u724c\u5c40\u548c\u4e0d\u652f\u6301\u7684 BGA \u6570\u636e\u4f1a\u663e\u793a\u5bfc\u5165\u5931\u8d25\uff0c\u4e0d\u4f1a\u8f7d\u5165\u9519\u8bef\u6570\u636e\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u91c7\u96c6",
-    bgaCaptureBody: "\u6253\u5f00 BGA \u5b98\u65b9\u56de\u653e\u9875\uff0c\u6216\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u5e76\u8f6c\u6362\u56de\u653e JSON\u3002",
+    bgaCaptureBody: "\u8bf7\u4f7f\u7528 BoardReplayLab \u91cc\u63d0\u4f9b\u7684\u5de5\u5177\u722c\u53d6\u5e76\u8f6c\u6362\u56de\u653e JSON\u3002",
     bgaTableIdLabel: "BGA \u724c\u684c ID",
     openBgaReview: "\u6253\u5f00 BGA \u56de\u653e",
     downloadBgaCaptureScript: "\u4e0b\u8f7d\u91c7\u96c6\u811a\u672c",
@@ -1467,7 +1467,7 @@ Object.assign(I18N.de, {
     downloadCapturedJson: "\u4e0b\u8f09\u63a1\u96c6 JSON",
     bgaTableImportStatus: "\u64f4\u5145\u724c\u5c40\u548c\u4e0d\u652f\u63f4\u7684 BGA \u8cc7\u6599\u6703\u986f\u793a\u532f\u5165\u5931\u6557\uff0c\u4e0d\u6703\u8f09\u5165\u932f\u8aa4\u8cc7\u6599\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u63a1\u96c6",
-    bgaCaptureBody: "\u6253\u958b BGA \u5b98\u65b9\u56de\u653e\u9801\uff0c\u6216\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u4e26\u8f49\u63db\u56de\u653e JSON\u3002",
+    bgaCaptureBody: "\u8acb\u4f7f\u7528 BoardReplayLab \u88e1\u63d0\u4f9b\u7684\u5de5\u5177\u722c\u53d6\u4e26\u8f49\u63db\u56de\u653e JSON\u3002",
     bgaTableIdLabel: "BGA \u724c\u684c ID",
     openBgaReview: "\u6253\u958b BGA \u56de\u653e",
     downloadBgaCaptureScript: "\u4e0b\u8f09\u63a1\u96c6\u8173\u672c",
@@ -1509,7 +1509,7 @@ Object.assign(I18N.de, {
     buyShort: "\u8cb7",
     reserveShort: "\u4e88",
     bgaCaptureTitle: "BGA \u30ea\u30d7\u30ec\u30a4\u53d6\u5f97",
-    bgaCaptureBody: "BGA \u516c\u5f0f\u30ec\u30d3\u30e5\u30fc\u30da\u30fc\u30b8\u3092\u958b\u304f\u304b\u3001BoardReplayLab \u3067\u56de\u653e JSON \u3092\u53d6\u5f97\u3057\u307e\u3059\u3002",
+    bgaCaptureBody: "BoardReplayLab \u306e\u30c4\u30fc\u30eb\u3067\u56de\u653e JSON \u3092\u53d6\u5f97\u30fb\u5909\u63db\u3057\u307e\u3059\u3002",
     bgaTableIdLabel: "BGA table ID",
     openBgaReview: "BGA \u56de\u653e\u3092\u958b\u304f",
     downloadBgaCaptureScript: "\u53d6\u5f97\u30b9\u30af\u30ea\u30d7\u30c8",
@@ -1577,6 +1577,7 @@ Object.assign(I18N.de, {
   var replayStepTimer = null;
   var replayAutoTimer = null;
   var replayAutoplay = false;
+  var replayJumpClickValue = null;
   var overlayRefreshTimer = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
@@ -5158,7 +5159,9 @@ Object.assign(I18N.de, {
   function replayMoveIndexFromInput(value) {
     if (!replayData || !Array.isArray(replayData.moves)) return null;
     var total = replayData.moves.length;
-    var moveNumber = Number(value);
+    var cleanValue = String(value === undefined || value === null ? "" : value).replace(/[^\d]/g, "");
+    if (!cleanValue) return null;
+    var moveNumber = Number(cleanValue);
     if (!Number.isFinite(moveNumber)) return null;
     moveNumber = Math.floor(moveNumber);
     if (moveNumber < 0 || moveNumber > total) return null;
@@ -5169,12 +5172,14 @@ Object.assign(I18N.de, {
     return byMoveId >= 0 ? byMoveId : moveNumber - 1;
   }
 
-  function jumpReplayToInput() {
+  function jumpReplayToInput(valueOverride) {
     if (!replayData || state.mode !== "replay") return;
     clearReplayStepTimer();
     setReplayAutoplay(false, true);
     var total = replayData.moves.length;
-    var target = replayMoveIndexFromInput(el.replayJumpInput && el.replayJumpInput.value);
+    var inputValue = valueOverride !== undefined && valueOverride !== null ? valueOverride : el.replayJumpInput && el.replayJumpInput.value;
+    var target = replayMoveIndexFromInput(inputValue);
+    replayJumpClickValue = null;
     if (target === null) {
       showMessage(t("msgReplayJumpInvalid", { total: total }));
       render();
@@ -5672,12 +5677,17 @@ Object.assign(I18N.de, {
         render();
       });
     }
+    if (el.replayJump) {
+      el.replayJump.addEventListener("pointerdown", function () {
+        replayJumpClickValue = el.replayJumpInput ? el.replayJumpInput.value : null;
+      });
+    }
     if (el.topReplayControls) {
       el.topReplayControls.addEventListener("click", function (event) {
         var jumpButton = event.target.closest("#replay-jump");
         if (!jumpButton) return;
         event.preventDefault();
-        jumpReplayToInput();
+        jumpReplayToInput(replayJumpClickValue);
       });
     }
     if (el.replayJumpInput) {
