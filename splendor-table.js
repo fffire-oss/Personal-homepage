@@ -2962,6 +2962,7 @@ Object.assign(I18N.de, {
     document.body.classList.toggle("game-active", !!state);
     document.documentElement.classList.toggle("game-active-root", !!state);
     document.body.classList.toggle("turn-locked", !!(state && (state.turnTransition || state.aiThinking)));
+    document.body.classList.toggle("replay-mode", !!(state && state.mode === "replay"));
 
     if (!state) {
       el.startPanel.hidden = false;

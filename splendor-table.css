@@ -716,6 +716,36 @@ body:not(.game-active) .board-progress {
   justify-self: end;
 }
 
+.top-replay-controls {
+  display: none;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(92px, 1fr) repeat(4, auto);
+  gap: 7px;
+  align-items: center;
+  padding: 6px;
+  border: 1px solid rgba(49, 215, 255, 0.18);
+  border-radius: 8px;
+  background: rgba(49, 215, 255, 0.055);
+}
+
+body.replay-mode .top-replay-controls {
+  display: grid;
+}
+
+.top-replay-controls button {
+  min-height: 30px;
+  padding: 0 9px;
+  font-size: 0.66rem;
+  white-space: nowrap;
+}
+
+#replay-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .status-actions button {
   min-height: 32px;
   padding: 0 10px;
@@ -2535,6 +2565,22 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     min-height: 28px;
     padding: 0 8px;
     font-size: 0.58rem;
+  }
+
+  .top-replay-controls {
+    grid-template-columns: minmax(0, 1fr) repeat(4, auto);
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .top-replay-controls button {
+    min-height: 27px;
+    padding: 0 5px;
+    font-size: clamp(0.52rem, 2.35vw, 0.62rem);
+  }
+
+  #replay-status {
+    font-size: clamp(0.54rem, 2.35vw, 0.66rem);
   }
 
   .table-top-panel {
