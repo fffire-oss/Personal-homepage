@@ -1,6 +1,8 @@
 node_modules/
 server/node_modules/
 .bga-crawler-profile/
+.bga-*-profile/
 .bga-replay-jobs/
+.bga-cookie-header
 bga-replays/
 *.log

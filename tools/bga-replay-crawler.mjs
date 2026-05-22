@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -14,6 +14,9 @@ function usage() {
     "Notes:",
     "  - The script opens the official BGA review page in a local browser.",
     "  - Log in on BGA in that browser if prompted.",
+    "  - Optional server-side cookie auth: BGA_COOKIE or BGA_COOKIE_FILE.",
+    "  - Optional server-side env login: BGA_USERNAME and BGA_PASSWORD.",
+    "  - Optional local cookie capture: BGA_WRITE_COOKIE_FILE.",
     "  - Your BGA password is never sent to zephyrlabs.cloud or this repo.",
     "  - Output is raw browser-visible BGA replay data for later conversion/import."
   ].join("\n");
@@ -45,6 +48,95 @@ function parseArgs(argv) {
   }
   args.table = String(args.table || "").replace(/[^\d]/g, "");
   return args;
+}
+
+function readBgaCredentials() {
+  return {
+    username: process.env.BGA_USERNAME || process.env.BGA_LOGIN_ID || process.env.BGA_USER || "",
+    password: process.env.BGA_PASSWORD || process.env.BGA_PASS || ""
+  };
+}
+
+async function readBgaCookieHeader() {
+  var direct = process.env.BGA_COOKIE || process.env.BGA_COOKIE_HEADER || "";
+  if (direct.trim()) return direct.trim();
+  var filePath = process.env.BGA_COOKIE_FILE || "";
+  if (!filePath.trim()) return "";
+  try {
+    return (await readFile(path.resolve(process.cwd(), filePath), "utf8")).trim();
+  } catch (error) {
+    throw new Error(`Could not read BGA_COOKIE_FILE: ${error.message}`);
+  }
+}
+
+function hasBgaCredentials(credentials) {
+  return !!(credentials && credentials.username && credentials.password);
+}
+
+function parseCookieHeader(cookieHeader) {
+  return String(cookieHeader || "")
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const splitAt = entry.indexOf("=");
+      if (splitAt <= 0) return null;
+      const name = entry.slice(0, splitAt).trim();
+      const value = entry.slice(splitAt + 1).trim();
+      if (!name) return null;
+      return { name, value };
+    })
+    .filter(Boolean);
+}
+
+async function applyBgaCookieHeader(context, cookieHeader) {
+  const pairs = parseCookieHeader(cookieHeader);
+  if (!pairs.length) return false;
+  const cookies = pairs.flatMap((pair) => [
+    {
+      name: pair.name,
+      value: pair.value,
+      url: "https://boardgamearena.com",
+      secure: true,
+      sameSite: "Lax"
+    },
+    {
+      name: pair.name,
+      value: pair.value,
+      url: "https://en.boardgamearena.com",
+      secure: true,
+      sameSite: "Lax"
+    }
+  ]);
+  await context.addCookies(cookies);
+  await context.setExtraHTTPHeaders({ Cookie: pairs.map((pair) => `${pair.name}=${pair.value}`).join("; ") });
+  return true;
+}
+
+async function cookieHeaderFromContext(context) {
+  const cookies = await context.cookies(["https://boardgamearena.com", "https://en.boardgamearena.com"]);
+  const seen = new Set();
+  return cookies
+    .filter((cookie) => cookie && cookie.name && cookie.value)
+    .filter((cookie) => {
+      const key = `${cookie.name}=${cookie.value}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .map((cookie) => `${cookie.name}=${cookie.value}`)
+    .join("; ");
+}
+
+async function maybeWriteCookieHeader(context) {
+  const target = process.env.BGA_WRITE_COOKIE_FILE || "";
+  if (!target.trim()) return;
+  const cookieHeader = await cookieHeaderFromContext(context);
+  if (!cookieHeader) return;
+  const outputPath = path.resolve(process.cwd(), target);
+  await mkdir(path.dirname(outputPath), { recursive: true });
+  await writeFile(outputPath, cookieHeader, "utf8");
+  console.log(`Saved BGA cookie header to ${outputPath}`);
 }
 
 function headersToObject(headers) {
@@ -116,7 +208,10 @@ async function loadChromium(repoRoot) {
 }
 
 async function collectSnapshot(page) {
-  return page.evaluate(() => {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      await page.waitForLoadState("domcontentloaded", { timeout: 5000 }).catch(() => {});
+      return await page.evaluate(() => {
     function cloneVisible(value, maxDepth) {
       const seen = new WeakSet();
       function walk(input, depth) {
@@ -168,7 +263,13 @@ async function collectSnapshot(page) {
       }, 10) : null,
       logs
     };
-  });
+      });
+    } catch (error) {
+      if (!/Execution context was destroyed|navigation|Target closed/i.test(error.message || "") || attempt === 3) throw error;
+      await page.waitForTimeout(800);
+    }
+  }
+  return { title: "", url: page.url(), gameui: null, logs: [] };
 }
 
 async function clickNextReplayControl(page) {
@@ -204,6 +305,170 @@ async function assertNotLoginOrLobby(page) {
   if (!/gamereview/i.test(current.url)) {
     throw new Error(`BGA did not stay on the gamereview page. Current URL: ${current.url}`);
   }
+}
+
+async function assertBgaReplayAccessible(page) {
+  const current = await page.evaluate(() => ({
+    title: document.title,
+    body: document.body ? document.body.innerText.slice(0, 4000) : ""
+  }));
+  const text = `${current.title}\n${current.body}`;
+  if (/registered more than 24 hours and have played at least 2 games/i.test(text)) {
+    throw new Error("BGA blocked replay access for this account: the account must be registered for more than 24 hours and must have played at least 2 games.");
+  }
+  if (/go premium|premium-only|premium only|support us & go premium/i.test(text) && !/replay|archive|logs|move/i.test(text)) {
+    throw new Error("BGA blocked replay access for this account. Premium access or additional account eligibility may be required.");
+  }
+}
+
+function responseHasReplayData(response) {
+  if (!response) return false;
+  const parsed = response.parsed_json;
+  if (/\/archive\/archive\/logs\.html/i.test(response.url || "")) {
+    return !!(parsed && parsed.data && Array.isArray(parsed.data.logs));
+  }
+  if (parsed && parsed.data && Array.isArray(parsed.data.logs)) return true;
+  if (parsed && Array.isArray(parsed.logs)) return true;
+  return false;
+}
+
+async function pageHasReplaySurface(page) {
+  return page.evaluate(() => {
+    if (window.gameui || window.gameui_playback) return true;
+    const text = document.body ? document.body.innerText : "";
+    if (/replay|archive|logs|turn|move|spectator|review/i.test(text)) return true;
+    if (/重播|遊戲日誌|游戏日志|行動|行动|選擇你的視角|选择你的视角|游戏结束|遊戲結束/.test(text)) return true;
+    if (document.querySelector(".choosePlayerLink, #gamelogs, #logs, .gamelogreview")) return true;
+    return false;
+  }).catch(() => false);
+}
+
+async function waitForReplayData(page, responses, timeoutMs) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (responses.some(responseHasReplayData)) return;
+    if (await pageHasReplaySurface(page)) return;
+    await page.waitForTimeout(350);
+  }
+  throw new Error(`BGA review page did not load usable replay data within ${timeoutMs}ms. Login, permission, or Premium access may be required.`);
+}
+
+async function waitForArchiveLogsResponse(page, responses, timeoutMs) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (responses.some(responseHasReplayData)) return true;
+    await page.waitForTimeout(350);
+  }
+  return false;
+}
+
+async function fetchArchiveLogs(page, tableId, responses) {
+  const alreadyCaptured = responses.some(responseHasReplayData);
+  if (alreadyCaptured) return;
+  const relativeUrl = `/archive/archive/logs.html?table=${encodeURIComponent(tableId)}&translated=true&dojo.preventCache=${Date.now()}`;
+  const captured = await page.evaluate(async (url) => {
+    const headers = { "x-requested-with": "XMLHttpRequest" };
+    if (window.bgaConfig && window.bgaConfig.requestToken) {
+      headers["x-request-token"] = window.bgaConfig.requestToken;
+    }
+    const response = await fetch(url, {
+      credentials: "include",
+      headers
+    });
+    const text = await response.text();
+    let parsedJson = null;
+    try {
+      parsedJson = JSON.parse(text);
+    } catch {
+      // Keep raw text if BGA changes this endpoint.
+    }
+    return {
+      url: new URL(url, location.href).href,
+      status: response.status,
+      content_type: response.headers.get("content-type") || "",
+      captured_at: new Date().toISOString(),
+      parsed_json: parsedJson,
+      text
+    };
+  }, relativeUrl);
+  if (captured && looksReplayRelated(captured.url, captured.content_type, captured.text)) {
+    responses.push(captured);
+  }
+}
+
+async function loginRequired(page) {
+  const current = await page.evaluate(() => ({
+    url: location.href,
+    title: document.title,
+    body: document.body ? document.body.innerText.slice(0, 3000) : ""
+  }));
+  return (
+    /\/account|\/lobby/i.test(current.url) ||
+    /login|log in|sign in/i.test(current.title) ||
+    /Login to Board Game Arena|Email or username|Already have a BGA account/i.test(current.body)
+  );
+}
+
+async function loginWithBgaCredentials(page, credentials, reviewUrl) {
+  if (!hasBgaCredentials(credentials)) return false;
+  await page.goto("https://boardgamearena.com/account?page=login", { waitUntil: "domcontentloaded", timeout: 90000 });
+  await page.waitForTimeout(1200);
+  const result = await page.evaluate(async ({ username, password }) => {
+    function formBody(data) {
+      const params = new URLSearchParams();
+      Object.entries(data).forEach(([key, value]) => {
+        params.set(key, value == null ? "" : String(value));
+      });
+      return params.toString();
+    }
+    async function postJson(path, data) {
+      const response = await fetch(path, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
+          "x-requested-with": "XMLHttpRequest"
+        },
+        body: formBody(data)
+      });
+      const text = await response.text();
+      let json = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        // The caller only needs sanitized status details.
+      }
+      return { status: response.status, json, text: text.slice(0, 300) };
+    }
+    const tokenResponse = await postJson("/account/auth/getRequestToken.html", { bgapp: "bga" });
+    const requestToken = tokenResponse && tokenResponse.json && tokenResponse.json.data
+      ? tokenResponse.json.data.request_token
+      : "";
+    if (!requestToken) {
+      return { success: false, message: "BGA request token was not returned.", token_status: tokenResponse.status };
+    }
+    const loginResponse = await postJson("/account/auth/loginUserWithPassword.html", {
+      username,
+      password,
+      remember_me: "true",
+      request_token: requestToken
+    });
+    const data = loginResponse && loginResponse.json && loginResponse.json.data ? loginResponse.json.data : {};
+    return {
+      success: !!data.success,
+      failed: !!data.failed,
+      wait_until: data.wait_until || null,
+      message: data.message || "",
+      status: loginResponse.status,
+      code: loginResponse && loginResponse.json ? loginResponse.json.code : null
+    };
+  }, { username: credentials.username, password: credentials.password });
+  if (!result || !result.success) {
+    throw new Error(result && result.message ? `BGA login failed: ${result.message}` : "BGA login failed through the auth API.");
+  }
+  await page.goto(reviewUrl, { waitUntil: "domcontentloaded", timeout: 90000 });
+  await page.waitForTimeout(1800);
+  return !(await loginRequired(page));
 }
 
 function detectCompatibility(payload) {
@@ -247,6 +512,8 @@ async function main() {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const repoRoot = path.resolve(scriptDir, "..");
   const chromium = await loadChromium(repoRoot);
+  const credentials = readBgaCredentials();
+  const cookieHeader = await readBgaCookieHeader();
   const outputDir = path.resolve(process.cwd(), args.out);
   const profileDir = path.resolve(process.cwd(), args.profile);
   await mkdir(outputDir, { recursive: true });
@@ -257,6 +524,9 @@ async function main() {
     viewport: { width: 1440, height: 1000 }
   });
   const page = context.pages()[0] || await context.newPage();
+  if (cookieHeader) {
+    await applyBgaCookieHeader(context, cookieHeader);
+  }
 
   page.on("response", async (response) => {
     try {
@@ -284,16 +554,25 @@ async function main() {
   console.log("If BGA asks you to log in, complete login in the opened browser window.");
   console.log("When the replay page is visible, the crawler will continue automatically.");
   await page.waitForTimeout(1800);
+  if (await loginRequired(page)) {
+    if (hasBgaCredentials(credentials)) {
+      const loggedIn = await loginWithBgaCredentials(page, credentials, reviewUrl);
+      if (!loggedIn) {
+        throw new Error("BGA automatic login did not complete. The account may need verification, captcha, or manual login in the crawler profile.");
+      }
+      await maybeWriteCookieHeader(context);
+    }
+  }
   await assertNotLoginOrLobby(page);
+  await maybeWriteCookieHeader(context);
+  await assertBgaReplayAccessible(page);
 
-  await page.waitForFunction(() => {
-    if (/\/account|\/lobby/i.test(location.href) || /login|log in|sign in/i.test(document.title)) return false;
-    const text = document.body ? document.body.innerText : "";
-    return /gamereview/i.test(location.href) && (/replay|archive|logs|tour|turn|move|spectator|review/i.test(text) || window.gameui || window.gameui_playback);
-  }, { timeout: args.waitMs }).catch((error) => {
-    throw new Error(`BGA review page did not load usable replay data within ${args.waitMs}ms. Login, permission, or Premium access may be required. ${error.message}`);
-  });
+  await waitForReplayData(page, responses, args.waitMs);
   await assertNotLoginOrLobby(page);
+  await assertBgaReplayAccessible(page);
+  if (!(await waitForArchiveLogsResponse(page, responses, Math.min(args.waitMs, 15000)))) {
+    await fetchArchiveLogs(page, args.table, responses).catch(() => {});
+  }
 
   const snapshots = [];
   snapshots.push(await collectSnapshot(page));
