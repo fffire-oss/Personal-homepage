@@ -5643,12 +5643,23 @@ Object.assign(I18N.de, {
         render();
       });
     }
-    if (el.replayJump) {
-      el.replayJump.addEventListener("click", jumpReplayToInput);
+    if (el.topReplayControls) {
+      el.topReplayControls.addEventListener("click", function (event) {
+        var jumpButton = event.target.closest("#replay-jump");
+        if (!jumpButton) return;
+        event.preventDefault();
+        jumpReplayToInput();
+      });
     }
     if (el.replayJumpInput) {
+      el.replayJumpInput.addEventListener("input", function () {
+        el.replayJumpInput.value = el.replayJumpInput.value.replace(/[^\d]/g, "");
+      });
       el.replayJumpInput.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") jumpReplayToInput();
+        if (event.key === "Enter") {
+          event.preventDefault();
+          jumpReplayToInput();
+        }
       });
     }
     if (el.continueReplay) {
@@ -5680,6 +5691,7 @@ Object.assign(I18N.de, {
       "resume-game",
       "clear-save",
       "game-panel",
+      "top-replay-controls",
       "table-top-sentinel",
       "current-player",
       "round-label",
