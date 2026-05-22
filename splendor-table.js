@@ -128,15 +128,15 @@
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
       fileIoHint: "Exports download as .json files. Import buttons read a selected .json file directly.",
       bgaCaptureTitle: "BGA replay capture",
-      bgaCaptureBody: "Install the userscript, open the official BGA review page with your own account, then export the browser-visible replay data as JSON.",
+      bgaCaptureBody: "Open the official BGA review page, or use BGAtoFreeboard to crawl and convert browser-visible replay data as JSON.",
       bgaTableImportTitle: "Import by BGA table ID",
-      bgaTableImportBody: "Enter a table ID to try direct import. If the browser cannot access BGA, run the GitHub crawler and import its JSON file.",
+      bgaTableImportBody: "Enter a table ID to try direct import. If the server cannot access BGA, use the BGAtoFreeboard crawler project and import its JSON file.",
       bgaTableIdLabel: "BGA table ID",
       bgaTableIdPlaceholder: "123456789",
       importBgaTable: "Import table ID",
       openBgaReview: "Open BGA review",
       downloadBgaCaptureScript: "Download capture script",
-      openBgaCrawlerGithub: "GitHub crawler script",
+      openBgaCrawlerGithub: "BGAtoFreeboard",
       downloadCapturedJson: "Download captured JSON",
       bgaCaptureStatus: "Credentials stay on BGA. This site does not ask for or store your BGA password.",
       bgaTableImportStatus: "Expansion tables and unsupported BGA captures will fail instead of loading incorrect data.",
@@ -221,15 +221,15 @@
       msgReplayLoaded: "Replay loaded. Use Next move and Prev move to inspect snapshots.",
       msgContinueFromReplay: "Replay snapshot converted to a live table. Reload the saved JSON to replay from the beginning.",
       msgBgaTableIdRequired: "Enter a numeric BGA table ID first.",
-      msgBgaReviewOpened: "BGA review opened. Log in on BGA if prompted, then use the capture script on that page.",
+      msgBgaReviewOpened: "BGA review opened. Log in on BGA if prompted, then use BGAtoFreeboard if you need an external JSON capture.",
       msgBgaTableFetching: "Trying to import BGA table {table}.",
-      msgBgaDirectImportFailed: "Direct BGA table import failed in this browser. Run the GitHub crawler script, then import the generated JSON file.",
-      msgBgaServerUnavailable: "Replay server is not available. Deploy server/bga-replay-server.mjs, or run the GitHub crawler script and import the generated JSON file.",
+      msgBgaDirectImportFailed: "Direct BGA table import failed. Use the BGAtoFreeboard crawler project, then import the generated JSON file.",
+      msgBgaServerUnavailable: "Replay server is not available. Use the BGAtoFreeboard crawler project and import the generated JSON file.",
       msgBgaServerQueued: "Server is crawling BGA table {table}. Keep this page open.",
       msgBgaServerDone: "Server captured the replay JSON. Download is ready.",
       msgBgaServerFailed: "Server crawl failed: {message}",
-      msgBgaCaptureUnsupported: "Replay JSON is ready to download, but raw BGA captures cannot be imported into the local table yet.",
-      msgBgaExpansionUnsupported: "Replay JSON is ready to download, but this table appears to use an expansion or unsupported variant, so it cannot be imported into the local base-game table.",
+      msgBgaCaptureUnsupported: "Replay JSON is ready to download, but this BGA capture could not be adapted into the current Gem Table replay schema.",
+      msgBgaExpansionUnsupported: "Replay JSON is ready to download, but an active expansion flag was detected, so it cannot be imported into the base-game table.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReturnedLiveTable: "Returned to live table.",
@@ -1393,13 +1393,13 @@ Object.assign(I18N.de, {
     fileIoHint: "\u5bfc\u51fa\u4f1a\u76f4\u63a5\u4e0b\u8f7d .json \u6587\u4ef6\uff0c\u5bfc\u5165\u6309\u94ae\u4f1a\u76f4\u63a5\u8bfb\u53d6\u9009\u62e9\u7684 .json \u6587\u4ef6\u3002",
     importReplayFile: "\u5bfc\u5165 JSON \u6587\u4ef6",
     bgaTableImportTitle: "\u901a\u8fc7 BGA table ID \u5bfc\u5165",
-    bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u6d4f\u89c8\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u8fd0\u884c GitHub \u722c\u53d6\u811a\u672c\u540e\u518d\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
+    bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u670d\u52a1\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9879\u76ee\u540e\u518d\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
     importBgaTable: "\u5bfc\u5165 table ID",
-    openBgaCrawlerGithub: "GitHub \u722c\u53d6\u811a\u672c",
+    openBgaCrawlerGithub: "BGAtoFreeboard",
     downloadCapturedJson: "\u4e0b\u8f7d\u91c7\u96c6 JSON",
     bgaTableImportStatus: "\u6269\u5c55\u724c\u5c40\u548c\u4e0d\u652f\u6301\u7684 BGA \u6570\u636e\u4f1a\u663e\u793a\u5bfc\u5165\u5931\u8d25\uff0c\u4e0d\u4f1a\u8f7d\u5165\u9519\u8bef\u6570\u636e\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u91c7\u96c6",
-    bgaCaptureBody: "\u5148\u5b89\u88c5 userscript\uff0c\u518d\u7528\u4f60\u81ea\u5df1\u7684 BGA \u8d26\u53f7\u6253\u5f00\u5b98\u65b9\u56de\u653e\u9875\uff0c\u6700\u540e\u5bfc\u51fa\u6d4f\u89c8\u5668\u5df2\u52a0\u8f7d\u7684\u56de\u653e JSON\u3002",
+    bgaCaptureBody: "\u6253\u5f00 BGA \u5b98\u65b9\u56de\u653e\u9875\uff0c\u6216\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u5e76\u8f6c\u6362\u56de\u653e JSON\u3002",
     bgaTableIdLabel: "BGA \u724c\u684c ID",
     openBgaReview: "\u6253\u5f00 BGA \u56de\u653e",
     downloadBgaCaptureScript: "\u4e0b\u8f7d\u91c7\u96c6\u811a\u672c",
@@ -1411,13 +1411,13 @@ Object.assign(I18N.de, {
     msgBgaTableIdRequired: "\u8bf7\u5148\u8f93\u5165\u6570\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
     msgBgaReviewOpened: "\u5df2\u6253\u5f00 BGA \u56de\u653e\u9875\u3002\u5982\u679c\u8981\u6c42\u767b\u5f55\uff0c\u8bf7\u5728 BGA \u9875\u9762\u5b8c\u6210\u767b\u5f55\uff0c\u7136\u540e\u4f7f\u7528\u91c7\u96c6\u811a\u672c\u5bfc\u51fa\u3002",
     msgBgaTableFetching: "\u6b63\u5728\u5c1d\u8bd5\u5bfc\u5165 BGA \u724c\u684c {table}\u3002",
-    msgBgaDirectImportFailed: "\u76f4\u63a5\u5bfc\u5165 BGA table \u5931\u8d25\u3002\u8bf7\u8fd0\u884c GitHub \u722c\u53d6\u811a\u672c\uff0c\u518d\u5bfc\u5165\u751f\u6210\u7684 JSON \u6587\u4ef6\u3002",
-    msgBgaServerUnavailable: "\u56de\u653e\u670d\u52a1\u5668\u4e0d\u53ef\u7528\u3002\u8bf7\u90e8\u7f72 server/bga-replay-server.mjs\uff0c\u6216\u8fd0\u884c GitHub \u722c\u53d6\u811a\u672c\u540e\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
+    msgBgaDirectImportFailed: "\u76f4\u63a5\u5bfc\u5165 BGA table \u5931\u8d25\u3002\u8bf7\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9879\u76ee\uff0c\u518d\u5bfc\u5165\u751f\u6210\u7684 JSON \u6587\u4ef6\u3002",
+    msgBgaServerUnavailable: "\u56de\u653e\u670d\u52a1\u5668\u4e0d\u53ef\u7528\u3002\u8bf7\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9879\u76ee\u540e\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
     msgBgaServerQueued: "\u670d\u52a1\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8bf7\u4fdd\u6301\u9875\u9762\u6253\u5f00\u3002",
     msgBgaServerDone: "\u670d\u52a1\u5668\u5df2\u751f\u6210\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f7d\u3002",
     msgBgaServerFailed: "\u670d\u52a1\u5668\u722c\u53d6\u5931\u8d25\uff1a{message}",
-    msgBgaCaptureUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f7d\uff1b\u4f46 BGA \u539f\u59cb\u91c7\u96c6\u6570\u636e\u8fd8\u4e0d\u80fd\u76f4\u63a5\u5bfc\u5165\u672c\u5730\u724c\u684c\u3002",
-    msgBgaExpansionUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f7d\uff1b\u4f46\u8be5 BGA \u56de\u653e\u5305\u542b\u6269\u5c55\u6216\u4e0d\u652f\u6301\u7684\u53d8\u4f53\uff0c\u4e0d\u80fd\u5bfc\u5165\u5f53\u524d\u57fa\u7840\u7248\u672c\u5730\u724c\u684c\u3002",
+    msgBgaCaptureUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f7d\uff1b\u4f46\u8fd9\u4efd BGA \u91c7\u96c6\u6570\u636e\u65e0\u6cd5\u9002\u914d\u6210\u5f53\u524d Gem Table \u56de\u653e\u683c\u5f0f\u3002",
+    msgBgaExpansionUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f7d\uff1b\u4f46\u68c0\u6d4b\u5230\u6269\u5c55\u5df2\u542f\u7528\uff0c\u4e0d\u80fd\u5bfc\u5165\u5f53\u524d\u57fa\u7840\u7248\u724c\u684c\u3002",
     msgContinueFromReplay: "\u5df2\u5c06\u5f53\u524d\u56de\u653e\u8282\u70b9\u8f6c\u4e3a\u53ef\u7ee7\u7eed\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8bf7\u91cd\u65b0\u4ece\u5934\u8f7d\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1439,13 +1439,13 @@ Object.assign(I18N.de, {
     fileIoHint: "\u532f\u51fa\u6703\u76f4\u63a5\u4e0b\u8f09 .json \u6a94\u6848\uff0c\u532f\u5165\u6309\u9215\u6703\u76f4\u63a5\u8b80\u53d6\u9078\u64c7\u7684 .json \u6a94\u6848\u3002",
     importReplayFile: "\u532f\u5165 JSON \u6a94\u6848",
     bgaTableImportTitle: "\u901a\u904e BGA table ID \u532f\u5165",
-    bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u700f\u89bd\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u57f7\u884c GitHub \u722c\u53d6\u8173\u672c\u5f8c\u518d\u532f\u5165 JSON \u6a94\u6848\u3002",
+    bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u4f3a\u670d\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9805\u76ee\u5f8c\u518d\u532f\u5165 JSON \u6a94\u6848\u3002",
     importBgaTable: "\u532f\u5165 table ID",
-    openBgaCrawlerGithub: "GitHub \u722c\u53d6\u8173\u672c",
+    openBgaCrawlerGithub: "BGAtoFreeboard",
     downloadCapturedJson: "\u4e0b\u8f09\u63a1\u96c6 JSON",
     bgaTableImportStatus: "\u64f4\u5145\u724c\u5c40\u548c\u4e0d\u652f\u63f4\u7684 BGA \u8cc7\u6599\u6703\u986f\u793a\u532f\u5165\u5931\u6557\uff0c\u4e0d\u6703\u8f09\u5165\u932f\u8aa4\u8cc7\u6599\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u63a1\u96c6",
-    bgaCaptureBody: "\u5148\u5b89\u88dd userscript\uff0c\u518d\u7528\u4f60\u81ea\u5df1\u7684 BGA \u5e33\u865f\u6253\u958b\u5b98\u65b9\u56de\u653e\u9801\uff0c\u6700\u5f8c\u532f\u51fa\u700f\u89bd\u5668\u5df2\u8f09\u5165\u7684\u56de\u653e JSON\u3002",
+    bgaCaptureBody: "\u6253\u958b BGA \u5b98\u65b9\u56de\u653e\u9801\uff0c\u6216\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u4e26\u8f49\u63db\u56de\u653e JSON\u3002",
     bgaTableIdLabel: "BGA \u724c\u684c ID",
     openBgaReview: "\u6253\u958b BGA \u56de\u653e",
     downloadBgaCaptureScript: "\u4e0b\u8f09\u63a1\u96c6\u8173\u672c",
@@ -1457,13 +1457,13 @@ Object.assign(I18N.de, {
     msgBgaTableIdRequired: "\u8acb\u5148\u8f38\u5165\u6578\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
     msgBgaReviewOpened: "\u5df2\u6253\u958b BGA \u56de\u653e\u9801\u3002\u5982\u679c\u8981\u6c42\u767b\u5165\uff0c\u8acb\u5728 BGA \u9801\u9762\u5b8c\u6210\u767b\u5165\uff0c\u7136\u5f8c\u4f7f\u7528\u63a1\u96c6\u8173\u672c\u532f\u51fa\u3002",
     msgBgaTableFetching: "\u6b63\u5728\u5617\u8a66\u532f\u5165 BGA \u724c\u684c {table}\u3002",
-    msgBgaDirectImportFailed: "\u76f4\u63a5\u532f\u5165 BGA table \u5931\u6557\u3002\u8acb\u57f7\u884c GitHub \u722c\u53d6\u8173\u672c\uff0c\u518d\u532f\u5165\u7522\u751f\u7684 JSON \u6a94\u6848\u3002",
-    msgBgaServerUnavailable: "\u56de\u653e\u4f3a\u670d\u5668\u4e0d\u53ef\u7528\u3002\u8acb\u90e8\u7f72 server/bga-replay-server.mjs\uff0c\u6216\u57f7\u884c GitHub \u722c\u53d6\u8173\u672c\u5f8c\u532f\u5165 JSON \u6a94\u6848\u3002",
+    msgBgaDirectImportFailed: "\u76f4\u63a5\u532f\u5165 BGA table \u5931\u6557\u3002\u8acb\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9805\u76ee\uff0c\u518d\u532f\u5165\u7522\u751f\u7684 JSON \u6a94\u6848\u3002",
+    msgBgaServerUnavailable: "\u56de\u653e\u4f3a\u670d\u5668\u4e0d\u53ef\u7528\u3002\u8acb\u4f7f\u7528 BGAtoFreeboard \u722c\u53d6\u9805\u76ee\u5f8c\u532f\u5165 JSON \u6a94\u6848\u3002",
     msgBgaServerQueued: "\u4f3a\u670d\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8acb\u4fdd\u6301\u9801\u9762\u958b\u555f\u3002",
     msgBgaServerDone: "\u4f3a\u670d\u5668\u5df2\u7522\u751f\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f09\u3002",
     msgBgaServerFailed: "\u4f3a\u670d\u5668\u722c\u53d6\u5931\u6557\uff1a{message}",
-    msgBgaCaptureUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f09\uff1b\u4f46 BGA \u539f\u59cb\u63a1\u96c6\u8cc7\u6599\u9084\u4e0d\u80fd\u76f4\u63a5\u532f\u5165\u672c\u5730\u724c\u684c\u3002",
-    msgBgaExpansionUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f09\uff1b\u4f46\u8a72 BGA \u56de\u653e\u5305\u542b\u64f4\u5145\u6216\u4e0d\u652f\u63f4\u7684\u8b8a\u9ad4\uff0c\u4e0d\u80fd\u532f\u5165\u76ee\u524d\u57fa\u790e\u7248\u672c\u5730\u724c\u684c\u3002",
+    msgBgaCaptureUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f09\uff1b\u4f46\u9019\u4efd BGA \u63a1\u96c6\u8cc7\u6599\u7121\u6cd5\u9069\u914d\u6210\u76ee\u524d Gem Table \u56de\u653e\u683c\u5f0f\u3002",
+    msgBgaExpansionUnsupported: "\u56de\u653e JSON \u5df2\u6293\u53d6\u5b8c\u6210\uff0c\u53ef\u4ee5\u4e0b\u8f09\uff1b\u4f46\u6aa2\u6e2c\u5230\u64f4\u5145\u5df2\u555f\u7528\uff0c\u4e0d\u80fd\u532f\u5165\u76ee\u524d\u57fa\u790e\u7248\u724c\u684c\u3002",
     msgContinueFromReplay: "\u5df2\u5c07\u7576\u524d\u56de\u653e\u7bc0\u9ede\u8f49\u70ba\u53ef\u7e7c\u7e8c\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8acb\u91cd\u65b0\u5f9e\u982d\u8f09\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1477,7 +1477,7 @@ Object.assign(I18N.de, {
     buyShort: "\u8cb7",
     reserveShort: "\u4e88",
     bgaCaptureTitle: "BGA \u30ea\u30d7\u30ec\u30a4\u53d6\u5f97",
-    bgaCaptureBody: "userscript \u3092\u5165\u308c\u3001\u81ea\u5206\u306e BGA \u30a2\u30ab\u30a6\u30f3\u30c8\u3067\u516c\u5f0f\u30ec\u30d3\u30e5\u30fc\u30da\u30fc\u30b8\u3092\u958b\u3044\u3066\u304b\u3089 JSON \u3092\u66f8\u304d\u51fa\u3057\u307e\u3059\u3002",
+    bgaCaptureBody: "BGA \u516c\u5f0f\u30ec\u30d3\u30e5\u30fc\u30da\u30fc\u30b8\u3092\u958b\u304f\u304b\u3001BGAtoFreeboard \u3067\u56de\u653e JSON \u3092\u53d6\u5f97\u3057\u307e\u3059\u3002",
     bgaTableIdLabel: "BGA table ID",
     openBgaReview: "BGA \u56de\u653e\u3092\u958b\u304f",
     downloadBgaCaptureScript: "\u53d6\u5f97\u30b9\u30af\u30ea\u30d7\u30c8",
@@ -2680,7 +2680,7 @@ Object.assign(I18N.de, {
   }
 
   function logCardBadge(cardId, options) {
-    var card = findDevelopmentCardById(cardId);
+    var card = findDevelopmentCardById(cardId) || options && options.card;
     var hidden = options && options.hidden;
     var tier = options && options.tier || card && card.tier || "?";
     if (hidden) {
@@ -2722,14 +2722,14 @@ Object.assign(I18N.de, {
       var hiddenReserve = mode === "safe" && move.type === "reserveDeck";
       return [
         '<span class="log-source-chip">' + escapeHtml(t(move.type === "reserveDeck" ? "logBlindReserve" : "logFaceUpReserve")) + "</span>",
-        logCardBadge(args.card_id, { hidden: hiddenReserve, tier: args.tier }),
+        logCardBadge(args.card_id, { hidden: hiddenReserve, tier: args.tier, card: args.card }),
         args.took_gold ? '<span class="log-source-chip gold">' + escapeHtml(t("logGoldTaken")) + " " + logTokenChip("gold", 1, true) + "</span>" : ""
       ].filter(Boolean).join("");
     }
     if (move.type === "buyMarket" || move.type === "buyReserved") {
       var hiddenBuy = mode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
       return [
-        logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier }),
+        logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier, card: args.card }),
         args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
         args.payment ? logTokenSet(args.payment.tokens, args.payment.gold_as) : ""
       ].filter(Boolean).join("");
@@ -3037,12 +3037,12 @@ Object.assign(I18N.de, {
 
   function pendingTakeIsLegal() {
     if (!state || pendingTake.length === 0) return false;
+    if (pendingTake.length === 2 && pendingTake[0] === pendingTake[1]) {
+      return state.bank[pendingTake[0]] >= 4;
+    }
     if (pendingTake.length === differentTakeTargetCount()) {
       var unique = new Set(pendingTake);
       return unique.size === pendingTake.length;
-    }
-    if (pendingTake.length === 2 && pendingTake[0] === pendingTake[1]) {
-      return state.bank[pendingTake[0]] >= 4;
     }
     return false;
   }
@@ -3914,19 +3914,74 @@ Object.assign(I18N.de, {
 
   function bgaCaptureHasExpansionHint(payload) {
     if (payload && payload.compatibility && payload.compatibility.has_expansion_hint) return true;
-    var text = "";
-    try {
-      text = JSON.stringify(payload).slice(0, 1200000).toLowerCase();
-    } catch (error) {
-      text = "";
+    return bgaActiveExpansionFlags(payload).length > 0;
+  }
+
+  function bgaCaptureExpansionDetails(payload) {
+    var compatibility = payload && payload.compatibility || {};
+    var detection = compatibility.expansion_detection || {};
+    var active = Array.isArray(detection.active) ? detection.active : bgaActiveExpansionFlags(payload);
+    if (active.length) {
+      return active.map(function (entry) {
+        return (entry.label || "Expansion") + (entry.path ? " (" + entry.path + ")" : "");
+      }).join(", ");
     }
-    return ["cities", "trading", "stronghold", "orient", "expansion", "extension", "\u6c38\u663c", "\u90fd\u5e02", "\u4ea4\u6613"].some(function (term) {
-      return text.indexOf(term.toLowerCase()) !== -1;
-    });
+    return compatibility.reason || "";
+  }
+
+  function bgaActiveExpansionFlags(payload) {
+    var active = [];
+    var patterns = [
+      { label: "Silk Road", re: /silk[_\-\s]?road|silkroad/i },
+      { label: "Cities", re: /cities|city/i },
+      { label: "Orient", re: /orient/i },
+      { label: "Trading", re: /trading/i },
+      { label: "Strongholds", re: /stronghold/i },
+      { label: "Expansion", re: /expansion|extension/i }
+    ];
+    function labelFor(value) {
+      var text = String(value || "");
+      var match = patterns.find(function (entry) { return entry.re.test(text); });
+      return match ? match.label : "";
+    }
+    function isActiveValue(value) {
+      if (value === true) return true;
+      if (typeof value === "number") return value === 1;
+      if (typeof value === "string") return /^(true|1|yes|on|enabled|active)$/i.test(value.trim());
+      return false;
+    }
+    function push(entry) {
+      if (!active.some(function (item) { return item.path === entry.path && item.label === entry.label; })) {
+        active.push(entry);
+      }
+    }
+    function walk(value, pathName) {
+      if (!value || typeof value !== "object") return;
+      if (Array.isArray(value)) {
+        value.slice(0, 1000).forEach(function (item, index) {
+          walk(item, pathName + "[" + index + "]");
+        });
+        return;
+      }
+      Object.keys(value).forEach(function (key) {
+        var child = value[key];
+        var path = pathName ? pathName + "." + key : key;
+        var label = labelFor(key);
+        if (label && (typeof child !== "object" || child === null) && isActiveValue(child)) {
+          push({ label: label, path: path, value: child });
+        }
+        walk(child, path);
+      });
+    }
+    walk(payload, "");
+    return active;
   }
 
   function showBgaImportMessage(key, fromStart) {
-    var message = t(key);
+    showBgaImportText(t(key), fromStart);
+  }
+
+  function showBgaImportText(message, fromStart) {
     if (fromStart) {
       showStartMessage(message);
       if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = message;
@@ -3937,8 +3992,289 @@ Object.assign(I18N.de, {
   }
 
   function failBgaCaptureImport(payload, fromStart) {
-    showBgaImportMessage(bgaCaptureHasExpansionHint(payload) ? "msgBgaExpansionUnsupported" : "msgBgaCaptureUnsupported", fromStart);
+    if (bgaCaptureHasExpansionHint(payload)) {
+      var details = bgaCaptureExpansionDetails(payload);
+      showBgaImportText(t("msgBgaExpansionUnsupported") + (details ? " " + details : ""), fromStart);
+    } else {
+      showBgaImportMessage("msgBgaCaptureUnsupported", fromStart);
+    }
     render();
+  }
+
+  function extractBgaReplayData(payload) {
+    if (payload && payload.data && Array.isArray(payload.data.logs)) return payload.data;
+    var responses = payload && Array.isArray(payload.responses) ? payload.responses : [];
+    for (var index = 0; index < responses.length; index += 1) {
+      var parsed = responses[index] && responses[index].parsed_json;
+      if (parsed && parsed.data && Array.isArray(parsed.data.logs)) return parsed.data;
+    }
+    return null;
+  }
+
+  function bgaGemColor(code) {
+    return {
+      C: "white",
+      S: "blue",
+      E: "green",
+      R: "red",
+      O: "black",
+      G: "gold"
+    }[String(code || "").trim().toUpperCase()] || "";
+  }
+
+  function bgaTierFromCard(card, args) {
+    var location = String(card && card.location || "");
+    var match = location.match(/(?:market|draw)_(\d+)/);
+    if (match) return Math.max(1, Math.min(3, Number(match[1]) || 1));
+    var drawpile = Number(args && args.drawpile);
+    if (drawpile >= 1 && drawpile <= 3) return drawpile;
+    var rank = String(args && args.rank || "");
+    var circles = (rank.match(/[◯○]/g) || []).length;
+    return circles >= 1 && circles <= 3 ? circles : 1;
+  }
+
+  function bgaCardId(card, fallback) {
+    var raw = card && (card.type || card.id) || fallback;
+    return "bga-" + String(raw || "unknown");
+  }
+
+  function bgaCardFromNotification(item, groupItems, fallback) {
+    var args = item && item.args || {};
+    var card = args.card || fallback && fallback.card || {};
+    var scoreItem = groupItems.find(function (entry) {
+      return entry && entry.type === "updateScore" && String(entry.args && entry.args.player_id) === String(args.player_id || fallback && fallback.player_id);
+    });
+    var color = bgaGemColor(args.gem_type) || fallback && fallback.color || "gold";
+    return {
+      id: bgaCardId(card, fallback && fallback.id),
+      bga_id: String(card.type || card.id || fallback && fallback.id || ""),
+      tier: bgaTierFromCard(card, args),
+      color: color,
+      points: Math.max(0, Number(scoreItem && scoreItem.args && scoreItem.args.amount_vp) || 0),
+      cost: normalizeCost({})
+    };
+  }
+
+  function bgaCoinsFromGap(items, sign) {
+    var counts = emptyCounts(true);
+    (items || []).forEach(function (item) {
+      if (!item || item.type !== "coins") return;
+      var gap = item.args && item.args.gap || {};
+      Object.keys(gap).forEach(function (code) {
+        var color = bgaGemColor(code);
+        var amount = Number(gap[code]) || 0;
+        if (!color || amount * sign <= 0) return;
+        counts[color] += Math.abs(amount);
+      });
+    });
+    return counts;
+  }
+
+  function bgaTokenListFromCounts(counts) {
+    var colors = [];
+    ALL_TOKENS.forEach(function (color) {
+      for (var index = 0; index < (Number(counts[color]) || 0); index += 1) {
+        colors.push(color);
+      }
+    });
+    return colors;
+  }
+
+  function applyBgaCoinGaps(game, player, items) {
+    (items || []).forEach(function (item) {
+      if (!item || item.type !== "coins") return;
+      var gap = item.args && item.args.gap || {};
+      Object.keys(gap).forEach(function (code) {
+        var color = bgaGemColor(code);
+        var delta = Number(gap[code]) || 0;
+        if (!color || !delta) return;
+        player.tokens[color] = Math.max(0, (player.tokens[color] || 0) + delta);
+        game.bank[color] = Math.max(0, (game.bank[color] || 0) - delta);
+      });
+    });
+  }
+
+  function buildBgaPlayerList(data) {
+    var players = Array.isArray(data && data.players) ? data.players.slice(0, 4) : [];
+    var byId = {};
+    players.forEach(function (player) {
+      byId[String(player.id)] = true;
+    });
+    (data && data.logs || []).forEach(function (packet) {
+      (packet.data || []).forEach(function (entry) {
+        var args = entry.args || {};
+        var id = args.player_id;
+        if (!id || byId[String(id)]) return;
+        byId[String(id)] = true;
+        players.push({ id: id, name: args.player_name || "BGA Player " + players.length });
+      });
+    });
+    return players.slice(0, 4);
+  }
+
+  function groupBgaPacketsByMove(logs) {
+    var groups = {};
+    (logs || []).forEach(function (packet) {
+      var moveId = String(packet && packet.move_id || packet && packet.packet_id || "");
+      if (!moveId) return;
+      if (!groups[moveId]) groups[moveId] = { move_id: moveId, items: [] };
+      groups[moveId].items = groups[moveId].items.concat(packet.data || []);
+    });
+    return Object.keys(groups).sort(function (a, b) {
+      return (Number(a) || 0) - (Number(b) || 0);
+    }).map(function (key) {
+      return groups[key];
+    });
+  }
+
+  function applyBgaMoveGroup(game, group, playerLookup) {
+    var items = group.items || [];
+    var publicReserve = items.find(function (entry) { return entry.type === "reserveCard" && (entry.log || entry.args && entry.args.player_name); });
+    var privateReserve = items.find(function (entry) { return entry.type === "reserveCard" && entry.args && entry.args.card; });
+    var buy = items.find(function (entry) { return entry.type === "buyCard"; });
+    var claim = items.find(function (entry) { return entry.type === "claimNoble"; });
+    var end = items.find(function (entry) { return entry.type === "simpleNode" && /end of game/i.test(entry.log || ""); });
+    var coins = items.filter(function (entry) { return entry.type === "coins"; });
+    var primary = buy || publicReserve || privateReserve || claim || coins[0] || end;
+    if (!primary) return null;
+    var primaryArgs = primary.args || {};
+    var externalId = String(primaryArgs.player_id || "");
+    if (!externalId && coins[0] && coins[0].args) externalId = String(coins[0].args.player_id || "");
+    var player = playerLookup[externalId] || game.players[0];
+    if (!player) return null;
+    game.current = Math.max(0, game.players.indexOf(player));
+    applyBgaCoinGaps(game, player, coins);
+
+    if (buy) {
+      var buyCard = bgaCardFromNotification(buy, items, { player_id: externalId });
+      var fromHand = /hand/i.test(String(buy.args && buy.args.card && buy.args.card.location || ""));
+      if (fromHand) {
+        var reservedIndex = player.reserved.findIndex(function (card) {
+          return card.bga_id && card.bga_id === buyCard.bga_id || card.id === buyCard.id;
+        });
+        if (reservedIndex >= 0) {
+          buyCard.reserved_from = player.reserved[reservedIndex].reserved_from;
+          player.reserved.splice(reservedIndex, 1);
+        } else {
+          buyCard.reserved_from = "deck";
+        }
+      }
+      if (COLORS.indexOf(buyCard.color) >= 0) player.bonuses[buyCard.color] += 1;
+      player.purchased.push(buyCard);
+      return {
+        type: fromHand ? "buyReserved" : "buyMarket",
+        player: player,
+        args: {
+          card_id: buyCard.id,
+          card: buyCard,
+          tier: buyCard.tier,
+          reserved_from: buyCard.reserved_from || "market",
+          payment: { tokens: bgaCoinsFromGap(coins, -1), gold_as: emptyCounts(false) }
+        }
+      };
+    }
+
+    if (publicReserve || privateReserve) {
+      var reserveItem = publicReserve || privateReserve;
+      var cardSource = privateReserve && privateReserve.args && privateReserve.args.card || reserveItem.args && reserveItem.args.card || {};
+      var fromDeck = /^draw_/i.test(String(cardSource.location || "")) || !!(reserveItem.args && reserveItem.args.drawpile);
+      var reserveCard = bgaCardFromNotification(reserveItem, items, { card: cardSource, id: cardSource.type || cardSource.id, player_id: externalId });
+      reserveCard.reserved_from = fromDeck ? "deck" : "market";
+      if (player.reserved.length < 3) player.reserved.push(reserveCard);
+      return {
+        type: fromDeck ? "reserveDeck" : "reserveMarket",
+        player: player,
+        args: {
+          card_id: reserveCard.id,
+          card: reserveCard,
+          tier: reserveCard.tier,
+          took_gold: (bgaCoinsFromGap(coins, 1).gold || 0) > 0
+        }
+      };
+    }
+
+    if (claim) {
+      var noble = {
+        id: "bga-noble-" + String(claim.args && claim.args.card && (claim.args.card.type || claim.args.card.id) || group.move_id),
+        name: String(claim.args && claim.args.noble_desc || "BGA noble"),
+        points: 3,
+        req: normalizeCost({})
+      };
+      player.nobles.push(noble);
+      return { type: "chooseNoble", player: player, args: { noble_id: noble.name } };
+    }
+
+    if (coins.length) {
+      var gained = bgaCoinsFromGap(coins, 1);
+      return {
+        type: "takeTokens",
+        player: player,
+        args: { colors: bgaTokenListFromCounts(gained) }
+      };
+    }
+
+    if (end) {
+      game.gameOver = true;
+      return { type: "gameEnd", player: player, args: {} };
+    }
+    return null;
+  }
+
+  function convertBgaCaptureToReplayPayload(payload) {
+    if (!isBgaCapturePayload(payload) || bgaCaptureHasExpansionHint(payload)) return null;
+    var data = extractBgaReplayData(payload);
+    if (!data || !Array.isArray(data.logs)) return null;
+    var bgaPlayers = buildBgaPlayerList(data);
+    if (bgaPlayers.length < 2) return null;
+    var game = createGame(bgaPlayers.length, bgaPlayers.map(function (player, index) {
+      return player.name || "BGA Player " + (index + 1);
+    }), bgaPlayers.map(function () {
+      return { enabled: false, mode: null, level: "balanced" };
+    }));
+    game.table_seed = 0;
+    game.decks = { 1: [], 2: [], 3: [] };
+    game.market = { 1: [], 2: [], 3: [] };
+    game.nobles = [];
+    game.log = ["Imported base-game BGA replay capture " + (payload.table_id || "") + "."];
+    game.moves = [];
+    game.next_move_id = 1;
+
+    var playerLookup = {};
+    bgaPlayers.forEach(function (player, index) {
+      if (game.players[index]) playerLookup[String(player.id)] = game.players[index];
+    });
+    game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
+
+    groupBgaPacketsByMove(data.logs).forEach(function (group) {
+      var converted = applyBgaMoveGroup(game, group, playerLookup);
+      if (!converted) return;
+      var actor = converted.player;
+      var move = {
+        move_id: game.next_move_id,
+        type: converted.type,
+        player_id: actor.id,
+        args: converted.args || {},
+        notification: {
+          type: converted.type,
+          log: "",
+          args: Object.assign({ player_id: actor.id, player_name: actor.name, bga_move_id: group.move_id }, converted.args || {})
+        },
+        state_after: toGamedatas(game, { includeSourceState: true })
+      };
+      game.log.unshift(actor.name + " " + converted.type + " (BGA move " + group.move_id + ").");
+      game.moves.push(move);
+      game.next_move_id += 1;
+    });
+
+    if (!game.moves.length) return null;
+    return {
+      schema: SCHEMA,
+      next_move_id: game.next_move_id,
+      gamedatas: game.initial_gamedatas,
+      moves: compactMovesForExport(game.moves),
+      bga_table_id: payload.table_id || "",
+      source: payload.source || "boardgamearena"
+    };
   }
 
   function setStartBgaDownload(url) {
@@ -4019,9 +4355,8 @@ Object.assign(I18N.de, {
       if (job.status === "done") {
         setStartBgaDownload(job.downloadUrl || "");
         var compatibility = job.compatibility || {};
-        var messageKey = compatibility.has_expansion_hint ? "msgBgaExpansionUnsupported" : "msgBgaCaptureUnsupported";
         clearActiveBgaReplayJob();
-        if (job.importable) {
+        if (job.importable || !compatibility.has_expansion_hint) {
           fetch(job.downloadUrl).then(function (response) { return response.json(); }).then(function (payload) {
             loadReplayPayload(payload, "", true);
           }).catch(function () {
@@ -4030,8 +4365,9 @@ Object.assign(I18N.de, {
           });
           return;
         }
-        showStartMessage(t(messageKey));
-        if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = t(messageKey);
+        var unsupported = t("msgBgaExpansionUnsupported") + (compatibility.reason ? " " + compatibility.reason : "");
+        showStartMessage(unsupported);
+        if (el.startBgaImportStatus) el.startBgaImportStatus.textContent = unsupported;
         render();
         return;
       }
@@ -4075,8 +4411,13 @@ Object.assign(I18N.de, {
 
   function loadReplayPayload(payload, rawText, fromStart) {
     if (isBgaCapturePayload(payload)) {
-      failBgaCaptureImport(payload, fromStart);
-      return;
+      var convertedPayload = convertBgaCaptureToReplayPayload(payload);
+      if (convertedPayload) {
+        payload = convertedPayload;
+      } else {
+        failBgaCaptureImport(payload, fromStart);
+        return;
+      }
     }
     if (payload.schema !== SCHEMA || !payload.gamedatas || !Array.isArray(payload.moves)) {
       if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
@@ -4708,6 +5049,7 @@ Object.assign(I18N.de, {
       exportReplayPayload: function () {
         return state ? buildReplayExportPayload(state) : null;
       },
+      convertBgaCaptureToReplayPayload: convertBgaCaptureToReplayPayload,
       clearSave: clearSavedState,
       schema: SCHEMA
     };

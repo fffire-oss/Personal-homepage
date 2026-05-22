@@ -5,109 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ZephyrLabs personal homepage with projects and a quiet alpine theme."
+      content="ZephyrLabs personal homepage for Gem Table, BGA replay tooling, and current project notes."
     />
     <title>ZephyrLabs</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="snow-field" aria-hidden="true"></div>
     <main class="home-shell" aria-labelledby="site-title">
-      <section class="hero-grid">
-        <header class="home-header">
-          <p class="eyebrow">Personal projects</p>
-          <h1 id="site-title">ZephyrLabs</h1>
-          <p class="season-note">Recently learning skiing.</p>
-          <div class="identity-tags" aria-label="Current interests">
-            <span>Skiing practice</span>
-            <span>Code</span>
-            <span>Game tables</span>
-          </div>
-        </header>
-
-        <div class="ski-scene" aria-hidden="true">
-          <span class="ridge ridge-back"></span>
-          <span class="ridge ridge-front"></span>
-          <span class="trail trail-one"></span>
-          <span class="trail trail-two"></span>
-          <span class="gate gate-one"></span>
-          <span class="gate gate-two"></span>
-          <span class="skier-dot"></span>
-        </div>
-      </section>
+      <header class="hero">
+        <a class="brand-mark" href="/" aria-label="ZephyrLabs home">ZL</a>
+        <p class="eyebrow">Personal lab</p>
+        <h1 id="site-title">ZephyrLabs</h1>
+        <p class="summary">
+          A quiet workspace for web game tables, BGA replay tooling, and small automation experiments.
+        </p>
+      </header>
 
       <section class="projects" aria-labelledby="projects-title">
         <h2 id="projects-title">Projects</h2>
         <div class="project-list">
           <a class="project-card gem-card" href="splendor-table.html">
-            <span class="project-kind">Local table</span>
+            <span class="project-kind">Playable table</span>
             <strong>Gem Table</strong>
-            <span>Unofficial local gem table with replay import/export.</span>
+            <span>Unofficial base-game gem table with local multiplayer, replay import/export, and BGA-style action logs.</span>
           </a>
 
           <a
-            class="project-card github-card"
-            href="https://github.com/fffire-oss"
+            class="project-card crawler-card"
+            href="https://github.com/Haro-stack/BGAtoFreeboard"
             target="_blank"
             rel="noreferrer"
           >
-            <span class="project-kind">Profile</span>
-            <strong>GitHub</strong>
-            <span>fffire-oss on GitHub.</span>
-          </a>
-
-          <a
-            class="project-card dino-card"
-            href="https://github.com/fffire-oss/DinoBoard"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span class="project-kind">Fork</span>
-            <strong>DinoBoard</strong>
-            <span>Repository fork.</span>
+            <span class="project-kind">Replay tool</span>
+            <strong>BGAtoFreeboard</strong>
+            <span>A crawler and converter plan for downloading BGA JSON data. Current target: Splendor base game, no expansion.</span>
           </a>
         </div>
       </section>
 
-      <section class="life-visuals" aria-label="Time and place visuals">
-        <article class="life-panel time-panel">
-          <span class="panel-label">Time</span>
-          <h2>Current rhythm</h2>
-          <div class="time-bars" aria-label="Relative time spent">
-            <span class="time-bar" style="--h: 34%; --tone: #a98cff">
-              <b>Explore</b>
-            </span>
-            <span class="time-bar" style="--h: 48%; --tone: #ffbd6b">
-              <b>Ski</b>
-            </span>
-            <span class="time-bar" style="--h: 66%; --tone: #5fe0a7">
-              <b>Build</b>
-            </span>
-            <span class="time-bar" style="--h: 84%; --tone: #aef4ff">
-              <b>Learn</b>
-            </span>
-          </div>
-        </article>
-
-        <article class="life-panel space-panel">
-          <span class="panel-label">Space</span>
-          <h2>Footprints</h2>
-          <div class="route-map" aria-label="Personal footprint route">
-            <span class="route-line"></span>
-            <span class="place-node node-one">
-              <strong>Base</strong>
-              <em>now</em>
-            </span>
-            <span class="place-node node-two">
-              <strong>Slope</strong>
-              <em>practice</em>
-            </span>
-            <span class="place-node node-three">
-              <strong>Next</strong>
-              <em>pin later</em>
-            </span>
-          </div>
-        </article>
+      <section class="todo" aria-labelledby="todo-title">
+        <h2 id="todo-title">Todo</h2>
+        <ul>
+          <li>Connect Gem Table to AI-assisted play.</li>
+          <li>Harden BGA base-game replay conversion.</li>
+          <li>Add expansion support after rule and data mapping are complete.</li>
+          <li>Develop automation tooling for trading workflows.</li>
+          <li>Work toward the CASI ski instructor pathway.</li>
+        </ul>
       </section>
     </main>
   </body>
