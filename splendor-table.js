@@ -6245,9 +6245,6 @@ Object.assign(I18N.de, {
       render();
     });
     el.resetGame.addEventListener("click", resetToStart);
-    if (el.restartGame) {
-      el.restartGame.addEventListener("click", resetToStart);
-    }
     el.confirmTake.addEventListener("click", confirmTake);
     el.clearTake.addEventListener("click", function () {
       pendingTake = [];
@@ -6448,7 +6445,6 @@ Object.assign(I18N.de, {
       "round-label",
       "game-state-label",
       "move-label",
-      "restart-game",
       "handoff-overlay",
       "handoff-title",
       "handoff-body",
