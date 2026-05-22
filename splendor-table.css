@@ -740,24 +740,51 @@ body.replay-mode .top-replay-controls {
 }
 
 .replay-jump {
-  display: inline-grid;
-  grid-template-columns: auto 54px;
-  gap: 5px;
+  display: inline-flex;
+  gap: 6px;
   align-items: center;
+  min-height: 30px;
   min-width: 0;
+  padding: 2px 3px 2px 8px;
+  border: 1px solid rgba(174, 244, 255, 0.16);
+  border-radius: 999px;
   color: var(--muted);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(49, 215, 255, 0.035)),
+    rgba(7, 12, 18, 0.5);
   font-size: 0.62rem;
   font-weight: 780;
   white-space: nowrap;
 }
 
 .replay-jump input {
-  width: 54px;
-  min-height: 30px;
+  width: 48px;
+  min-height: 24px;
   padding: 0 6px;
-  border-radius: 7px;
-  font-size: 0.66rem;
+  border-color: transparent;
+  border-radius: 999px;
+  color: #eef8f8;
+  background: rgba(255, 255, 255, 0.075);
+  font-size: 0.68rem;
+  font-weight: 850;
   text-align: center;
+}
+
+.replay-jump input:focus {
+  border-color: rgba(49, 215, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(49, 215, 255, 0.1);
+}
+
+.replay-jump input::-webkit-outer-spin-button,
+.replay-jump input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+#replay-jump {
+  border-color: rgba(49, 215, 255, 0.32);
+  color: #d7fbff;
+  background: rgba(49, 215, 255, 0.08);
 }
 
 #replay-status {
@@ -2602,13 +2629,14 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
   .replay-jump {
     grid-column: span 2;
-    grid-template-columns: auto minmax(42px, 1fr);
     gap: 4px;
+    justify-content: space-between;
+    padding-left: 7px;
     font-size: clamp(0.5rem, 2.25vw, 0.58rem);
   }
 
   .replay-jump input {
-    width: 100%;
+    width: 44px;
     min-height: 27px;
     padding: 0 4px;
     font-size: clamp(0.52rem, 2.35vw, 0.62rem);
