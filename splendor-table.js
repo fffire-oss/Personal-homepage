@@ -2899,7 +2899,7 @@ Object.assign(I18N.de, {
       }, {}));
     }
     if (move.type === "discardToken") {
-      return logTokenChip(args.color, 1, false);
+      return args.returned ? logTokenSet(args.returned) : logTokenChip(args.color, 1, false);
     }
     if (move.type === "reserveMarket" || move.type === "reserveDeck") {
       var hiddenReserve = mode === "safe" && move.type === "reserveDeck";
@@ -2914,11 +2914,13 @@ Object.assign(I18N.de, {
       return [
         logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier, card: args.card }),
         args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
-        args.payment ? logTokenSet(args.payment.tokens, args.payment.gold_as) : ""
+        args.payment ? logTokenSet(args.payment.tokens, args.payment.gold_as) : "",
+        args.noble_id ? '<span class="log-source-chip">' + escapeHtml(t("logNobleTitle")) + "</span>" : "",
+        args.noble_id ? '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id) + "</span>" : ""
       ].filter(Boolean).join("");
     }
     if (move.type === "chooseNoble") {
-      return '<span class="log-source-chip">' + escapeHtml(args.noble_id || t("logNobleTitle")) + "</span>";
+      return '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id || t("logNobleTitle")) + "</span>";
     }
     return move.notification && move.notification.log ? escapeHtml(move.notification.log) : escapeHtml(t("logGameTitle"));
   }
@@ -2984,7 +2986,11 @@ Object.assign(I18N.de, {
       var colors = Array.isArray(args.colors) ? args.colors : [];
       return colors.map(function (color) { return TOKEN_LABEL[color] || ""; }).filter(Boolean).join(" ") || t("tokens");
     }
-    if (move.type === "discardToken") return TOKEN_LABEL[args.color] || t("tokens");
+    if (move.type === "discardToken") {
+      var returnedColors = args.returned ? bgaTokenListFromCounts(args.returned) : [];
+      var discardColors = returnedColors.length ? returnedColors : [args.color];
+      return discardColors.map(function (color) { return TOKEN_LABEL[color] || ""; }).filter(Boolean).join(" ") || t("tokens");
+    }
     if (move.type === "reserveDeck") return t("blind");
     if (move.type === "reserveMarket") return t("reserve");
     if (move.type === "buyMarket" || move.type === "buyReserved") return t("buy");
@@ -3004,7 +3010,8 @@ Object.assign(I18N.de, {
       source = document.querySelector('[data-bank-color="' + firstColor + '"]') || el.bankTokens || el.bankPanel;
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".player-resource-panel");
     } else if (move.type === "discardToken") {
-      color = args.color || "gold";
+      var discardList = args.returned ? bgaTokenListFromCounts(args.returned) : [];
+      color = discardList[0] || args.color || "gold";
       source = replayPlayerSourceElement(move.player_id, '.token[data-color="' + color + '"]') || replayPlayerSourceElement(move.player_id, ".player-resource-panel");
       targetSelector = ".bank-tokens";
     } else if (move.type === "reserveDeck") {
@@ -4637,6 +4644,21 @@ Object.assign(I18N.de, {
     };
   }
 
+  function applyBgaClaimNoble(game, player, claim, gamedatas) {
+    if (!game || !player || !claim) return null;
+    var nobleRaw = bgaRawCardTypeId(claim.args && claim.args.card, claim.args && claim.args.card && claim.args.card.id);
+    var noble = bgaNobleFromDb(nobleRaw, gamedatas, { name: claim.args && claim.args.noble_desc || "BGA noble" });
+    var nobleIndex = game.nobles.findIndex(function (entry) {
+      return entry && ((entry.bga_id && entry.bga_id === noble.bga_id) || entry.id === noble.id);
+    });
+    if (nobleIndex >= 0) noble = game.nobles.splice(nobleIndex, 1)[0];
+    var alreadyClaimed = player.nobles.some(function (entry) {
+      return entry && ((entry.bga_id && entry.bga_id === noble.bga_id) || entry.id === noble.id);
+    });
+    if (!alreadyClaimed) player.nobles.push(noble);
+    return noble;
+  }
+
   function applyBgaInitialGamedatas(game, gamedatas) {
     if (!gamedatas || !gamedatas.market || !gamedatas.carddb) return false;
     var market = gamedatas.market || {};
@@ -4770,6 +4792,7 @@ Object.assign(I18N.de, {
       }
       if (COLORS.indexOf(buyCard.color) >= 0) player.bonuses[buyCard.color] += 1;
       player.purchased.push(buyCard);
+      var claimedAfterBuy = applyBgaClaimNoble(game, player, claim, gamedatas);
       return {
         type: fromHand ? "buyReserved" : "buyMarket",
         player: player,
@@ -4778,7 +4801,9 @@ Object.assign(I18N.de, {
           card: buyCard,
           tier: buyCard.tier,
           reserved_from: buyCard.reserved_from || "market",
-          payment: { tokens: bgaCoinsFromGap(coins, -1), gold_as: emptyCounts(false) }
+          payment: { tokens: bgaCoinsFromGap(coins, -1), gold_as: emptyCounts(false) },
+          noble_id: claimedAfterBuy && claimedAfterBuy.id,
+          noble: claimedAfterBuy
         }
       };
     }
@@ -4810,22 +4835,26 @@ Object.assign(I18N.de, {
     }
 
     if (claim) {
-      var nobleRaw = bgaRawCardTypeId(claim.args && claim.args.card, group.move_id);
-      var noble = bgaNobleFromDb(nobleRaw, gamedatas, { name: claim.args && claim.args.noble_desc || "BGA noble" });
-      var nobleIndex = game.nobles.findIndex(function (entry) {
-        return entry && ((entry.bga_id && entry.bga_id === noble.bga_id) || entry.id === noble.id);
-      });
-      if (nobleIndex >= 0) noble = game.nobles.splice(nobleIndex, 1)[0];
-      player.nobles.push(noble);
-      return { type: "chooseNoble", player: player, args: { noble_id: noble.name } };
+      var noble = applyBgaClaimNoble(game, player, claim, gamedatas);
+      return { type: "chooseNoble", player: player, args: { noble_id: noble && noble.id, noble: noble } };
     }
 
     if (coins.length) {
       var gained = bgaCoinsFromGap(coins, 1);
+      var returned = bgaCoinsFromGap(coins, -1);
+      var gainedColors = bgaTokenListFromCounts(gained);
+      var returnedColors = bgaTokenListFromCounts(returned);
+      if (!gainedColors.length && returnedColors.length) {
+        return {
+          type: "discardToken",
+          player: player,
+          args: { color: returnedColors[0], returned: returned }
+        };
+      }
       return {
         type: "takeTokens",
         player: player,
-        args: { colors: bgaTokenListFromCounts(gained) }
+        args: { colors: gainedColors }
       };
     }
 
