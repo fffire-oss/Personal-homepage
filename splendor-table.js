@@ -4,6 +4,9 @@
   var STORAGE_KEY = "zephyrlabs-gem-table-save-v3";
   var LEGACY_STORAGE_KEYS = ["zephyrlabs-gem-table-save-v2", "zephyrlabs-gem-table-save-v1"];
   var SCHEMA = "zephyrlabs-gemtable-bga-v1";
+  var RULESET_SCHEMA = "zephyrlabs-gemtable-ruleset-v1";
+  var BASE_RULESET_ID = "splendor-base";
+  var EXPANSION_MODULES = ["cities", "trading_posts", "orient", "strongholds"];
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
@@ -239,6 +242,7 @@
       msgBgaServerFailed: "Server crawl failed: {message}",
       msgBgaCaptureUnsupported: "Replay JSON is ready to download, but this BGA capture could not be adapted into the current Gem Table replay schema.",
       msgBgaExpansionUnsupported: "Replay JSON is ready to download, but an active expansion flag was detected, so it cannot be imported into the base-game table.",
+      msgRulesetUnsupported: "This replay uses unsupported Splendor modules: {modules}. Current Gem Table supports base game only.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReplayJumped: "Jumped to move {move}.",
@@ -1646,6 +1650,53 @@ Object.assign(I18N.de, {
     return normalized;
   }
 
+  function createBaseRuleset() {
+    var modules = {};
+    EXPANSION_MODULES.forEach(function (module) {
+      modules[module] = false;
+    });
+    return {
+      schema: RULESET_SCHEMA,
+      id: BASE_RULESET_ID,
+      name: "Splendor base",
+      modules: modules,
+      supported_by_engine: true
+    };
+  }
+
+  function normalizeRuleset(ruleset) {
+    var normalized = createBaseRuleset();
+    if (!ruleset || typeof ruleset !== "object") return normalized;
+    if (typeof ruleset.id === "string" && ruleset.id) normalized.id = ruleset.id;
+    if (typeof ruleset.name === "string" && ruleset.name) normalized.name = ruleset.name;
+    var modules = ruleset.modules && typeof ruleset.modules === "object" ? ruleset.modules : {};
+    EXPANSION_MODULES.forEach(function (module) {
+      normalized.modules[module] = modules[module] === true;
+    });
+    normalized.supported_by_engine = activeRulesetModules(normalized).length === 0;
+    return normalized;
+  }
+
+  function activeRulesetModules(ruleset) {
+    var normalized = ruleset && ruleset.modules ? ruleset : normalizeRuleset(ruleset);
+    return EXPANSION_MODULES.filter(function (module) {
+      return normalized.modules && normalized.modules[module] === true;
+    });
+  }
+
+  function unsupportedRulesetModules(ruleset) {
+    return activeRulesetModules(ruleset);
+  }
+
+  function rulesetSupportedByEngine(ruleset) {
+    return unsupportedRulesetModules(ruleset).length === 0;
+  }
+
+  function ensureStateRuleset(game) {
+    if (game && typeof game === "object") game.ruleset = normalizeRuleset(game.ruleset);
+    return game;
+  }
+
   var SOURCE_CARD_ROWS = {
     black: [
       [0, 0, 1, 1, 1, 1],
@@ -2180,6 +2231,7 @@ Object.assign(I18N.de, {
       created_at: new Date().toISOString(),
       mode: "live",
       playerCount: playerCount,
+      ruleset: createBaseRuleset(),
       table_seed: tableSeed,
       next_move_id: 1,
       players: Array.from({ length: playerCount }, function (_, index) {
@@ -2714,6 +2766,7 @@ Object.assign(I18N.de, {
         showStartMessage(t("msgSavedInvalidCleared"));
         return null;
       }
+      ensureStateRuleset(parsed);
       parsed.mode = "live";
       return parsed;
     } catch (error) {
@@ -2725,6 +2778,7 @@ Object.assign(I18N.de, {
 
   function validateState(candidate) {
     if (!candidate || candidate.schema !== SCHEMA) return false;
+    if (!rulesetSupportedByEngine(candidate.ruleset)) return false;
     if (!Array.isArray(candidate.players) || candidate.players.length < 2 || candidate.players.length > 4) return false;
     if (!candidate.bank || !candidate.decks || !candidate.market) return false;
     if (!Array.isArray(candidate.nobles) || !Array.isArray(candidate.log) || !Array.isArray(candidate.moves)) return false;
@@ -4515,6 +4569,7 @@ Object.assign(I18N.de, {
 
   function toGamedatas(game, options) {
     var includeSourceState = options && options.includeSourceState;
+    var ruleset = normalizeRuleset(game.ruleset);
     var players = {};
     game.players.forEach(function (player, index) {
       players[player.id] = {
@@ -4539,8 +4594,10 @@ Object.assign(I18N.de, {
         current_player_id: game.players[game.current] ? game.players[game.current].id : null,
         active_player_id: game.players[game.current] ? game.players[game.current].id : null,
         next_move_id: game.next_move_id,
-        mode: game.mode || "live"
+        mode: game.mode || "live",
+        ruleset_id: ruleset.id
       },
+      ruleset: clone(ruleset),
       gamestate: {
         name: game.gameOver ? "gameEnd" : game.awaitingDiscard ? "discard" : game.awaitingNobleChoice ? "chooseNoble" : "playerTurn",
         description: gameStateTextFor(game),
@@ -4590,6 +4647,7 @@ Object.assign(I18N.de, {
     if (!game || !Array.isArray(game.players)) return null;
     return {
       schema: SCHEMA,
+      ruleset: normalizeRuleset(game.ruleset),
       table_seed: game.table_seed,
       next_move_id: game.next_move_id,
       players: clone(game.players),
@@ -4621,6 +4679,7 @@ Object.assign(I18N.de, {
     var compact = {
       schema: SCHEMA,
       table: cloneOr(gamedatas.table, {}),
+      ruleset: normalizeRuleset(gamedatas.ruleset || gamedatas.source_state && gamedatas.source_state.ruleset),
       gamestate: cloneOr(gamedatas.gamestate, {}),
       players: cloneOr(gamedatas.players, {}),
       playerorder: Array.isArray(gamedatas.playerorder) ? gamedatas.playerorder.slice() : [],
@@ -4655,9 +4714,11 @@ Object.assign(I18N.de, {
 
   function compactReplayPayload(payload) {
     if (!payload || payload.schema !== SCHEMA) return null;
+    if (!rulesetSupportedByEngine(rulesetFromReplayPayload(payload))) return null;
     return {
       schema: SCHEMA,
       next_move_id: payload.next_move_id,
+      ruleset: normalizeRuleset(rulesetFromReplayPayload(payload)),
       gamedatas: compactGamedatasForExport(payload.gamedatas),
       moves: compactMovesForExport(payload.moves)
     };
@@ -4679,6 +4740,7 @@ Object.assign(I18N.de, {
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
+      ruleset: normalizeRuleset(game.ruleset),
       gamedatas: compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
@@ -4691,6 +4753,7 @@ Object.assign(I18N.de, {
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
+      ruleset: normalizeRuleset(game.ruleset),
       gamedatas: compactGamedatasForExport(game.initial_gamedatas) || compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
@@ -4698,13 +4761,28 @@ Object.assign(I18N.de, {
 
   function stateFromGamedatas(gamedatas) {
     if (!gamedatas || gamedatas.schema !== SCHEMA) return null;
+    if (!rulesetSupportedByEngine(gamedatas.ruleset)) return null;
     if (gamedatas.source_state && validateState(gamedatas.source_state)) {
       var restored = clone(gamedatas.source_state);
+      ensureStateRuleset(restored);
       restored.seen_cards = collectSeenCardsByTier(restored);
       restored.mode = "live";
       return restored;
     }
     return null;
+  }
+
+  function rulesetFromReplayPayload(payload) {
+    return payload && (
+      payload.ruleset ||
+      payload.gamedatas && payload.gamedatas.ruleset ||
+      payload.gamedatas && payload.gamedatas.source_state && payload.gamedatas.source_state.ruleset
+    );
+  }
+
+  function replayPayloadUnsupportedRulesetModules(payload) {
+    if (!payload || payload.schema !== SCHEMA) return [];
+    return unsupportedRulesetModules(rulesetFromReplayPayload(payload));
   }
 
   function exportFileName(kind) {
@@ -5479,6 +5557,7 @@ Object.assign(I18N.de, {
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
+      ruleset: normalizeRuleset(game.ruleset),
       gamedatas: game.initial_gamedatas,
       moves: compactMovesForExport(game.moves),
       bga_table_id: payload.table_id || "",
@@ -5631,6 +5710,14 @@ Object.assign(I18N.de, {
     if (payload.schema !== SCHEMA || !payload.gamedatas || !Array.isArray(payload.moves)) {
       if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
       else showMessage(t("msgLoadReplayExpected"));
+      render();
+      return;
+    }
+    var unsupportedModules = replayPayloadUnsupportedRulesetModules(payload);
+    if (unsupportedModules.length) {
+      var unsupportedMessage = t("msgRulesetUnsupported", { modules: unsupportedModules.join(", ") });
+      if (fromStart) showStartMessage(unsupportedMessage);
+      else showMessage(unsupportedMessage);
       render();
       return;
     }
