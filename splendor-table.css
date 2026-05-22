@@ -118,12 +118,14 @@ a {
 
 code {
   color: var(--accent);
+  overflow-wrap: anywhere;
 }
 
 :lang(zh-Hans),
 :lang(zh-Hant),
 :lang(ja) {
-  word-break: keep-all;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .table-header {
@@ -2253,6 +2255,13 @@ body.market-sticky-active .market-panel {
 
 .bga-actions {
   margin-top: 0;
+  min-width: 0;
+}
+
+.bga-actions button {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1180px) {
