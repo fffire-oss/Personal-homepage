@@ -85,7 +85,7 @@
               <div>
                 <h3 id="start-bga-import-title" data-i18n="bgaTableImportTitle">Import by BGA table ID</h3>
                 <p class="muted compact" data-i18n="bgaTableImportBody">
-                  Enter a table ID to try direct import. If the browser cannot access BGA, run the GitHub crawler and import its JSON file.
+                  Enter a table ID to try direct import. If the server cannot access BGA, use the BGAtoFreeboard crawler project and import its JSON file.
                 </p>
               </div>
               <label class="bga-table-field">
@@ -94,7 +94,7 @@
               </label>
               <div class="bga-actions">
                 <button id="start-import-bga-table" type="button" class="primary" data-i18n="importBgaTable">Import table ID</button>
-                <a class="button-link" href="https://github.com/fffire-oss/Personal-homepage/blob/main/tools/bga-replay-crawler.mjs" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler script</a>
+                <a class="button-link" href="https://github.com/Haro-stack/BGAtoFreeboard" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler project</a>
                 <a id="start-bga-download" class="button-link" href="#" hidden download data-i18n="downloadCapturedJson">Download captured JSON</a>
               </div>
               <p id="start-bga-import-status" class="muted compact" data-i18n="bgaTableImportStatus">
@@ -328,7 +328,7 @@
             <div>
               <h3 id="bga-capture-title" data-i18n="bgaCaptureTitle">BGA replay capture</h3>
               <p class="muted compact" data-i18n="bgaCaptureBody">
-                Install the userscript, open the official BGA review page with your own account, then export the browser-visible replay data as JSON.
+                Open the official BGA review page, or use BGAtoFreeboard to crawl and convert browser-visible replay data as JSON.
               </p>
             </div>
             <label class="bga-table-field">
@@ -337,8 +337,7 @@
             </label>
             <div class="bga-actions">
               <button id="open-bga-review" type="button" data-i18n="openBgaReview">Open BGA review</button>
-              <a class="button-link" href="tools/bga-replay-capture.user.js" download data-i18n="downloadBgaCaptureScript">Download capture script</a>
-              <a class="button-link" href="https://github.com/fffire-oss/Personal-homepage/blob/main/tools/bga-replay-crawler.mjs" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler script</a>
+              <a class="button-link" href="https://github.com/Haro-stack/BGAtoFreeboard" target="_blank" rel="noopener" data-i18n="openBgaCrawlerGithub">GitHub crawler project</a>
             </div>
             <p id="bga-capture-status" class="muted compact" data-i18n="bgaCaptureStatus">
               Credentials stay on BGA. This site does not ask for or store your BGA password.
@@ -349,6 +348,6 @@
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260522-bga-download-copy1"></script>
+    <script src="splendor-table.js?v=20260522-bga-base-adapter1"></script>
   </body>
 </html>
