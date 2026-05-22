@@ -10,6 +10,7 @@
   var TURN_SWITCH_DELAY_MS = 3000;
   var AI_MIN_THINK_MS = 2000;
   var REPLAY_STEP_DELAY_MS = 1800;
+  var REPLAY_AUTO_DELAY_MS = 420;
   var GEM_HEX = {
     white: "#f1eadb",
     blue: "#55a7ff",
@@ -124,6 +125,10 @@
       loadReplay: "Load replay",
       prevMove: "Prev move",
       nextMove: "Next move",
+      replayAutoplay: "Autoplay",
+      replayPause: "Pause",
+      replayJumpLabel: "Move",
+      replayJump: "Jump",
       continueFromReplay: "Continue from here",
       exitReplay: "Exit replay",
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
@@ -234,6 +239,10 @@
       msgBgaExpansionUnsupported: "Replay JSON is ready to download, but an active expansion flag was detected, so it cannot be imported into the base-game table.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
+      msgReplayJumped: "Jumped to move {move}.",
+      msgReplayJumpInvalid: "Enter a move number between 0 and {total}.",
+      msgReplayAutoplayStarted: "Autoplay started.",
+      msgReplayAutoplayStopped: "Autoplay paused.",
       msgReturnedLiveTable: "Returned to live table.",
       msgJsonParseFailed: "JSON parse failed: {message}",
       msgChoosePlayerCount: "Choose 2, 3, or 4 players.",
@@ -1428,6 +1437,14 @@ Object.assign(I18N.de, {
 
   Object.assign(I18N["zh-Hans"], {
     handoffAction: "\u52a8\u4f5c",
+    replayAutoplay: "\u81ea\u52a8\u64ad\u653e",
+    replayPause: "\u6682\u505c",
+    replayJumpLabel: "\u6b65\u6570",
+    replayJump: "\u8df3\u8f6c",
+    msgReplayJumped: "\u5df2\u8df3\u8f6c\u5230\u7b2c {move} \u6b65\u3002",
+    msgReplayJumpInvalid: "\u8bf7\u8f93\u5165 0 \u5230 {total} \u4e4b\u95f4\u7684\u6b65\u6570\u3002",
+    msgReplayAutoplayStarted: "\u5df2\u5f00\u59cb\u81ea\u52a8\u64ad\u653e\u3002",
+    msgReplayAutoplayStopped: "\u5df2\u6682\u505c\u81ea\u52a8\u64ad\u653e\u3002",
     bonusCardsTitle: "{color} \u5361\u724c",
     bonusCardsEmpty: "\u8fd8\u6ca1\u6709\u8fd9\u4e2a\u989c\u8272\u7684\u5df2\u8d2d\u5361\u3002"
   });
@@ -1476,6 +1493,14 @@ Object.assign(I18N.de, {
 
   Object.assign(I18N["zh-Hant"], {
     handoffAction: "\u52d5\u4f5c",
+    replayAutoplay: "\u81ea\u52d5\u64ad\u653e",
+    replayPause: "\u66ab\u505c",
+    replayJumpLabel: "\u6b65\u6578",
+    replayJump: "\u8df3\u8f49",
+    msgReplayJumped: "\u5df2\u8df3\u8f49\u5230\u7b2c {move} \u6b65\u3002",
+    msgReplayJumpInvalid: "\u8acb\u8f38\u5165 0 \u5230 {total} \u4e4b\u9593\u7684\u6b65\u6578\u3002",
+    msgReplayAutoplayStarted: "\u5df2\u958b\u59cb\u81ea\u52d5\u64ad\u653e\u3002",
+    msgReplayAutoplayStopped: "\u5df2\u66ab\u505c\u81ea\u52d5\u64ad\u653e\u3002",
     bonusCardsTitle: "{color} \u5361\u724c",
     bonusCardsEmpty: "\u9084\u6c92\u6709\u9019\u500b\u984f\u8272\u7684\u5df2\u8cfc\u5361\u3002"
   });
@@ -1550,6 +1575,8 @@ Object.assign(I18N.de, {
   var lastHumanPlayerIndex = 0;
   var turnAdvanceTimer = null;
   var replayStepTimer = null;
+  var replayAutoTimer = null;
+  var replayAutoplay = false;
   var overlayRefreshTimer = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
@@ -3030,9 +3057,21 @@ Object.assign(I18N.de, {
 
   function renderReplayStatus() {
     if (!state || state.mode !== "replay") {
+      replayAutoplay = false;
+      clearReplayAutoTimer();
       el.replayStatus.textContent = t("liveTable");
       el.prevMove.disabled = true;
       el.nextMove.disabled = true;
+      if (el.replayAutoplay) {
+        el.replayAutoplay.disabled = true;
+        el.replayAutoplay.textContent = t("replayAutoplay");
+      }
+      if (el.replayJumpInput) {
+        el.replayJumpInput.disabled = true;
+        el.replayJumpInput.value = "0";
+        el.replayJumpInput.max = "0";
+      }
+      if (el.replayJump) el.replayJump.disabled = true;
       if (el.continueReplay) el.continueReplay.disabled = true;
       el.exitReplay.disabled = true;
       return;
@@ -3042,6 +3081,19 @@ Object.assign(I18N.de, {
     el.replayStatus.textContent = t("replayMove", { current: Math.max(0, replayIndex + 1), total: total });
     el.prevMove.disabled = animating || replayIndex < 0;
     el.nextMove.disabled = animating || !replayData || replayIndex >= total - 1;
+    if (el.replayAutoplay) {
+      el.replayAutoplay.disabled = !replayData || (replayIndex >= total - 1 && !replayAutoplay);
+      el.replayAutoplay.textContent = replayAutoplay ? t("replayPause") : t("replayAutoplay");
+      el.replayAutoplay.setAttribute("aria-pressed", replayAutoplay ? "true" : "false");
+    }
+    if (el.replayJumpInput) {
+      el.replayJumpInput.disabled = animating || !replayData;
+      el.replayJumpInput.max = String(total);
+      if (document.activeElement !== el.replayJumpInput) {
+        el.replayJumpInput.value = String(Math.max(0, replayIndex + 1));
+      }
+    }
+    if (el.replayJump) el.replayJump.disabled = animating || !replayData;
     if (el.continueReplay) el.continueReplay.disabled = animating || !replayData;
     el.exitReplay.disabled = animating;
   }
@@ -3671,6 +3723,39 @@ Object.assign(I18N.de, {
       window.clearTimeout(replayStepTimer);
       replayStepTimer = null;
     }
+  }
+
+  function clearReplayAutoTimer() {
+    if (replayAutoTimer) {
+      window.clearTimeout(replayAutoTimer);
+      replayAutoTimer = null;
+    }
+  }
+
+  function setReplayAutoplay(enabled, silent) {
+    replayAutoplay = !!(enabled && state && state.mode === "replay" && replayData);
+    clearReplayAutoTimer();
+    if (replayAutoplay) {
+      scheduleReplayAutoplay();
+      if (!silent) showMessage(t("msgReplayAutoplayStarted"), "ok");
+    } else if (!silent) {
+      showMessage(t("msgReplayAutoplayStopped"), "ok");
+    }
+    renderReplayStatus();
+  }
+
+  function scheduleReplayAutoplay() {
+    clearReplayAutoTimer();
+    if (!replayAutoplay || !state || state.mode !== "replay" || !replayData) return;
+    if (state.turnTransition && state.turnTransition.replay) return;
+    if (replayIndex >= replayData.moves.length - 1) {
+      setReplayAutoplay(false, true);
+      return;
+    }
+    replayAutoTimer = window.setTimeout(function () {
+      replayAutoTimer = null;
+      if (replayAutoplay) stepReplay(1);
+    }, REPLAY_AUTO_DELAY_MS);
   }
 
   function transitionSecondsRemaining() {
@@ -4980,6 +5065,7 @@ Object.assign(I18N.de, {
     replayIndex = -1;
     clearTurnAdvanceTimer();
     clearReplayStepTimer();
+    setReplayAutoplay(false, true);
     state = initial;
     state.mode = "replay";
     pendingTake = [];
@@ -5037,10 +5123,43 @@ Object.assign(I18N.de, {
     var moveText = replayIndex === -1 ? t("msgInitialReplayPosition") : t("msgReplayAtMove", { move: replayData.moves[replayIndex].move_id, type: replayData.moves[replayIndex].type });
     showMessage(moveText, "ok");
     render();
+    if (replayAutoplay) scheduleReplayAutoplay();
+  }
+
+  function replayMoveIndexFromInput(value) {
+    if (!replayData || !Array.isArray(replayData.moves)) return null;
+    var total = replayData.moves.length;
+    var moveNumber = Number(value);
+    if (!Number.isFinite(moveNumber)) return null;
+    moveNumber = Math.floor(moveNumber);
+    if (moveNumber < 0 || moveNumber > total) return null;
+    if (moveNumber === 0) return -1;
+    var byMoveId = replayData.moves.findIndex(function (move) {
+      return Number(move && move.move_id) === moveNumber;
+    });
+    return byMoveId >= 0 ? byMoveId : moveNumber - 1;
+  }
+
+  function jumpReplayToInput() {
+    if (!replayData || state.mode !== "replay") return;
+    clearReplayStepTimer();
+    setReplayAutoplay(false, true);
+    var total = replayData.moves.length;
+    var target = replayMoveIndexFromInput(el.replayJumpInput && el.replayJumpInput.value);
+    if (target === null) {
+      showMessage(t("msgReplayJumpInvalid", { total: total }));
+      render();
+      return;
+    }
+    applyReplayIndex(target);
+    var label = target < 0 ? 0 : replayData.moves[target].move_id;
+    showMessage(t("msgReplayJumped", { move: label }), "ok");
+    render();
   }
 
   function exitReplay() {
     if (!state || state.mode !== "replay") return;
+    setReplayAutoplay(false, true);
     state = liveStateBeforeReplay ? clone(liveStateBeforeReplay) : null;
     liveStateBeforeReplay = null;
     replayData = null;
@@ -5054,6 +5173,7 @@ Object.assign(I18N.de, {
 
   function continueReplayFromHere() {
     if (!state || state.mode !== "replay" || !replayData) return;
+    setReplayAutoplay(false, true);
     var preservedReplay = clone(replayData);
     var continuedMoves = compactMovesForExport(replayMovesThroughCurrentStep());
     var continued = clone(state);
@@ -5509,8 +5629,28 @@ Object.assign(I18N.de, {
         if (event.key === "Enter") openBgaReviewByTableId();
       });
     }
-    el.prevMove.addEventListener("click", function () { stepReplay(-1); });
-    el.nextMove.addEventListener("click", function () { stepReplay(1); });
+    el.prevMove.addEventListener("click", function () {
+      setReplayAutoplay(false, true);
+      stepReplay(-1);
+    });
+    el.nextMove.addEventListener("click", function () {
+      setReplayAutoplay(false, true);
+      stepReplay(1);
+    });
+    if (el.replayAutoplay) {
+      el.replayAutoplay.addEventListener("click", function () {
+        setReplayAutoplay(!replayAutoplay, false);
+        render();
+      });
+    }
+    if (el.replayJump) {
+      el.replayJump.addEventListener("click", jumpReplayToInput);
+    }
+    if (el.replayJumpInput) {
+      el.replayJumpInput.addEventListener("keydown", function (event) {
+        if (event.key === "Enter") jumpReplayToInput();
+      });
+    }
     if (el.continueReplay) {
       el.continueReplay.addEventListener("click", continueReplayFromHere);
     }
@@ -5596,6 +5736,9 @@ Object.assign(I18N.de, {
       "load-replay",
       "prev-move",
       "next-move",
+      "replay-autoplay",
+      "replay-jump-input",
+      "replay-jump",
       "continue-replay",
       "exit-replay",
       "replay-status"
