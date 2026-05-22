@@ -3807,6 +3807,9 @@ Object.assign(I18N.de, {
   }
 
   function buildReplayExportPayload(game) {
+    if (game && game.mode === "replay" && replayData) {
+      return compactReplayPayload(replayData);
+    }
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
