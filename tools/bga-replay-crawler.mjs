@@ -9,7 +9,7 @@ const SCHEMA = "zephyrlabs-bga-replay-crawler-v1";
 function usage() {
   return [
     "Usage:",
-    "  node tools/bga-replay-crawler.mjs --table <BGA_TABLE_ID> [--out ./bga-replays] [--manual] [--headless]",
+    "  node tools/bga-replay-crawler.mjs --table <BGA_TABLE_ID> [--out ./bga-replays] [--manual] [--headless] [--wait-ms 60000]",
     "",
     "Notes:",
     "  - The script opens the official BGA review page in a local browser.",
@@ -26,7 +26,8 @@ function parseArgs(argv) {
     profile: ".bga-crawler-profile",
     manual: false,
     headless: false,
-    maxSteps: 400
+    maxSteps: 400,
+    waitMs: 60000
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -36,6 +37,7 @@ function parseArgs(argv) {
     else if (value === "--manual") args.manual = true;
     else if (value === "--headless") args.headless = true;
     else if (value === "--max-steps") args.maxSteps = Number(argv[++index] || args.maxSteps);
+    else if (value === "--wait-ms") args.waitMs = Number(argv[++index] || args.waitMs);
     else if (value === "--help" || value === "-h") {
       console.log(usage());
       process.exit(0);
@@ -186,6 +188,24 @@ async function clickNextReplayControl(page) {
   });
 }
 
+async function assertNotLoginOrLobby(page) {
+  const current = await page.evaluate(() => ({
+    url: location.href,
+    title: document.title,
+    body: document.body ? document.body.innerText.slice(0, 2000) : ""
+  }));
+  if (
+    /\/account|\/lobby/i.test(current.url) ||
+    /login|log in|sign in/i.test(current.title) ||
+    /login|log in|sign in/i.test(current.body)
+  ) {
+    throw new Error("BGA redirected to login or lobby. Log in with the crawler browser profile and make sure this account can view the table replay.");
+  }
+  if (!/gamereview/i.test(current.url)) {
+    throw new Error(`BGA did not stay on the gamereview page. Current URL: ${current.url}`);
+  }
+}
+
 function detectCompatibility(payload) {
   const text = JSON.stringify(payload).toLowerCase();
   const snapshots = Array.isArray(payload.snapshots) ? payload.snapshots : [];
@@ -263,11 +283,17 @@ async function main() {
   await page.goto(reviewUrl, { waitUntil: "domcontentloaded", timeout: 90000 });
   console.log("If BGA asks you to log in, complete login in the opened browser window.");
   console.log("When the replay page is visible, the crawler will continue automatically.");
+  await page.waitForTimeout(1800);
+  await assertNotLoginOrLobby(page);
 
   await page.waitForFunction(() => {
+    if (/\/account|\/lobby/i.test(location.href) || /login|log in|sign in/i.test(document.title)) return false;
     const text = document.body ? document.body.innerText : "";
-    return /gamereview|replay|archive|logs|tour|turn|move|spectator|review/i.test(text) || window.gameui || window.gameui_playback;
-  }, { timeout: 0 });
+    return /gamereview/i.test(location.href) && (/replay|archive|logs|tour|turn|move|spectator|review/i.test(text) || window.gameui || window.gameui_playback);
+  }, { timeout: args.waitMs }).catch((error) => {
+    throw new Error(`BGA review page did not load usable replay data within ${args.waitMs}ms. Login, permission, or Premium access may be required. ${error.message}`);
+  });
+  await assertNotLoginOrLobby(page);
 
   const snapshots = [];
   snapshots.push(await collectSnapshot(page));

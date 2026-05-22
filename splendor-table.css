@@ -548,9 +548,6 @@ textarea {
 }
 
 .table-top-panel {
-  position: sticky;
-  top: 0;
-  z-index: 45;
   display: grid;
   gap: 0;
   overflow: hidden;
@@ -1034,14 +1031,6 @@ body:not(.game-active) .board-progress {
   font-size: 0.86rem;
 }
 
-body.market-sticky-active .market-panel {
-  border-color: rgba(49, 215, 255, 0.42);
-  box-shadow:
-    0 0 0 1px rgba(49, 215, 255, 0.16),
-    0 18px 48px rgba(49, 215, 255, 0.08),
-    var(--shadow);
-}
-
 .table-bank-panel {
   display: grid;
   gap: 8px;
@@ -1091,8 +1080,6 @@ body.market-sticky-active .market-panel {
 }
 
 .side-panel {
-  position: sticky;
-  top: 154px;
   display: grid;
   align-content: start;
   gap: 10px;
@@ -2424,12 +2411,6 @@ body.market-sticky-active .market-panel {
   textarea {
     min-width: 0;
     max-width: 100%;
-  }
-
-  .table-top-panel {
-    position: sticky;
-    top: 0;
-    z-index: 76;
   }
 
   .status-bar {
