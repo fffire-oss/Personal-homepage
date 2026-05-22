@@ -9,6 +9,7 @@
   var AI_LEVELS = ["easy", "balanced", "expert"];
   var TURN_SWITCH_DELAY_MS = 3000;
   var AI_MIN_THINK_MS = 2000;
+  var REPLAY_STEP_DELAY_MS = 1800;
   var GEM_HEX = {
     white: "#f1eadb",
     blue: "#55a7ff",
@@ -136,7 +137,7 @@
       importBgaTable: "Import table ID",
       openBgaReview: "Open BGA review",
       downloadBgaCaptureScript: "Download capture script",
-      openBgaCrawlerGithub: "BoardReplayLab",
+      openBgaCrawlerGithub: "Script download",
       downloadCapturedJson: "Download captured JSON",
       bgaCaptureStatus: "Credentials stay on BGA. This site does not ask for or store your BGA password.",
       bgaTableImportStatus: "Expansion tables and unsupported BGA captures will fail instead of loading incorrect data.",
@@ -172,6 +173,7 @@
       gamePayment: "Payment choice",
       gameAiThinking: "AI thinking",
       gameTurnTransition: "Turn handoff",
+      gameReplayStep: "Replay step",
       gameFinal: "Final round ({turns} turns left)",
       gameProgress: "In progress",
       msgSaveSerializeFailed: "Save failed: table state could not be serialized.",
@@ -238,6 +240,7 @@
       msgGameStarted: "Game started.",
       msgSwitchingPlayer: "Turn ends. Next player in {seconds}s.",
       msgAiThinking: "{player} is thinking.",
+      msgReplayStepAnimating: "Replaying move {move} ({seconds}s).",
       msgRandomAiEnabled: "Smart AI is temporarily unavailable. Random AI will play legal non-reserve moves for this player.",
       msgNoValidSavedTable: "No valid saved table found.",
       msgSavedResumed: "Saved table resumed.",
@@ -1395,7 +1398,7 @@ Object.assign(I18N.de, {
     bgaTableImportTitle: "\u901a\u8fc7 BGA table ID \u5bfc\u5165",
     bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u670d\u52a1\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\u540e\u518d\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
     importBgaTable: "\u5bfc\u5165 table ID",
-    openBgaCrawlerGithub: "BoardReplayLab",
+    openBgaCrawlerGithub: "\u811a\u672c\u4e0b\u8f7d",
     downloadCapturedJson: "\u4e0b\u8f7d\u91c7\u96c6 JSON",
     bgaTableImportStatus: "\u6269\u5c55\u724c\u5c40\u548c\u4e0d\u652f\u6301\u7684 BGA \u6570\u636e\u4f1a\u663e\u793a\u5bfc\u5165\u5931\u8d25\uff0c\u4e0d\u4f1a\u8f7d\u5165\u9519\u8bef\u6570\u636e\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u91c7\u96c6",
@@ -1405,6 +1408,8 @@ Object.assign(I18N.de, {
     downloadBgaCaptureScript: "\u4e0b\u8f7d\u91c7\u96c6\u811a\u672c",
     bgaCaptureStatus: "\u8d26\u53f7\u5bc6\u7801\u53ea\u5728 BGA \u5b98\u65b9\u9875\u9762\u8f93\u5165\uff0c\u672c\u7ad9\u4e0d\u4f1a\u8be2\u95ee\u6216\u4fdd\u5b58\u4f60\u7684 BGA \u5bc6\u7801\u3002",
     continueFromReplay: "\u4ece\u6b64\u7ee7\u7eed",
+    gameReplayStep: "\u56de\u653e\u6b65\u9aa4",
+    msgReplayStepAnimating: "\u6b63\u5728\u56de\u653e\u7b2c {move} \u6b65\uff08{seconds}s\uff09\u3002",
     msgExportPreparing: "\u6b63\u5728\u51c6\u5907\u5bfc\u51fa\u6587\u4ef6...",
     msgExportFailed: "\u5bfc\u51fa\u5931\u8d25\uff1a{message}",
     msgFileReadFailed: "\u6587\u4ef6\u8bfb\u53d6\u5931\u8d25\uff1a{message}",
@@ -1441,7 +1446,7 @@ Object.assign(I18N.de, {
     bgaTableImportTitle: "\u901a\u904e BGA table ID \u532f\u5165",
     bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u4f3a\u670d\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\u5f8c\u518d\u532f\u5165 JSON \u6a94\u6848\u3002",
     importBgaTable: "\u532f\u5165 table ID",
-    openBgaCrawlerGithub: "BoardReplayLab",
+    openBgaCrawlerGithub: "\u8173\u672c\u4e0b\u8f09",
     downloadCapturedJson: "\u4e0b\u8f09\u63a1\u96c6 JSON",
     bgaTableImportStatus: "\u64f4\u5145\u724c\u5c40\u548c\u4e0d\u652f\u63f4\u7684 BGA \u8cc7\u6599\u6703\u986f\u793a\u532f\u5165\u5931\u6557\uff0c\u4e0d\u6703\u8f09\u5165\u932f\u8aa4\u8cc7\u6599\u3002",
     bgaCaptureTitle: "BGA \u56de\u653e\u63a1\u96c6",
@@ -1451,6 +1456,8 @@ Object.assign(I18N.de, {
     downloadBgaCaptureScript: "\u4e0b\u8f09\u63a1\u96c6\u8173\u672c",
     bgaCaptureStatus: "\u5e33\u865f\u5bc6\u78bc\u53ea\u5728 BGA \u5b98\u65b9\u9801\u9762\u8f38\u5165\uff0c\u672c\u7ad9\u4e0d\u6703\u8a62\u554f\u6216\u4fdd\u5b58\u4f60\u7684 BGA \u5bc6\u78bc\u3002",
     continueFromReplay: "\u5f9e\u6b64\u7e7c\u7e8c",
+    gameReplayStep: "\u56de\u653e\u6b65\u9a5f",
+    msgReplayStepAnimating: "\u6b63\u5728\u56de\u653e\u7b2c {move} \u6b65\uff08{seconds}s\uff09\u3002",
     msgExportPreparing: "\u6b63\u5728\u6e96\u5099\u532f\u51fa\u6a94\u6848...",
     msgExportFailed: "\u532f\u51fa\u5931\u6557\uff1a{message}",
     msgFileReadFailed: "\u6a94\u6848\u8b80\u53d6\u5931\u6557\uff1a{message}",
@@ -1542,6 +1549,7 @@ Object.assign(I18N.de, {
   var aiDisplayCurrentOverride = null;
   var lastHumanPlayerIndex = 0;
   var turnAdvanceTimer = null;
+  var replayStepTimer = null;
   var overlayRefreshTimer = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
@@ -1775,6 +1783,120 @@ Object.assign(I18N.de, {
     return shuffle(deck, (seed || 7000) + tier * 101);
   }
 
+  function emptySeenCards() {
+    return { 1: [], 2: [], 3: [] };
+  }
+
+  function localDevelopmentCardById(id) {
+    var value = String(id || "");
+    for (var tier = 1; tier <= 3; tier += 1) {
+      var found = (DEVELOPMENT_CARDS[tier] || []).find(function (card) {
+        return card.id === value;
+      });
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function localDevelopmentCardFor(card) {
+    if (!card || card.hidden) return null;
+    var byId = localDevelopmentCardById(card.id);
+    if (byId) return byId;
+    if (!card.cost || COLORS.indexOf(card.color) < 0) return null;
+    return bgaLocalCardMatch(card.tier, card.color, card.points, card.cost) || null;
+  }
+
+  function normalizeSeenCards(value) {
+    var seen = emptySeenCards();
+    [1, 2, 3].forEach(function (tier) {
+      var list = value && value[tier] || value && value[String(tier)] || [];
+      if (!Array.isArray(list)) return;
+      list.forEach(function (id) {
+        var local = localDevelopmentCardById(id);
+        if (local && seen[tier].indexOf(local.id) < 0) seen[tier].push(local.id);
+      });
+    });
+    return seen;
+  }
+
+  function ensureSeenCards(game) {
+    if (!game.seen_cards) game.seen_cards = emptySeenCards();
+    game.seen_cards = normalizeSeenCards(game.seen_cards);
+    return game.seen_cards;
+  }
+
+  function rememberSeenCard(game, card) {
+    if (!game) return null;
+    var local = localDevelopmentCardFor(card);
+    if (!local) return null;
+    var seen = ensureSeenCards(game);
+    if (seen[local.tier].indexOf(local.id) < 0) seen[local.tier].push(local.id);
+    return local.id;
+  }
+
+  function rememberSeenCards(game, cards) {
+    (cards || []).forEach(function (card) {
+      rememberSeenCard(game, card);
+    });
+  }
+
+  function isBgaHiddenCard(card) {
+    return !!(card && (card.hidden || /^bga-hidden-/i.test(String(card.id || ""))));
+  }
+
+  function collectSeenCardsByTier(game) {
+    var seen = normalizeSeenCards(game && game.seen_cards);
+    function add(card) {
+      var local = localDevelopmentCardFor(card);
+      if (local && seen[local.tier].indexOf(local.id) < 0) seen[local.tier].push(local.id);
+    }
+    [1, 2, 3].forEach(function (tier) {
+      (game && game.market && game.market[tier] || []).forEach(add);
+    });
+    (game && game.players || []).forEach(function (player) {
+      (player.reserved || []).forEach(add);
+      (player.purchased || []).forEach(add);
+    });
+    if (game) game.seen_cards = clone(seen);
+    return seen;
+  }
+
+  function rebuildUnknownBgaDecksForLive(game) {
+    if (!game || !game.decks || !game.market) return;
+    var hasUnknown = !!game.bga_deck_unknown;
+    [1, 2, 3].forEach(function (tier) {
+      hasUnknown = hasUnknown ||
+        (game.decks[tier] || []).some(isBgaHiddenCard) ||
+        (game.market[tier] || []).some(isBgaHiddenCard);
+    });
+    if (!hasUnknown) return;
+    var seen = collectSeenCardsByTier(game);
+    var seed = randomSeed();
+    game.table_seed = seed;
+    [1, 2, 3].forEach(function (tier) {
+      var hiddenMarketSlots = [];
+      (game.market[tier] || []).forEach(function (card, index) {
+        if (isBgaHiddenCard(card)) hiddenMarketSlots.push(index);
+      });
+      var candidates = shuffle((DEVELOPMENT_CARDS[tier] || []).filter(function (card) {
+        return seen[tier].indexOf(card.id) < 0;
+      }).map(clone), seed + tier * 5099 + (Number(game.next_move_id) || 0) * 37);
+      hiddenMarketSlots.forEach(function (index) {
+        var replacement = candidates.pop();
+        if (replacement) {
+          game.market[tier][index] = replacement;
+          rememberSeenCard(game, replacement);
+        } else {
+          game.market[tier].splice(index, 1);
+        }
+      });
+      game.decks[tier] = candidates;
+    });
+    game.bga_deck_unknown = false;
+    game.bga_continued_deck_seed = seed;
+    collectSeenCardsByTier(game);
+  }
+
   function tokenCountForPlayers(playerCount) {
     if (playerCount === 2) return 4;
     if (playerCount === 3) return 5;
@@ -1826,6 +1948,7 @@ Object.assign(I18N.de, {
       bank: emptyCounts(true),
       decks: decks,
       market: { 1: [], 2: [], 3: [] },
+      seen_cards: emptySeenCards(),
       nobles: shuffle(NOBLE_POOL, tableSeed + 9111).slice(0, playerCount + 1),
       current: 0,
       round: 1,
@@ -1845,6 +1968,7 @@ Object.assign(I18N.de, {
     game.bank.gold = 5;
     [1, 2, 3].forEach(function (tier) {
       refillMarket(game, tier);
+      rememberSeenCards(game, game.market[tier]);
     });
     game.log.unshift("Started " + playerCount + "-player local table.");
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
@@ -1868,6 +1992,7 @@ Object.assign(I18N.de, {
     var replacement = game.decks[tier] && game.decks[tier].length ? game.decks[tier].pop() : null;
     if (replacement) {
       game.market[tier][index] = replacement;
+      rememberSeenCard(game, replacement);
       return replacement;
     }
     game.market[tier].splice(index, 1);
@@ -2125,7 +2250,7 @@ Object.assign(I18N.de, {
   }
 
   function queueFlightFromElement(source, color, label, targetSelector) {
-    if (!source || !source.getBoundingClientRect || state && state.mode === "replay") return;
+    if (!source || !source.getBoundingClientRect) return;
     if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var rect = source.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
@@ -2155,6 +2280,14 @@ Object.assign(I18N.de, {
 
   function playerPanelTarget(suffix) {
     return '.player-card[data-player-index="' + state.current + '"] ' + suffix;
+  }
+
+  function playerPanelTargetForPlayerId(playerId, suffix) {
+    var playerIndex = state && state.players ? state.players.findIndex(function (player) {
+      return player.id === playerId;
+    }) : -1;
+    if (playerIndex < 0) playerIndex = state ? state.current : 0;
+    return '.player-card[data-player-index="' + playerIndex + '"] ' + suffix;
   }
 
   function flushPendingFlight() {
@@ -2392,7 +2525,7 @@ Object.assign(I18N.de, {
   function renderNoble(noble, choiceMode) {
     var button = choiceMode ? '<button type="button" class="primary" data-choose-noble="' + noble.id + '">' + t("choose") + "</button>" : "";
     return [
-      '<article class="noble-card">',
+      '<article class="noble-card" data-noble-id="' + escapeHtml(noble.id) + '">',
       "<strong>" + noble.points + " " + t("prestige") + "</strong>",
       '<div class="cost-row requirement-row">' + requirementHtml(noble.req) + "</div>",
       button,
@@ -2798,6 +2931,77 @@ Object.assign(I18N.de, {
     return replayData.moves.slice(0, replayIndex + 1).filter(Boolean);
   }
 
+  function replayDeckElement(tier) {
+    var button = document.querySelector('[data-reserve-deck="' + tier + '"]');
+    return button && button.closest(".deck-box") || null;
+  }
+
+  function replayPlayerSourceElement(playerId, suffix) {
+    return document.querySelector(playerPanelTargetForPlayerId(playerId, suffix)) || null;
+  }
+
+  function replayMoveActor(move) {
+    var player = state && state.players ? state.players.find(function (candidate) {
+      return candidate.id === move.player_id;
+    }) : null;
+    var notificationName = move && move.notification && move.notification.args && move.notification.args.player_name;
+    return {
+      id: move && move.player_id || player && player.id || "",
+      name: player && player.name || notificationName || t("players")
+    };
+  }
+
+  function replayMoveFlightLabel(move) {
+    var args = move && move.args || {};
+    if (move.type === "takeTokens") {
+      var colors = Array.isArray(args.colors) ? args.colors : [];
+      return colors.map(function (color) { return TOKEN_LABEL[color] || ""; }).filter(Boolean).join(" ") || t("tokens");
+    }
+    if (move.type === "discardToken") return TOKEN_LABEL[args.color] || t("tokens");
+    if (move.type === "reserveDeck") return t("blind");
+    if (move.type === "reserveMarket") return t("reserve");
+    if (move.type === "buyMarket" || move.type === "buyReserved") return t("buy");
+    if (move.type === "chooseNoble") return t("logNobleTitle");
+    return moveTitle(move);
+  }
+
+  function queueReplayMoveFlight(move, delta) {
+    if (!move || delta <= 0 || replayIndex + delta < 0) return;
+    var args = move.args || {};
+    var source = null;
+    var color = "gold";
+    var targetSelector = playerPanelTargetForPlayerId(move.player_id, ".player-resource-panel");
+    if (move.type === "takeTokens") {
+      var firstColor = Array.isArray(args.colors) && args.colors[0] || "gold";
+      color = firstColor;
+      source = document.querySelector('[data-bank-color="' + firstColor + '"]') || el.bankTokens || el.bankPanel;
+      targetSelector = playerPanelTargetForPlayerId(move.player_id, ".player-resource-panel");
+    } else if (move.type === "discardToken") {
+      color = args.color || "gold";
+      source = replayPlayerSourceElement(move.player_id, '.token[data-color="' + color + '"]') || replayPlayerSourceElement(move.player_id, ".player-resource-panel");
+      targetSelector = ".bank-tokens";
+    } else if (move.type === "reserveDeck") {
+      color = "gold";
+      source = replayDeckElement(args.tier) || el.market;
+      targetSelector = playerPanelTargetForPlayerId(move.player_id, ".reserved-list");
+    } else if (move.type === "reserveMarket") {
+      color = args.card && args.card.color || "gold";
+      source = cardElementForFlight(args.card || { id: args.card_id }) || el.market;
+      targetSelector = playerPanelTargetForPlayerId(move.player_id, ".reserved-list");
+    } else if (move.type === "buyMarket" || move.type === "buyReserved") {
+      color = args.card && args.card.color || "gold";
+      source = cardElementForFlight(args.card || { id: args.card_id }) || (move.type === "buyReserved" ? el.activeHandPanel : el.market);
+      targetSelector = playerPanelTargetForPlayerId(move.player_id, ".purchased-summary");
+    } else if (move.type === "chooseNoble") {
+      source = document.querySelector('[data-noble-id="' + String(args.noble_id || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]') || document.querySelector(".noble-card") || el.nobles;
+      color = "gold";
+      targetSelector = playerPanelTargetForPlayerId(move.player_id, ".purchased-summary");
+    } else {
+      source = el.market || el.gamePanel;
+    }
+    queueFlightFromElement(source, color, replayMoveFlightLabel(move), targetSelector);
+  }
+
   function nextMoveIdAfterMoves(game, moves) {
     var currentNext = Number(game && game.next_move_id) || 1;
     var moveMax = Array.isArray(moves) ? moves.reduce(function (max, move) {
@@ -2834,11 +3038,12 @@ Object.assign(I18N.de, {
       return;
     }
     var total = replayData && replayData.moves ? replayData.moves.length : 0;
+    var animating = !!(state.turnTransition && state.turnTransition.replay);
     el.replayStatus.textContent = t("replayMove", { current: Math.max(0, replayIndex + 1), total: total });
-    el.prevMove.disabled = replayIndex < 0;
-    el.nextMove.disabled = !replayData || replayIndex >= total - 1;
-    if (el.continueReplay) el.continueReplay.disabled = !replayData;
-    el.exitReplay.disabled = false;
+    el.prevMove.disabled = animating || replayIndex < 0;
+    el.nextMove.disabled = animating || !replayData || replayIndex >= total - 1;
+    if (el.continueReplay) el.continueReplay.disabled = animating || !replayData;
+    el.exitReplay.disabled = animating;
   }
 
   function syncDockWidth() {
@@ -2985,7 +3190,9 @@ Object.assign(I18N.de, {
     el.moveLabel.textContent = String((state.next_move_id || 1) - 1);
     el.gameStateLabel.textContent = gameStateText();
     if (state.turnTransition) {
-      messageText = t("msgSwitchingPlayer", { seconds: transitionSecondsRemaining() });
+      messageText = state.turnTransition.replay
+        ? t("msgReplayStepAnimating", { move: state.turnTransition.move_id || "", seconds: replayStepSecondsRemaining() })
+        : t("msgSwitchingPlayer", { seconds: transitionSecondsRemaining() });
       messageKind = "ok";
     } else if (state.aiThinking) {
       messageText = t("msgAiThinking", { player: activePlayer().name });
@@ -3459,9 +3666,21 @@ Object.assign(I18N.de, {
     }
   }
 
+  function clearReplayStepTimer() {
+    if (replayStepTimer) {
+      window.clearTimeout(replayStepTimer);
+      replayStepTimer = null;
+    }
+  }
+
   function transitionSecondsRemaining() {
     if (!state || !state.turnTransition) return 0;
     return Math.max(1, Math.ceil(((state.turnTransition.until || Date.now()) - Date.now()) / 1000));
+  }
+
+  function replayStepSecondsRemaining() {
+    if (!state || !state.turnTransition || !state.turnTransition.replay) return 0;
+    return transitionSecondsRemaining();
   }
 
   function aiThinkingSecondsRemaining() {
@@ -3487,7 +3706,7 @@ Object.assign(I18N.de, {
 
   function renderHandoffOverlay() {
     if (!el.handoffOverlay) return;
-    var mode = state && state.aiThinking ? "ai" : state && state.turnTransition ? "turn" : "";
+    var mode = state && state.aiThinking ? "ai" : state && state.turnTransition ? (state.turnTransition.replay ? "replay" : "turn") : "";
     if (!mode) {
       el.handoffOverlay.hidden = true;
       el.handoffOverlay.classList.remove("ai-thinking");
@@ -3497,10 +3716,14 @@ Object.assign(I18N.de, {
     }
     var seconds = mode === "ai" ? aiThinkingSecondsRemaining() : transitionSecondsRemaining();
     var player = mode === "ai" && state.players[state.current] ? state.players[state.current].name : "";
-    el.handoffTitle.textContent = mode === "ai" ? t("gameAiThinking") : t("gameTurnTransition");
-    el.handoffBody.textContent = mode === "ai" ? t("msgAiThinking", { player: player }) : t("msgSwitchingPlayer", { seconds: seconds });
+    el.handoffTitle.textContent = mode === "ai" ? t("gameAiThinking") : mode === "replay" ? t("gameReplayStep") : t("gameTurnTransition");
+    el.handoffBody.textContent = mode === "ai"
+      ? t("msgAiThinking", { player: player })
+      : mode === "replay"
+        ? t("msgReplayStepAnimating", { move: state.turnTransition.move_id || "", seconds: seconds })
+        : t("msgSwitchingPlayer", { seconds: seconds });
     if (el.handoffAction) {
-      el.handoffAction.innerHTML = mode === "turn" ? renderTransitionAction(state.turnTransition) : "";
+      el.handoffAction.innerHTML = mode === "turn" || mode === "replay" ? renderTransitionAction(state.turnTransition) : "";
     }
     el.handoffCountdown.textContent = String(seconds);
     el.handoffOverlay.hidden = false;
@@ -3722,6 +3945,9 @@ Object.assign(I18N.de, {
       bank: clone(game.bank),
       decks: clone(game.decks),
       market: clone(game.market),
+      seen_cards: clone(collectSeenCardsByTier(game)),
+      bga_deck_unknown: !!game.bga_deck_unknown,
+      bga_continued_deck_seed: game.bga_continued_deck_seed,
       nobles: clone(game.nobles),
       current: game.current,
       round: game.round,
@@ -3823,6 +4049,7 @@ Object.assign(I18N.de, {
     if (!gamedatas || gamedatas.schema !== SCHEMA) return null;
     if (gamedatas.source_state && validateState(gamedatas.source_state)) {
       var restored = clone(gamedatas.source_state);
+      restored.seen_cards = collectSeenCardsByTier(restored);
       restored.mode = "live";
       return restored;
     }
@@ -4337,8 +4564,10 @@ Object.assign(I18N.de, {
         return card && card.bga_id && card.bga_id !== "unknown";
       });
       game.market[tier] = cards;
+      rememberSeenCards(game, cards);
       game.decks[tier] = bgaDeckPlaceholders(tier, Number(row.count) || 0);
     });
+    game.bga_deck_unknown = true;
     game.nobles = bgaObjectValues(market.nobles).map(function (entry) {
       return bgaNobleFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, {});
     }).filter(function (noble) {
@@ -4397,6 +4626,7 @@ Object.assign(I18N.de, {
         if (emptyIndex >= 0) game.market[targetTier][emptyIndex] = revealCard;
         else game.market[targetTier].push(revealCard);
       }
+      rememberSeenCard(game, revealCard);
     }
     decrementBgaDeck(game, targetTier);
     return revealCard;
@@ -4437,6 +4667,7 @@ Object.assign(I18N.de, {
 
     if (buy) {
       var buyCard = bgaCardFromNotification(buy, items, { player_id: externalId }, gamedatas);
+      rememberSeenCard(game, buyCard);
       var fromHand = /hand/i.test(String(buy.args && buy.args.card && buy.args.card.location || ""));
       if (fromHand) {
         var reservedIndex = player.reserved.findIndex(function (card) {
@@ -4472,6 +4703,7 @@ Object.assign(I18N.de, {
       var cardSource = privateReserve && privateReserve.args && privateReserve.args.card || reserveItem.args && reserveItem.args.card || {};
       var fromDeck = /^draw_/i.test(String(cardSource.location || "")) || !!(reserveItem.args && reserveItem.args.drawpile);
       var reserveCard = bgaCardFromNotification(reserveItem, items, { card: cardSource, id: bgaRawCardTypeId(cardSource, ""), player_id: externalId }, gamedatas);
+      rememberSeenCard(game, reserveCard);
       reserveCard.reserved_from = fromDeck ? "deck" : "market";
       if (player.reserved.length < 3) player.reserved.push(reserveCard);
       if (fromDeck) {
@@ -4747,6 +4979,7 @@ Object.assign(I18N.de, {
     replayData = compactPayload;
     replayIndex = -1;
     clearTurnAdvanceTimer();
+    clearReplayStepTimer();
     state = initial;
     state.mode = "replay";
     pendingTake = [];
@@ -4759,8 +4992,41 @@ Object.assign(I18N.de, {
 
   function stepReplay(delta) {
     if (!replayData || state.mode !== "replay") return;
+    if (state.turnTransition && state.turnTransition.replay) return;
     var nextIndex = replayIndex + delta;
     if (nextIndex < -1 || nextIndex >= replayData.moves.length) return;
+    clearReplayStepTimer();
+    if (delta > 0 && nextIndex >= 0) {
+      startReplayStep(nextIndex, delta);
+      return;
+    }
+    applyReplayIndex(nextIndex);
+  }
+
+  function startReplayStep(nextIndex, delta) {
+    var move = replayData.moves[nextIndex];
+    if (!move) return;
+    var now = Date.now();
+    state.turnTransition = {
+      type: move.type,
+      args: clone(move.args || {}),
+      actor: replayMoveActor(move),
+      display_current: displayCurrentIndex(),
+      replay: true,
+      move_id: move.move_id,
+      started_at: new Date(now).toISOString(),
+      until: now + REPLAY_STEP_DELAY_MS
+    };
+    queueReplayMoveFlight(move, delta);
+    showMessage(t("msgReplayStepAnimating", { move: move.move_id, seconds: Math.ceil(REPLAY_STEP_DELAY_MS / 1000) }), "ok");
+    render();
+    replayStepTimer = window.setTimeout(function () {
+      replayStepTimer = null;
+      applyReplayIndex(nextIndex);
+    }, REPLAY_STEP_DELAY_MS);
+  }
+
+  function applyReplayIndex(nextIndex) {
     replayIndex = nextIndex;
     if (replayIndex === -1) {
       state = stateFromGamedatas(replayData.gamedatas);
@@ -4779,6 +5045,7 @@ Object.assign(I18N.de, {
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
+    clearReplayStepTimer();
     pendingTake = [];
     pendingPayment = null;
     showMessage(state ? t("msgReturnedLiveTable") : "");
@@ -4794,12 +5061,14 @@ Object.assign(I18N.de, {
     continued.moves = continuedMoves;
     continued.initial_gamedatas = compactGamedatasForExport(preservedReplay.gamedatas) || clone(preservedReplay.gamedatas);
     continued.next_move_id = nextMoveIdAfterMoves(continued, continuedMoves);
+    rebuildUnknownBgaDecksForLive(continued);
     continued.imported_replay = preservedReplay;
     continued.imported_replay_resume_index = replayIndex;
     state = continued;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
+    clearReplayStepTimer();
     pendingTake = [];
     pendingPayment = null;
     if (el.bgaFileStatus) el.bgaFileStatus.textContent = t("fileIoHint");
