@@ -41,6 +41,7 @@
       startModeNew: "New game",
       startModeReplay: "Import replay",
       replayJsonLabel: "Replay JSON",
+      replayFileLabel: "Replay JSON file",
       startReplayPlaceholder: "Paste a complete replay JSON payload here.",
       startReplayBody: "Load a complete replay chain, step through it, then continue from any visible record if needed.",
       players: "Players",
@@ -124,6 +125,7 @@
       continueFromReplay: "Continue from here",
       exitReplay: "Exit replay",
       jsonPlaceholder: "Exported JSON appears here. Paste state or replay JSON here before importing/loading.",
+      fileIoHint: "Exports download as .json files. Import buttons read a selected .json file directly.",
       affordable: "Affordable",
       needTokens: "Need tokens",
       buy: "Buy",
@@ -193,8 +195,11 @@
       msgMultipleNobles: "{player} is eligible for multiple nobles. Choose one.",
       msgNobleNotEligible: "That noble is not eligible.",
       msgNoActiveTableExport: "No active table to export.",
+      msgExportPreparing: "Preparing export file...",
+      msgExportFailed: "Export failed: {message}",
       msgStateExported: "Current state exported.",
       msgReplayExported: "Replay exported.",
+      msgFileReadFailed: "File read failed: {message}",
       msgImportFailedSchema: "Import failed: expected a Gem Table state or gamedatas.source_state using {schema}.",
       msgStateImported: "State imported.",
       msgLoadReplayExpected: "Load replay failed: expected { schema, gamedatas, moves }.",
@@ -1358,9 +1363,14 @@ Object.assign(I18N.de, {
     startModeNew: "\u65b0\u6e38\u620f",
     startModeReplay: "\u5bfc\u5165\u56de\u653e",
     replayJsonLabel: "\u56de\u653e JSON",
+    replayFileLabel: "\u56de\u653e JSON \u6587\u4ef6",
     startReplayPlaceholder: "\u5728\u8fd9\u91cc\u7c98\u8d34\u5b8c\u6574\u7684\u56de\u653e JSON\u3002",
     startReplayBody: "\u5bfc\u5165\u5b8c\u6574\u56de\u653e\u94fe\u540e\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u4e2a\u8bb0\u5f55\u70b9\u7ee7\u7eed\u6e38\u620f\u3002",
+    fileIoHint: "\u5bfc\u51fa\u4f1a\u76f4\u63a5\u4e0b\u8f7d .json \u6587\u4ef6\uff0c\u5bfc\u5165\u6309\u94ae\u4f1a\u76f4\u63a5\u8bfb\u53d6\u9009\u62e9\u7684 .json \u6587\u4ef6\u3002",
     continueFromReplay: "\u4ece\u6b64\u7ee7\u7eed",
+    msgExportPreparing: "\u6b63\u5728\u51c6\u5907\u5bfc\u51fa\u6587\u4ef6...",
+    msgExportFailed: "\u5bfc\u51fa\u5931\u8d25\uff1a{message}",
+    msgFileReadFailed: "\u6587\u4ef6\u8bfb\u53d6\u5931\u8d25\uff1a{message}",
     msgContinueFromReplay: "\u5df2\u5c06\u5f53\u524d\u56de\u653e\u8282\u70b9\u8f6c\u4e3a\u53ef\u7ee7\u7eed\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8bf7\u91cd\u65b0\u4ece\u5934\u8f7d\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1376,9 +1386,14 @@ Object.assign(I18N.de, {
     startModeNew: "\u65b0\u904a\u6232",
     startModeReplay: "\u532f\u5165\u56de\u653e",
     replayJsonLabel: "\u56de\u653e JSON",
+    replayFileLabel: "\u56de\u653e JSON \u6a94\u6848",
     startReplayPlaceholder: "\u5728\u9019\u88e1\u8cbc\u4e0a\u5b8c\u6574\u7684\u56de\u653e JSON\u3002",
     startReplayBody: "\u532f\u5165\u5b8c\u6574\u56de\u653e\u93c8\u5f8c\uff0c\u53ef\u4ee5\u9010\u6b65\u67e5\u770b\uff0c\u4e5f\u53ef\u4ee5\u5728\u67d0\u500b\u8a18\u9304\u9ede\u7e7c\u7e8c\u904a\u6232\u3002",
+    fileIoHint: "\u532f\u51fa\u6703\u76f4\u63a5\u4e0b\u8f09 .json \u6a94\u6848\uff0c\u532f\u5165\u6309\u9215\u6703\u76f4\u63a5\u8b80\u53d6\u9078\u64c7\u7684 .json \u6a94\u6848\u3002",
     continueFromReplay: "\u5f9e\u6b64\u7e7c\u7e8c",
+    msgExportPreparing: "\u6b63\u5728\u6e96\u5099\u532f\u51fa\u6a94\u6848...",
+    msgExportFailed: "\u532f\u51fa\u5931\u6557\uff1a{message}",
+    msgFileReadFailed: "\u6a94\u6848\u8b80\u53d6\u5931\u6557\uff1a{message}",
     msgContinueFromReplay: "\u5df2\u5c07\u7576\u524d\u56de\u653e\u7bc0\u9ede\u8f49\u70ba\u53ef\u7e7c\u7e8c\u7684\u724c\u5c40\u3002\u5982\u9700\u56de\u653e\uff0c\u8acb\u91cd\u65b0\u5f9e\u982d\u8f09\u5165\u4fdd\u7559\u7684 JSON\u3002"
   });
 
@@ -1648,6 +1663,10 @@ Object.assign(I18N.de, {
     return JSON.parse(JSON.stringify(value));
   }
 
+  function cloneOr(value, fallback) {
+    return typeof value === "undefined" ? fallback : clone(value);
+  }
+
   function makeRng(seed) {
     var value = seed >>> 0;
     return function () {
@@ -1892,7 +1911,7 @@ Object.assign(I18N.de, {
     if (!state || state.mode === "replay") return;
     var serialized = "";
     try {
-      serialized = JSON.stringify(state);
+      serialized = JSON.stringify(compactStateForPersistence(state) || state);
     } catch (error) {
       showMessage(t("msgSaveSerializeFailed"));
       return;
@@ -3785,23 +3804,111 @@ Object.assign(I18N.de, {
   }
 
   function cloneWithoutMoveSnapshots(game) {
-    var copy = clone(game);
-    copy.moves = copy.moves.map(function (move) {
-      return {
-        move_id: move.move_id,
-        type: move.type,
-        player_id: move.player_id,
-        args: clone(move.args),
-        notification: clone(move.notification),
-        state_after: {
-          schema: SCHEMA,
-          table: move.state_after.table,
-          gamestate: move.state_after.gamestate
-        }
-      };
-    });
-    copy.initial_gamedatas = null;
-    return copy;
+    return compactSourceState(game);
+  }
+
+  function compactSourceState(game) {
+    if (!game || !Array.isArray(game.players)) return null;
+    return {
+      schema: SCHEMA,
+      table_seed: game.table_seed,
+      next_move_id: game.next_move_id,
+      players: clone(game.players),
+      bank: clone(game.bank),
+      decks: clone(game.decks),
+      market: clone(game.market),
+      nobles: clone(game.nobles),
+      current: game.current,
+      round: game.round,
+      log: Array.isArray(game.log) ? game.log.slice() : [],
+      moves: [],
+      initial_gamedatas: null,
+      awaitingDiscard: !!game.awaitingDiscard,
+      awaitingNobleChoice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null,
+      endTriggered: !!game.endTriggered,
+      finalTurnsLeft: game.finalTurnsLeft,
+      gameOver: !!game.gameOver,
+      turnTransition: game.turnTransition ? clone(game.turnTransition) : null,
+      aiThinking: game.aiThinking ? clone(game.aiThinking) : null,
+      mode: "live"
+    };
+  }
+
+  function compactGamedatasForExport(gamedatas) {
+    if (!gamedatas || gamedatas.schema !== SCHEMA) return null;
+    var compact = {
+      schema: SCHEMA,
+      table: cloneOr(gamedatas.table, {}),
+      gamestate: cloneOr(gamedatas.gamestate, {}),
+      players: cloneOr(gamedatas.players, {}),
+      playerorder: Array.isArray(gamedatas.playerorder) ? gamedatas.playerorder.slice() : [],
+      bank: cloneOr(gamedatas.bank, {}),
+      market: cloneOr(gamedatas.market, {}),
+      nobles: cloneOr(gamedatas.nobles, []),
+      decks_remaining: cloneOr(gamedatas.decks_remaining, {}),
+      awaiting: cloneOr(gamedatas.awaiting, {}),
+      end: cloneOr(gamedatas.end, {}),
+      log: Array.isArray(gamedatas.log) ? gamedatas.log.slice() : []
+    };
+    if (validateState(gamedatas.source_state)) {
+      compact.source_state = compactSourceState(gamedatas.source_state);
+    }
+    return compact;
+  }
+
+  function compactMoveForExport(move) {
+    return {
+      move_id: move.move_id,
+      type: move.type,
+      player_id: move.player_id,
+      args: clone(move.args || {}),
+      notification: clone(move.notification || {}),
+      state_after: compactGamedatasForExport(move.state_after) || (move.state_after ? clone(move.state_after) : null)
+    };
+  }
+
+  function compactMovesForExport(moves) {
+    return Array.isArray(moves) ? moves.map(compactMoveForExport) : [];
+  }
+
+  function compactReplayPayload(payload) {
+    if (!payload || payload.schema !== SCHEMA) return null;
+    return {
+      schema: SCHEMA,
+      next_move_id: payload.next_move_id,
+      gamedatas: compactGamedatasForExport(payload.gamedatas),
+      moves: compactMovesForExport(payload.moves)
+    };
+  }
+
+  function compactStateForPersistence(game) {
+    var compact = compactSourceState(game);
+    if (!compact) return null;
+    compact.moves = compactMovesForExport(game.moves);
+    compact.initial_gamedatas = compactGamedatasForExport(game.initial_gamedatas);
+    if (game.imported_replay) {
+      compact.imported_replay = compactReplayPayload(game.imported_replay);
+      compact.imported_replay_resume_index = game.imported_replay_resume_index;
+    }
+    return compact;
+  }
+
+  function buildStateExportPayload(game) {
+    return {
+      schema: SCHEMA,
+      next_move_id: game.next_move_id,
+      gamedatas: compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
+      moves: compactMovesForExport(game.moves)
+    };
+  }
+
+  function buildReplayExportPayload(game) {
+    return {
+      schema: SCHEMA,
+      next_move_id: game.next_move_id,
+      gamedatas: compactGamedatasForExport(game.initial_gamedatas) || compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
+      moves: compactMovesForExport(game.moves)
+    };
   }
 
   function stateFromGamedatas(gamedatas) {
@@ -3814,21 +3921,85 @@ Object.assign(I18N.de, {
     return null;
   }
 
+  function exportFileName(kind) {
+    var stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return "gem-table-" + kind + "-" + stamp + ".json";
+  }
+
+  function downloadJsonFile(payloadFactory, fileName, successKey) {
+    showMessage(t("msgExportPreparing"), "ok");
+    render();
+    window.setTimeout(function () {
+      try {
+        var payload = typeof payloadFactory === "function" ? payloadFactory() : payloadFactory;
+        var json = JSON.stringify(payload);
+        var blob = new Blob([json], { type: "application/json;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a");
+        link.href = url;
+        link.download = fileName;
+        link.rel = "noopener";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(function () {
+          URL.revokeObjectURL(url);
+        }, 1200);
+        if (el.bgaFileStatus) el.bgaFileStatus.textContent = fileName;
+        showMessage(t(successKey), "ok");
+        render();
+      } catch (error) {
+        showMessage(t("msgExportFailed", { message: error.message }));
+        render();
+      }
+    }, 0);
+  }
+
+  function readJsonFileFromPicker(startScope, onPayload) {
+    var input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json,.json";
+    input.style.position = "fixed";
+    input.style.left = "-9999px";
+    input.style.top = "0";
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      input.remove();
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var text = String(reader.result || "");
+        try {
+          onPayload(JSON.parse(text), text, file);
+        } catch (error) {
+          var message = t("msgJsonParseFailed", { message: error.message });
+          if (startScope) showStartMessage(message);
+          else showMessage(message);
+          render();
+        }
+      };
+      reader.onerror = function () {
+        var error = reader.error || { message: "unknown error" };
+        var message = t("msgFileReadFailed", { message: error.message });
+        if (startScope) showStartMessage(message);
+        else showMessage(message);
+        render();
+      };
+      reader.readAsText(file);
+    });
+    document.body.appendChild(input);
+    input.click();
+  }
+
   function exportStateJson() {
     if (!state) {
       showMessage(t("msgNoActiveTableExport"));
       render();
       return;
     }
-    var payload = {
-      schema: SCHEMA,
-      next_move_id: state.next_move_id,
-      gamedatas: toGamedatas(state, { includeSourceState: true }),
-      moves: clone(state.moves)
-    };
-    el.bgaJson.value = JSON.stringify(payload, null, 2);
-    showMessage(t("msgStateExported"), "ok");
-    render();
+    downloadJsonFile(function () {
+      return buildStateExportPayload(state);
+    }, exportFileName("state"), "msgStateExported");
   }
 
   function exportReplayJson() {
@@ -3837,25 +4008,22 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var payload = {
-      schema: SCHEMA,
-      next_move_id: state.next_move_id,
-      gamedatas: state.initial_gamedatas || toGamedatas(state, { includeSourceState: true }),
-      moves: clone(state.moves)
-    };
-    el.bgaJson.value = JSON.stringify(payload, null, 2);
-    showMessage(t("msgReplayExported"), "ok");
-    render();
+    downloadJsonFile(function () {
+      return buildReplayExportPayload(state);
+    }, exportFileName("replay"), "msgReplayExported");
   }
 
-  function importStateJson() {
-    var payload = parseJsonTextarea();
-    if (!payload) return;
+  function importStatePayload(payload) {
     var imported = null;
     if (validateState(payload)) {
-      imported = payload;
+      imported = compactStateForPersistence(payload) || payload;
     } else if (payload.schema === SCHEMA && payload.gamedatas) {
-      imported = stateFromGamedatas(payload.gamedatas);
+      var compactGamedatas = compactGamedatasForExport(payload.gamedatas);
+      imported = stateFromGamedatas(compactGamedatas);
+      if (imported && Array.isArray(payload.moves)) {
+        imported.moves = compactMovesForExport(payload.moves);
+        imported.next_move_id = payload.next_move_id || imported.next_move_id;
+      }
     } else if (payload.schema === SCHEMA && payload.source_state) {
       imported = stateFromGamedatas(payload);
     }
@@ -3877,16 +4045,25 @@ Object.assign(I18N.de, {
     render();
   }
 
+  function importStateJson() {
+    readJsonFileFromPicker(false, function (payload, rawText, file) {
+      if (el.bgaFileStatus && file) el.bgaFileStatus.textContent = file.name;
+      importStatePayload(payload);
+    });
+  }
+
   function loadReplayJson() {
-    var payload = parseJsonTextarea(el.bgaJson, false);
-    if (!payload) return;
-    loadReplayPayload(payload, el.bgaJson.value, false);
+    readJsonFileFromPicker(false, function (payload, rawText, file) {
+      if (el.bgaFileStatus && file) el.bgaFileStatus.textContent = file.name;
+      loadReplayPayload(payload, "", false);
+    });
   }
 
   function loadReplayFromStart() {
-    var payload = parseJsonTextarea(el.startReplayJson, true);
-    if (!payload) return;
-    loadReplayPayload(payload, el.startReplayJson.value, true);
+    readJsonFileFromPicker(true, function (payload, rawText, file) {
+      if (el.startReplayFileStatus && file) el.startReplayFileStatus.textContent = file.name;
+      loadReplayPayload(payload, "", true);
+    });
   }
 
   function loadReplayPayload(payload, rawText, fromStart) {
@@ -3896,7 +4073,14 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var initial = stateFromGamedatas(payload.gamedatas);
+    var compactPayload = compactReplayPayload(payload);
+    if (!compactPayload || !compactPayload.gamedatas || !Array.isArray(compactPayload.moves)) {
+      if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
+      else showMessage(t("msgLoadReplayExpected"));
+      render();
+      return;
+    }
+    var initial = stateFromGamedatas(compactPayload.gamedatas);
     if (!initial) {
       if (fromStart) showStartMessage(t("msgLoadReplaySource"));
       else showMessage(t("msgLoadReplaySource"));
@@ -3904,18 +4088,15 @@ Object.assign(I18N.de, {
       return;
     }
     if (state && state.mode !== "replay") {
-      liveStateBeforeReplay = clone(state);
+      liveStateBeforeReplay = compactStateForPersistence(state) || clone(state);
     }
-    replayData = clone(payload);
+    replayData = compactPayload;
     replayIndex = -1;
     clearTurnAdvanceTimer();
     state = initial;
     state.mode = "replay";
     pendingTake = [];
     pendingPayment = null;
-    if (el.bgaJson) {
-      el.bgaJson.value = rawText || JSON.stringify(payload, null, 2);
-    }
     showStartMessage("");
     showMessage(t("msgReplayLoaded"), "ok");
     render();
@@ -3963,9 +4144,7 @@ Object.assign(I18N.de, {
     replayIndex = -1;
     pendingTake = [];
     pendingPayment = null;
-    if (el.bgaJson) {
-      el.bgaJson.value = JSON.stringify(preservedReplay, null, 2);
-    }
+    if (el.bgaFileStatus) el.bgaFileStatus.textContent = t("fileIoHint");
     showMessage(t("msgContinueFromReplay"), "ok");
     saveState();
     render();
@@ -4214,6 +4393,7 @@ Object.assign(I18N.de, {
     if (el.startClearReplay) {
       el.startClearReplay.addEventListener("click", function () {
         el.startReplayJson.value = "";
+        if (el.startReplayFileStatus) el.startReplayFileStatus.textContent = t("startReplayBody");
         showStartMessage("");
       });
     }
@@ -4392,6 +4572,7 @@ Object.assign(I18N.de, {
       "start-mode-replay",
       "start-replay-panel",
       "start-replay-json",
+      "start-replay-file-status",
       "start-load-replay",
       "start-clear-replay",
       "language-select",
@@ -4444,6 +4625,7 @@ Object.assign(I18N.de, {
       "save-game",
       "reset-game",
       "bga-json",
+      "bga-file-status",
       "export-state",
       "import-state",
       "export-replay",
@@ -4490,12 +4672,7 @@ Object.assign(I18N.de, {
         chooseNoble: chooseNoble
       },
       exportReplayPayload: function () {
-        return state ? {
-          schema: SCHEMA,
-          next_move_id: state.next_move_id,
-          gamedatas: state.initial_gamedatas || toGamedatas(state, { includeSourceState: true }),
-          moves: clone(state.moves)
-        } : null;
+        return state ? buildReplayExportPayload(state) : null;
       },
       clearSave: clearSavedState,
       schema: SCHEMA
