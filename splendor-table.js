@@ -2768,6 +2768,19 @@ Object.assign(I18N.de, {
     ].join("");
   }
 
+  function replayMovesThroughCurrentStep() {
+    if (!replayData || !Array.isArray(replayData.moves) || replayIndex < 0) return [];
+    return replayData.moves.slice(0, replayIndex + 1).filter(Boolean);
+  }
+
+  function nextMoveIdAfterMoves(game, moves) {
+    var currentNext = Number(game && game.next_move_id) || 1;
+    var moveMax = Array.isArray(moves) ? moves.reduce(function (max, move) {
+      return Math.max(max, Number(move && move.move_id) || 0);
+    }, 0) : 0;
+    return Math.max(currentNext, moveMax + 1);
+  }
+
   function renderLog() {
     if (el.logSafeMode) {
       el.logSafeMode.classList.toggle("active", logMode === "safe");
@@ -2777,7 +2790,8 @@ Object.assign(I18N.de, {
       el.logFullMode.classList.toggle("active", logMode === "full");
       el.logFullMode.setAttribute("aria-pressed", logMode === "full" ? "true" : "false");
     }
-    var moves = state.moves.slice().reverse();
+    var sourceMoves = state.mode === "replay" ? replayMovesThroughCurrentStep() : state.moves;
+    var moves = sourceMoves.slice().reverse();
     if (!moves.length) {
       el.actionLog.innerHTML = '<li><article class="log-entry"><div class="log-entry-head"><span class="log-entry-title">' + escapeHtml(t("logStart")) + '</span><span class="log-entry-meta">0</span></div><div class="log-entry-body">' + escapeHtml(state.log[0] || t("logStart")) + "</div></article></li>";
       return;
@@ -4101,8 +4115,12 @@ Object.assign(I18N.de, {
   function continueReplayFromHere() {
     if (!state || state.mode !== "replay" || !replayData) return;
     var preservedReplay = clone(replayData);
+    var continuedMoves = compactMovesForExport(replayMovesThroughCurrentStep());
     var continued = clone(state);
     continued.mode = "live";
+    continued.moves = continuedMoves;
+    continued.initial_gamedatas = compactGamedatasForExport(preservedReplay.gamedatas) || clone(preservedReplay.gamedatas);
+    continued.next_move_id = nextMoveIdAfterMoves(continued, continuedMoves);
     continued.imported_replay = preservedReplay;
     continued.imported_replay_resume_index = replayIndex;
     state = continued;
