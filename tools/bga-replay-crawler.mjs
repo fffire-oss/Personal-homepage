@@ -519,10 +519,14 @@ async function main() {
   await mkdir(outputDir, { recursive: true });
 
   const responses = [];
-  const context = await chromium.launchPersistentContext(profileDir, {
+  const launchOptions = {
     headless: args.headless,
     viewport: { width: 1440, height: 1000 }
-  });
+  };
+  if (process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE) {
+    launchOptions.executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE;
+  }
+  const context = await chromium.launchPersistentContext(profileDir, launchOptions);
   const page = context.pages()[0] || await context.newPage();
   if (cookieHeader) {
     await applyBgaCookieHeader(context, cookieHeader);
