@@ -2160,6 +2160,28 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   z-index: 130;
 }
 
+.players-panel {
+  position: relative;
+  z-index: 24;
+  overflow: visible;
+}
+
+.players-panel:has(.reserve-badge:hover),
+.players-panel:has(.reserve-badge:focus-within),
+.players-panel:has(.reserve-badge.preview-open) {
+  z-index: 150;
+}
+
+.reserve-badge:hover,
+.reserve-badge:focus-within,
+.reserve-badge.preview-open {
+  z-index: 160;
+}
+
+.reserve-badge .reserve-preview {
+  z-index: 170;
+}
+
 .action-log {
   display: grid;
   gap: 8px;
@@ -3089,8 +3111,16 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
   .reserve-badge.preview-open .reserve-preview,
   .log-card-badge.preview-open .reserve-preview {
+    position: fixed;
+    top: 50%;
+    right: 12px;
+    left: 12px;
+    z-index: 220;
+    width: auto;
+    max-width: none;
     opacity: 1 !important;
-    transform: translateY(0) scale(1) !important;
+    transform: translateY(-50%) scale(1) !important;
+    transform-origin: center;
   }
 }
 
