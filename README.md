@@ -4,23 +4,24 @@ Static personal homepage for ZephyrLabs projects.
 
 ## What It Contains
 
-- `index.html`: minimal ZephyrLabs landing page with project links and a short todo list.
-- `splendor-table.html`: Gem Table, an unofficial base-game Splendor-style local table.
+- `index.html`: minimal ZephyrLabs landing page with Gem Table, BoardReplayLab, Bilibili links, and a short todo list.
+- `splendor-table.html`: Gem Table, an unofficial Splendor-style local table.
 - `splendor-table.js`: local game logic, replay import/export, BGA-style action logs, hot-seat play, and random AI fallback.
 - `splendor-table.css`: Gem Table layout and interaction styling.
 
 ## Current Project Focus
 
-- Gem Table local multiplayer and replay workflows.
-- Base-game BGA replay capture adaptation.
-- Future AI-assisted Gem Table play.
-- Future expansion support once rule data and BGA capture data are mapped cleanly.
-- Automation tooling experiments, including trading workflow research.
+- Gem Table local multiplayer, replay workflows, and expansion compatibility.
+- BoardReplayLab replay capture/conversion tooling for Gem Table and training data.
+- Stronger AlphaZero-style training with real-player replay data.
+- Tampermonkey scripts for BGA play/replay ergonomics.
+- Quantitative stock-model experiments and structured explanation videos.
 
 ## Related Work
 
-- [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): public crawler/converter project for downloading BGA replay JSON data and converting supported captures for Gem Table.
+- [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): replay capture/conversion lab. The current Splendor module exports supported BGA replay data for Gem Table and AI workflows.
 - [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard): upstream board-game AI framework reference used by the Gem Table Smart AI deployment.
+- [Bilibili](https://space.bilibili.com/231033317?spm_id_from=333.40164.0.0): video index for match analysis and project notes.
 
 ## Local Preview
 
