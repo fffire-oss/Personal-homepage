@@ -3126,13 +3126,14 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   .log-card-badge.preview-open .reserve-preview {
     position: fixed;
     top: 50%;
+    bottom: auto;
     right: auto;
     left: 50%;
     z-index: 220;
     box-sizing: border-box;
     width: min(292px, calc(100vw - 28px));
     max-width: calc(100vw - 28px);
-    max-height: min(68vh, 420px);
+    max-height: calc(100dvh - 32px);
     overflow-y: auto;
     opacity: 1 !important;
     transform: translate(-50%, -50%) scale(1) !important;
