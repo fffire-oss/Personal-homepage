@@ -3126,14 +3126,49 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   .log-card-badge.preview-open .reserve-preview {
     position: fixed;
     top: 50%;
-    right: 12px;
-    left: 12px;
+    right: auto;
+    left: 50%;
     z-index: 220;
-    width: auto;
-    max-width: none;
+    box-sizing: border-box;
+    width: min(292px, calc(100vw - 28px));
+    max-width: calc(100vw - 28px);
+    max-height: min(68vh, 420px);
+    overflow-y: auto;
     opacity: 1 !important;
-    transform: translateY(-50%) scale(1) !important;
+    transform: translate(-50%, -50%) scale(1) !important;
     transform-origin: center;
+    white-space: normal;
+  }
+
+  .reserve-badge.preview-open .reserve-preview-title,
+  .log-card-badge.preview-open .reserve-preview-title {
+    align-items: flex-start;
+    font-size: clamp(0.72rem, 3.3vw, 0.84rem);
+    line-height: 1.16;
+  }
+
+  .reserve-badge.preview-open .reserve-preview-title strong,
+  .log-card-badge.preview-open .reserve-preview-title strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .reserve-badge.preview-open .reserve-preview-title span,
+  .log-card-badge.preview-open .reserve-preview-title span {
+    font-size: clamp(0.64rem, 3vw, 0.76rem);
+  }
+
+  .reserve-badge.preview-open .reserve-preview-cost,
+  .log-card-badge.preview-open .reserve-preview-cost {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .reserve-badge.preview-open .reserve-preview .requirement-tile,
+  .log-card-badge.preview-open .reserve-preview .requirement-tile {
+    width: 23px;
+    height: 23px;
+    font-size: 0.66rem;
   }
 }
 
