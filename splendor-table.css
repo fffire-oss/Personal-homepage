@@ -1080,7 +1080,7 @@ body.replay-mode .top-replay-controls {
 
 .payment-controls {
   display: grid;
-  grid-template-columns: repeat(4, minmax(44px, 1fr));
+  grid-template-columns: repeat(6, minmax(42px, 1fr));
   gap: 5px;
 }
 
@@ -1096,6 +1096,88 @@ body.replay-mode .top-replay-controls {
 
 .payment-actions {
   grid-column: 1 / -1;
+}
+
+.payment-discard-row {
+  display: grid;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--gem), transparent 70%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--gem), transparent 88%), transparent),
+    rgba(255, 255, 255, 0.035);
+}
+
+.payment-discard-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #eef8f8;
+  font-size: 0.76rem;
+  font-weight: 860;
+}
+
+.payment-discard-cards,
+.orient-action-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(138px, 1fr));
+  gap: 8px;
+  min-width: 0;
+}
+
+.payment-discard-cards button,
+.orient-choice-card {
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--gem, #cbd5e1), transparent 62%);
+  border-radius: 8px;
+  color: #eef8f8;
+  text-align: left;
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--gem, #cbd5e1), transparent 84%), rgba(255, 255, 255, 0.035)),
+    rgba(9, 14, 20, 0.88);
+}
+
+.payment-discard-cards button.active,
+.orient-choice-card:hover,
+.orient-choice-card:focus-visible {
+  border-color: color-mix(in srgb, var(--gem, #31d7ff), white 10%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--gem, #31d7ff), transparent 64%);
+}
+
+.orient-action-panel {
+  border-color: rgba(255, 191, 69, 0.42);
+}
+
+.orient-choice-card .dev-card {
+  width: 100%;
+  min-height: 122px;
+  pointer-events: none;
+}
+
+.orient-choice-note {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  color: #081016;
+  font-size: 0.68rem;
+  font-weight: 900;
+  background: color-mix(in srgb, var(--gem, #31d7ff), white 16%);
+}
+
+.market-empty-slot {
+  display: grid;
+  min-height: 118px;
+  place-items: center;
+  border: 1px dashed rgba(160, 177, 199, 0.28);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 820;
+  background: rgba(255, 255, 255, 0.025);
 }
 
 .table-layout {

@@ -13,7 +13,7 @@
   var ORIENT_MARKET_ID = "orient";
   var BASE_MARKET_SLOT_COUNT = 4;
   var ORIENT_MARKET_SLOT_COUNT = 2;
-  var ORIENT_CATALOG_SCHEMA = "zephyrlabs-gemtable-orient-placeholder-catalog-v1";
+  var ORIENT_CATALOG_SCHEMA = "zephyrlabs-gemtable-orient-bga-carddb-v1";
   var MOVE_EVENT_SCHEMA = "zephyrlabs-gemtable-move-events-v1";
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
@@ -37,6 +37,13 @@
     red: "R",
     black: "B",
     gold: "Au"
+  };
+  var BGA_COST_COLOR = {
+    C: "white",
+    S: "blue",
+    E: "green",
+    R: "red",
+    O: "black"
   };
   var TIER_SIZES = { 1: 40, 2: 30, 3: 20 };
   var LANGUAGE_KEY = "zephyrlabs-gem-table-language-v1";
@@ -104,12 +111,22 @@
       marketHint: "Buy, reserve, or reserve blind from a deck.",
       baseMarketTab: "Base",
       orientMarketTab: "Orient",
-      orientMarketHint: "Generic placeholder cards for later Orient abilities.",
-      orientAbilityPlaceholder: "Ability slot",
+      orientMarketHint: "Buy, reserve, and resolve The Orient cards.",
+      orientAbilityPlaceholder: "Orient ability",
       orientActionsPending: "Actions pending",
       orientAbilityPending: "Ability pending",
       orientDoubleBonus: "Double bonus",
-      orientVirtualGold: "Virtual gold later",
+      orientVirtualGold: "2 virtual gold",
+      orientCopyBonus: "Copy bonus",
+      orientFreeCard: "Free tier {tier}",
+      orientDiscardCost: "Discard {count} {color} cards",
+      orientChoiceTitle: "Orient ability",
+      orientChoiceBody: "Resolve this card's required effect before the turn continues.",
+      orientChooseCopy: "Choose a bonus card to copy",
+      orientChooseFree: "Choose a free tier {tier} card",
+      orientUseVirtual: "Use Orient gold",
+      orientPaymentDiscard: "Discard cards",
+      orientNoChoices: "No legal Orient choice is available.",
       orientSlotLabel: "Slot {slot}",
       actionLog: "Action log",
       logSafeMode: "Masked",
@@ -223,7 +240,11 @@
       msgMarketGone: "That market card is no longer available.",
       msgDeckEmpty: "That deck is empty.",
       msgNotEnoughForCard: "Not enough tokens or gold for that card.",
-      msgOrientAbilityPending: "That Orient ability needs a choice that is not implemented yet.",
+      msgOrientAbilityPending: "Resolve the pending Orient ability first.",
+      msgOrientCopyNeedsBonus: "This Orient card must copy one of your existing bonus cards.",
+      msgOrientDiscardNeedsCards: "This Orient card requires discarding {count} {color} development cards.",
+      msgOrientChooseCopy: "Choose a card for {card} to copy.",
+      msgOrientChooseFree: "Choose a free tier {tier} card.",
       msgChoosePayment: "Choose the payment for {card}.",
       msgPaymentInvalid: "This payment does not exactly cover the card cost.",
       msgPaymentCleared: "Payment selection cleared.",
@@ -263,7 +284,7 @@
       msgBgaServerFailed: "Server crawl failed: {message}",
       msgBgaCaptureUnsupported: "Replay JSON is ready to download, but this BGA capture could not be adapted into the current Gem Table replay schema.",
       msgBgaExpansionUnsupported: "Replay JSON is ready to download, but an active expansion flag was detected, so it cannot be imported into the base-game table.",
-      msgRulesetUnsupported: "This replay uses unsupported Splendor modules: {modules}. Current Gem Table supports base game plus the Orient market placeholder.",
+      msgRulesetUnsupported: "This replay uses unsupported Splendor modules: {modules}. Current Gem Table supports base game plus The Orient.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReplayJumped: "Jumped to move {move}.",
@@ -1482,7 +1503,24 @@ Object.assign(I18N.de, {
     msgReplayAutoplayStarted: "\u5df2\u5f00\u59cb\u81ea\u52a8\u64ad\u653e\u3002",
     msgReplayAutoplayStopped: "\u5df2\u6682\u505c\u81ea\u52a8\u64ad\u653e\u3002",
     bonusCardsTitle: "{color} \u5361\u724c",
-    bonusCardsEmpty: "\u8fd8\u6ca1\u6709\u8fd9\u4e2a\u989c\u8272\u7684\u5df2\u8d2d\u5361\u3002"
+    bonusCardsEmpty: "\u8fd8\u6ca1\u6709\u8fd9\u4e2a\u989c\u8272\u7684\u5df2\u8d2d\u5361\u3002",
+    orientMarketHint: "\u8d2d\u4e70\u3001\u9884\u7ea6\u5e76\u7ed3\u7b97\u4e1c\u65b9\u724c\u6548\u679c\u3002",
+    orientVirtualGold: "2 \u865a\u62df\u9ec4\u91d1",
+    orientCopyBonus: "\u590d\u5236\u52a0\u6210",
+    orientFreeCard: "\u514d\u8d39 {tier} \u7ea7\u724c",
+    orientDiscardCost: "\u5f03 {count} \u5f20 {color} \u724c",
+    orientChoiceTitle: "\u4e1c\u65b9\u80fd\u529b",
+    orientChoiceBody: "\u5148\u7ed3\u7b97\u8fd9\u5f20\u724c\u7684\u5fc5\u8981\u80fd\u529b\u3002",
+    orientChooseCopy: "\u9009\u62e9\u8981\u590d\u5236\u7684\u52a0\u6210\u724c",
+    orientChooseFree: "\u9009\u62e9\u4e00\u5f20\u514d\u8d39 {tier} \u7ea7\u724c",
+    orientUseVirtual: "\u865a\u62df\u91d1",
+    orientPaymentDiscard: "\u5f03\u724c",
+    orientNoChoices: "\u6ca1\u6709\u53ef\u9009\u7684\u4e1c\u65b9\u80fd\u529b\u76ee\u6807\u3002",
+    msgOrientAbilityPending: "\u8bf7\u5148\u7ed3\u7b97\u5f85\u5904\u7406\u7684\u4e1c\u65b9\u80fd\u529b\u3002",
+    msgOrientCopyNeedsBonus: "\u8fd9\u5f20\u4e1c\u65b9\u724c\u9700\u8981\u590d\u5236\u4f60\u5df2\u6709\u7684\u52a0\u6210\u724c\u3002",
+    msgOrientDiscardNeedsCards: "\u8fd9\u5f20\u4e1c\u65b9\u724c\u9700\u8981\u5f03 {count} \u5f20 {color} \u53d1\u5c55\u724c\u3002",
+    msgOrientChooseCopy: "\u4e3a {card} \u9009\u62e9\u8981\u590d\u5236\u7684\u724c\u3002",
+    msgOrientChooseFree: "\u9009\u62e9\u4e00\u5f20\u514d\u8d39 {tier} \u7ea7\u724c\u3002"
   });
 
   Object.assign(I18N["zh-Hant"], {
@@ -1538,7 +1576,24 @@ Object.assign(I18N.de, {
     msgReplayAutoplayStarted: "\u5df2\u958b\u59cb\u81ea\u52d5\u64ad\u653e\u3002",
     msgReplayAutoplayStopped: "\u5df2\u66ab\u505c\u81ea\u52d5\u64ad\u653e\u3002",
     bonusCardsTitle: "{color} \u5361\u724c",
-    bonusCardsEmpty: "\u9084\u6c92\u6709\u9019\u500b\u984f\u8272\u7684\u5df2\u8cfc\u5361\u3002"
+    bonusCardsEmpty: "\u9084\u6c92\u6709\u9019\u500b\u984f\u8272\u7684\u5df2\u8cfc\u5361\u3002",
+    orientMarketHint: "\u8cfc\u8cb7\u3001\u9810\u7d04\u4e26\u7d50\u7b97\u6771\u65b9\u724c\u6548\u679c\u3002",
+    orientVirtualGold: "2 \u865b\u64ec\u9ec3\u91d1",
+    orientCopyBonus: "\u8907\u88fd\u52a0\u6210",
+    orientFreeCard: "\u514d\u8cbb {tier} \u7d1a\u724c",
+    orientDiscardCost: "\u68c4 {count} \u5f35 {color} \u724c",
+    orientChoiceTitle: "\u6771\u65b9\u80fd\u529b",
+    orientChoiceBody: "\u5148\u7d50\u7b97\u9019\u5f35\u724c\u7684\u5fc5\u8981\u80fd\u529b\u3002",
+    orientChooseCopy: "\u9078\u64c7\u8981\u8907\u88fd\u7684\u52a0\u6210\u724c",
+    orientChooseFree: "\u9078\u64c7\u4e00\u5f35\u514d\u8cbb {tier} \u7d1a\u724c",
+    orientUseVirtual: "\u865b\u64ec\u91d1",
+    orientPaymentDiscard: "\u68c4\u724c",
+    orientNoChoices: "\u6c92\u6709\u53ef\u9078\u7684\u6771\u65b9\u80fd\u529b\u76ee\u6a19\u3002",
+    msgOrientAbilityPending: "\u8acb\u5148\u7d50\u7b97\u5f85\u8655\u7406\u7684\u6771\u65b9\u80fd\u529b\u3002",
+    msgOrientCopyNeedsBonus: "\u9019\u5f35\u6771\u65b9\u724c\u9700\u8981\u8907\u88fd\u4f60\u5df2\u6709\u7684\u52a0\u6210\u724c\u3002",
+    msgOrientDiscardNeedsCards: "\u9019\u5f35\u6771\u65b9\u724c\u9700\u8981\u68c4 {count} \u5f35 {color} \u767c\u5c55\u724c\u3002",
+    msgOrientChooseCopy: "\u70ba {card} \u9078\u64c7\u8981\u8907\u88fd\u7684\u724c\u3002",
+    msgOrientChooseFree: "\u9078\u64c7\u4e00\u5f35\u514d\u8cbb {tier} \u7d1a\u724c\u3002"
   });
 
   Object.assign(I18N.ja, {
@@ -1549,28 +1604,38 @@ Object.assign(I18N.de, {
     bgaTableIdLabel: "BGA table ID",
     openBgaReview: "BGA \u56de\u653e\u3092\u958b\u304f",
     downloadBgaCaptureScript: "\u53d6\u5f97\u30b9\u30af\u30ea\u30d7\u30c8",
-    bgaCaptureStatus: "\u30d1\u30b9\u30ef\u30fc\u30c9\u306f BGA \u516c\u5f0f\u30da\u30fc\u30b8\u3067\u306e\u307f\u5165\u529b\u3057\u307e\u3059\u3002\u672c\u30b5\u30a4\u30c8\u306f\u4fdd\u5b58\u3057\u307e\u305b\u3093\u3002"
+    bgaCaptureStatus: "\u30d1\u30b9\u30ef\u30fc\u30c9\u306f BGA \u516c\u5f0f\u30da\u30fc\u30b8\u3067\u306e\u307f\u5165\u529b\u3057\u307e\u3059\u3002\u672c\u30b5\u30a4\u30c8\u306f\u4fdd\u5b58\u3057\u307e\u305b\u3093\u3002",
+    orientCopyBonus: "\u30dc\u30fc\u30ca\u30b9\u8907\u88fd",
+    orientUseVirtual: "\u4eee\u91d1",
+    orientPaymentDiscard: "\u30ab\u30fc\u30c9\u7834\u68c4",
+    orientChoiceTitle: "\u6771\u65b9\u80fd\u529b"
   });
 
   Object.assign(I18N.fr, {
     buyShort: "Ach.",
     reserveShort: "Res.",
     downloadBgaCaptureScript: "Script capture",
-    openBgaReview: "Ouvrir BGA"
+    openBgaReview: "Ouvrir BGA",
+    orientUseVirtual: "Or virt.",
+    orientPaymentDiscard: "Defausse"
   });
 
   Object.assign(I18N.de, {
     buyShort: "Kauf",
     reserveShort: "Res.",
     downloadBgaCaptureScript: "Capture-Skript",
-    openBgaReview: "BGA offnen"
+    openBgaReview: "BGA offnen",
+    orientUseVirtual: "Virt. Gold",
+    orientPaymentDiscard: "Ablegen"
   });
 
   Object.assign(I18N.es, {
     buyShort: "Com.",
     reserveShort: "Res.",
     downloadBgaCaptureScript: "Script captura",
-    openBgaReview: "Abrir BGA"
+    openBgaReview: "Abrir BGA",
+    orientUseVirtual: "Oro virt.",
+    orientPaymentDiscard: "Descartar"
   });
 
   var NOBLE_POOL = [
@@ -1599,6 +1664,7 @@ Object.assign(I18N.de, {
   var replayIndex = -1;
   var pendingTake = [];
   var pendingPayment = null;
+  var pendingOrientAction = null;
   var logMode = "safe";
   var startMode = "new";
   var messageText = "";
@@ -1883,64 +1949,172 @@ Object.assign(I18N.de, {
 
   var DEVELOPMENT_CARDS = buildDevelopmentCards();
 
-  function orientPlaceholderCost(tier, colorIndex, variant) {
+  var ORIENT_CARDDB_ROWS = [
+    [201, 11, 5, 0, "CCCRR", 1, 0, 0, ""],
+    [202, 11, 5, 0, "RRRSS", 1, 0, 0, ""],
+    [203, 11, 5, 0, "SSSEE", 1, 0, 0, ""],
+    [204, 11, 5, 0, "EEEOO", 1, 0, 0, ""],
+    [205, 11, 5, 0, "OOOCC", 1, 0, 0, ""],
+    [206, 11, 6, 0, "RRR", 0, 0, 0, ""],
+    [207, 11, 6, 0, "EEE", 0, 0, 0, ""],
+    [208, 11, 6, 0, "SSS", 0, 0, 0, ""],
+    [209, 11, 6, 0, "CCC", 0, 0, 0, ""],
+    [210, 11, 6, 0, "OOO", 0, 0, 0, ""],
+    [211, 12, 0, 1, "RRRREEE", 0, 0, 2, ""],
+    [212, 12, 1, 1, "OOOORRR", 0, 0, 2, ""],
+    [213, 12, 2, 1, "CCCCOOO", 0, 0, 2, ""],
+    [214, 12, 3, 1, "SSSSCCC", 0, 0, 2, ""],
+    [215, 12, 4, 1, "EEEESSS", 0, 0, 2, ""],
+    [216, 12, 5, 1, "RRRREEEC", 1, 1, 0, ""],
+    [217, 12, 5, 1, "SSSSOOOR", 1, 1, 0, ""],
+    [218, 12, 5, 1, "OOOORRRE", 1, 1, 0, ""],
+    [219, 12, 5, 1, "EEEECCCS", 1, 1, 0, ""],
+    [220, 12, 5, 1, "CCCCSSSO", 1, 1, 0, ""],
+    [221, 13, 4, 3, "", 0, 0, 1, "SS"],
+    [222, 13, 2, 3, "", 0, 0, 1, "OO"],
+    [223, 13, 3, 3, "", 0, 0, 1, "CC"],
+    [224, 13, 0, 3, "", 0, 0, 1, "EE"],
+    [225, 13, 1, 3, "", 0, 0, 1, "RR"],
+    [226, 13, 0, 1, "SSSSSSEEER", 0, 2, 1, ""],
+    [227, 13, 1, 1, "EEEEEERRRO", 0, 2, 1, ""],
+    [228, 13, 2, 1, "RRRRRROOOC", 0, 2, 1, ""],
+    [229, 13, 3, 1, "OOOOOOCCCS", 0, 2, 1, ""],
+    [230, 13, 4, 1, "CCCCCCSSSE", 0, 2, 1, ""]
+  ];
+
+  function costFromBgaCodes(value) {
     var cost = emptyCounts(false);
-    var primary = COLORS[(colorIndex + tier + variant) % COLORS.length];
-    var secondary = COLORS[(colorIndex + 2 + variant) % COLORS.length];
-    var tertiary = COLORS[(colorIndex + 4) % COLORS.length];
-    cost[primary] = tier + 1;
-    cost[secondary] = tier;
-    if (tier > 1) cost[tertiary] = tier - 1;
+    String(value || "").split("").forEach(function (code) {
+      var color = BGA_COST_COLOR[code];
+      if (color) cost[color] += 1;
+    });
     return normalizeCost(cost);
+  }
+
+  function orientAbilitiesForRow(row, color, costCardColor) {
+    var abilities = [];
+    if (row.symbolCopy) {
+      abilities.push({
+        id: "orient-copy-bonus",
+        timing: "on_acquire",
+        effect: "copy_bonus",
+        status: "implemented",
+        requires_choice: true,
+        immediate_choice: true
+      });
+    }
+    if (row.type === 6) {
+      abilities.push({
+        id: "orient-virtual-gold",
+        timing: "future_payment",
+        effect: "virtual_gold_2",
+        status: "implemented",
+        virtual_gold: 2,
+        immediate_choice: false
+      });
+    }
+    if (row.nbBonus === 2) {
+      abilities.push({
+        id: "orient-double-bonus",
+        timing: "on_acquire",
+        effect: "double_bonus",
+        status: "implemented",
+        bonus_color: color,
+        bonus_count: 2,
+        immediate_choice: false
+      });
+    }
+    if (row.symbolTake) {
+      abilities.push({
+        id: "orient-free-tier-" + row.symbolTake,
+        timing: "on_acquire",
+        effect: "take_level_free",
+        status: "implemented",
+        free_tier: row.symbolTake,
+        requires_choice: true,
+        immediate_choice: true
+      });
+    }
+    if (costCardColor) {
+      abilities.push({
+        id: "orient-discard-card-cost",
+        timing: "on_buy",
+        effect: "discard_cards_cost",
+        status: "implemented",
+        color: costCardColor,
+        count: 2,
+        immediate_choice: false
+      });
+    }
+    if (!abilities.length) {
+      abilities.push({
+        id: "orient-fixed-bonus",
+        timing: "on_acquire",
+        effect: "fixed_bonus",
+        status: "implemented",
+        bonus_color: color,
+        bonus_count: row.nbBonus || 1,
+        immediate_choice: false
+      });
+    }
+    return abilities;
   }
 
   function buildOrientCards() {
     var cardsByTier = { 1: [], 2: [], 3: [] };
-    [1, 2, 3].forEach(function (tier) {
-      COLORS.forEach(function (color, colorIndex) {
-        [0, 1].forEach(function (variant) {
-          var number = colorIndex * 2 + variant + 1;
-          var isVirtualGold = variant === 1;
-          var ability = isVirtualGold ? {
-            id: "orient-virtual-gold-placeholder",
-            timing: "on_acquire",
-            effect: "virtual_gold_placeholder",
-            status: "metadata",
-            immediate_choice: false
-          } : {
-            id: "orient-double-bonus",
-            timing: "on_acquire",
-            effect: "double_bonus",
-            status: "implemented",
-            bonus_color: color,
-            bonus_count: 2,
-            immediate_choice: false
-          };
-          cardsByTier[tier].push({
-            id: "orient-t" + tier + "-" + String(number).padStart(2, "0"),
-            tier: tier,
-            color: isVirtualGold ? "gold" : color,
-            printed_color: color,
-            points: tier === 1 ? 0 : tier - 1,
-            cost: orientPlaceholderCost(tier, colorIndex, variant),
-            module: ORIENT_MARKET_ID,
-            catalog_schema: ORIENT_CATALOG_SCHEMA,
-            orient_effective: isVirtualGold ? {
-              bonus: {},
-              virtual_gold: true,
-              payment_feature_pending: true
-            } : {
-              bonus: Object.assign({}, emptyCounts(false), { [color]: 2 })
-            },
-            abilities: [ability]
-          });
-        });
+    ORIENT_CARDDB_ROWS.forEach(function (raw) {
+      var row = {
+        id: raw[0],
+        lvl: raw[1],
+        type: raw[2],
+        points: raw[3],
+        cost: raw[4],
+        symbolCopy: raw[5],
+        symbolTake: raw[6],
+        nbBonus: raw[7],
+        costCard: raw[8]
+      };
+      var tier = row.lvl - 10;
+      var color = row.type >= 0 && row.type <= 4 ? COLORS[row.type] : "gold";
+      var costCard = costFromBgaCodes(row.costCard);
+      var costCardColor = COLORS.find(function (entry) { return costCard[entry] > 0; }) || "";
+      var orientBonus = emptyCounts(false);
+      if (row.type >= 0 && row.type <= 4 && row.nbBonus > 0) orientBonus[color] = row.nbBonus;
+      cardsByTier[tier].push({
+        id: "orient-" + row.id,
+        bga_id: String(row.id),
+        tier: tier,
+        color: color,
+        printed_color: row.type >= 0 && row.type <= 4 ? color : null,
+        points: row.points,
+        cost: costFromBgaCodes(row.cost),
+        module: ORIENT_MARKET_ID,
+        catalog_schema: ORIENT_CATALOG_SCHEMA,
+        bga_carddb: clone(row),
+        orient_effective: {
+          bonus: orientBonus,
+          virtual_gold: row.type === 6,
+          virtual_gold_value: row.type === 6 ? 2 : 0
+        },
+        orient_cost_card: costCardColor ? { color: costCardColor, count: costCard[costCardColor] || 2 } : null,
+        abilities: orientAbilitiesForRow(row, color, costCardColor)
       });
     });
     return cardsByTier;
   }
 
   var ORIENT_CARDS = buildOrientCards();
+
+  function localOrientCardByBgaId(id) {
+    var value = String(id || "");
+    for (var tier = 1; tier <= 3; tier += 1) {
+      var found = (ORIENT_CARDS[tier] || []).find(function (card) {
+        return String(card.bga_id || "") === value || card.id === "orient-" + value;
+      });
+      if (found) return found;
+    }
+    return null;
+  }
 
   var DINOBOARD_CARDS = [
     [1, 1, 0, [0, 0, 0, 0, 3]], [1, 1, 0, [1, 0, 0, 0, 2]], [1, 1, 0, [0, 0, 2, 0, 2]],
@@ -2227,7 +2401,7 @@ Object.assign(I18N.de, {
     return {
       orient: {
         enabled: orientEnabled,
-        status: orientEnabled ? "placeholder_market" : "disabled",
+        status: orientEnabled ? "supported" : "disabled",
         catalog_schema: ORIENT_CATALOG_SCHEMA,
         card_count: [1, 2, 3].reduce(function (sum, tier) {
           return sum + (ORIENT_CARDS[tier] || []).length;
@@ -2246,7 +2420,7 @@ Object.assign(I18N.de, {
     game.module_state = {
       orient: Object.assign({}, base.orient, orient, {
         enabled: base.orient.enabled,
-        status: base.orient.enabled ? (orient.status || "placeholder_market") : "disabled",
+        status: base.orient.enabled ? (orient.status === "placeholder_market" ? "supported" : orient.status || "supported") : "disabled",
         catalog_schema: ORIENT_CATALOG_SCHEMA,
         market_slot_count: ORIENT_MARKET_SLOT_COUNT,
         event_schema: MOVE_EVENT_SCHEMA
@@ -2513,6 +2687,7 @@ Object.assign(I18N.de, {
       moves: [],
       initial_gamedatas: null,
       awaitingDiscard: false,
+      awaitingOrientAction: null,
       awaitingNobleChoice: null,
       endTriggered: false,
       finalTurnsLeft: null,
@@ -2647,7 +2822,77 @@ Object.assign(I18N.de, {
     return !!(card && card.module === ORIENT_MARKET_ID);
   }
 
-  function orientAbilityBuyStatus(card) {
+  function orientCardAbilities(card, effect) {
+    var abilities = Array.isArray(card && card.abilities) ? card.abilities : [];
+    return effect ? abilities.filter(function (ability) { return ability && ability.effect === effect; }) : abilities;
+  }
+
+  function orientCardHasAbility(card, effect) {
+    return orientCardAbilities(card, effect).length > 0;
+  }
+
+  function cardPrimaryBonusColor(card) {
+    var bonuses = effectiveCardBonuses(card);
+    return COLORS.find(function (color) { return bonuses[color] > 0; }) || "";
+  }
+
+  function orientDiscardCost(card) {
+    if (!cardIsOrient(card) || !card.orient_cost_card) return null;
+    var color = card.orient_cost_card.color;
+    var count = Number(card.orient_cost_card.count) || 2;
+    return COLORS.indexOf(color) >= 0 ? { color: color, count: count } : null;
+  }
+
+  function orientDiscardCostCandidates(player, card) {
+    var requirement = orientDiscardCost(card);
+    if (!player || !requirement) return [];
+    return (player.purchased || []).filter(function (candidate) {
+      return candidate && candidate.id !== card.id && cardPrimaryBonusColor(candidate) === requirement.color;
+    }).sort(function (a, b) {
+      var aCopied = a.copied_color === requirement.color ? 0 : 1;
+      var bCopied = b.copied_color === requirement.color ? 0 : 1;
+      return aCopied - bCopied || String(a.id).localeCompare(String(b.id));
+    });
+  }
+
+  function orientDiscardSelectionHasPriority(player, card, selectedIds) {
+    var requirement = orientDiscardCost(card);
+    if (!requirement) return true;
+    var priorityIds = orientDiscardCostCandidates(player, card).filter(function (candidate) {
+      return candidate.copied_color === requirement.color;
+    }).map(function (candidate) {
+      return candidate.id;
+    });
+    var requiredPriority = priorityIds.slice(0, Math.min(priorityIds.length, requirement.count));
+    return requiredPriority.every(function (cardId) {
+      return selectedIds.indexOf(cardId) >= 0;
+    });
+  }
+
+  function orientCopyCandidates(player, card) {
+    if (!player || !orientCardHasAbility(card, "copy_bonus")) return [];
+    return (player.purchased || []).filter(function (candidate) {
+      return candidate && candidate.id !== card.id && !!cardPrimaryBonusColor(candidate);
+    });
+  }
+
+  function orientCardNeedsManualChoice(card) {
+    return cardIsOrient(card) && (orientCardHasAbility(card, "copy_bonus") || orientCardHasAbility(card, "take_level_free"));
+  }
+
+  function orientAbilityBuyStatus(card, player) {
+    if (!cardIsOrient(card)) return { ok: true, reason: "" };
+    if (player && orientCardHasAbility(card, "copy_bonus") && orientCopyCandidates(player, card).length === 0) {
+      return { ok: false, reason: t("msgOrientCopyNeedsBonus") };
+    }
+    var discardCost = orientDiscardCost(card);
+    if (player && discardCost && orientDiscardCostCandidates(player, card).length < discardCost.count) {
+      return { ok: false, reason: t("msgOrientDiscardNeedsCards", { count: discardCost.count, color: TOKEN_LABEL[discardCost.color] }) };
+    }
+    return { ok: true, reason: "" };
+  }
+
+  function orientAbilityBuyStatusLegacy(card) {
     if (!cardIsOrient(card)) return { ok: true, reason: "" };
     var abilities = Array.isArray(card.abilities) ? card.abilities : [];
     var safeEffects = ["double_bonus", "virtual_gold_placeholder", "no_bonus_placeholder", "metadata"];
@@ -2668,6 +2913,10 @@ Object.assign(I18N.de, {
     var bonuses = emptyCounts(false);
     if (!card) return bonuses;
     if (cardIsOrient(card)) {
+      if (card.copied_color && COLORS.indexOf(card.copied_color) >= 0) {
+        bonuses[card.copied_color] = 1;
+        return bonuses;
+      }
       var explicit = card.orient_effective && card.orient_effective.bonus || card.effective_bonuses;
       COLORS.forEach(function (color) {
         bonuses[color] = Math.max(0, Number(explicit && explicit[color]) || 0);
@@ -2689,11 +2938,12 @@ Object.assign(I18N.de, {
     if (!cardIsOrient(card)) return null;
     var hasVirtualGold = !!(card.orient_effective && card.orient_effective.virtual_gold);
     (card.abilities || []).forEach(function (ability) {
-      if (ability && ability.effect === "virtual_gold_placeholder") hasVirtualGold = true;
+      if (ability && (ability.effect === "virtual_gold_placeholder" || ability.effect === "virtual_gold_2")) hasVirtualGold = true;
     });
     return hasVirtualGold ? {
       card_id: card.id,
-      status: "payment_feature_pending",
+      value: 2,
+      status: "available",
       source: ORIENT_MARKET_ID
     } : null;
   }
@@ -2744,6 +2994,48 @@ Object.assign(I18N.de, {
     return record;
   }
 
+  function availableOrientVirtualGoldCards(player) {
+    return (player && player.purchased || []).filter(function (card) {
+      return !!orientVirtualGoldMetadata(card);
+    });
+  }
+
+  function orientVirtualGoldCapacity(player) {
+    return availableOrientVirtualGoldCards(player).reduce(function (sum, card) {
+      var meta = orientVirtualGoldMetadata(card);
+      return sum + (Number(meta && meta.value) || 0);
+    }, 0);
+  }
+
+  function paymentVirtualCards(player, payment) {
+    var total = paymentVirtualTotal(payment);
+    var selected = [];
+    availableOrientVirtualGoldCards(player).some(function (card) {
+      if (total <= 0) return true;
+      var meta = orientVirtualGoldMetadata(card);
+      var value = Number(meta && meta.value) || 0;
+      if (value <= 0) return false;
+      selected.push(card.id);
+      total -= value;
+      return false;
+    });
+    return selected;
+  }
+
+  function removePurchasedCardsByIds(player, cardIds) {
+    var removed = [];
+    (cardIds || []).forEach(function (cardId) {
+      var index = (player.purchased || []).findIndex(function (card) {
+        return card && card.id === cardId;
+      });
+      if (index < 0) return;
+      var card = player.purchased.splice(index, 1)[0];
+      removeCardBonuses(player, card);
+      removed.push(card);
+    });
+    return removed;
+  }
+
   function totalTokens(player) {
     return ALL_TOKENS.reduce(function (sum, color) {
       return sum + (Number(player.tokens[color]) || 0);
@@ -2752,7 +3044,7 @@ Object.assign(I18N.de, {
 
   function canAct(options) {
     var allowAi = !!(options && options.allowAi) || aiTurnInProgress;
-    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment;
+    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment && !state.awaitingOrientAction;
   }
 
   function aiSelectionOrder(player, index) {
@@ -3408,13 +3700,21 @@ Object.assign(I18N.de, {
   function emptyPaymentPlan() {
     return {
       colored: emptyCounts(false),
-      gold: emptyCounts(false)
+      gold: emptyCounts(false),
+      virtual: emptyCounts(false),
+      discard_cards: []
     };
   }
 
   function paymentGoldTotal(payment) {
     return COLORS.reduce(function (sum, color) {
       return sum + (Number(payment && payment.gold && payment.gold[color]) || 0);
+    }, 0);
+  }
+
+  function paymentVirtualTotal(payment) {
+    return COLORS.reduce(function (sum, color) {
+      return sum + (Number(payment && payment.virtual && payment.virtual[color]) || 0);
     }, 0);
   }
 
@@ -3432,8 +3732,13 @@ Object.assign(I18N.de, {
     COLORS.forEach(function (color) {
       var colored = Number(payment && payment.colored && payment.colored[color]) || 0;
       var gold = Number(payment && payment.gold && payment.gold[color]) || 0;
+      var virtual = Number(payment && payment.virtual && payment.virtual[color]) || 0;
       if (colored > 0) parts.push(TOKEN_LABEL[color] + " " + colored);
       if (gold > 0) parts.push(TOKEN_LABEL.gold + " " + gold + " -> " + TOKEN_LABEL[color]);
+      if (virtual > 0) parts.push(t("orientUseVirtual") + " " + virtual + " -> " + TOKEN_LABEL[color]);
+    });
+    (payment && payment.discard_cards || []).forEach(function (cardId) {
+      parts.push(t("orientPaymentDiscard") + " " + cardId);
     });
     return parts.length ? parts.join(", ") : "-";
   }
@@ -3447,6 +3752,8 @@ Object.assign(I18N.de, {
       normalized.colored[color] = colored;
       var gold = Math.max(0, Number(payment && payment.gold && payment.gold[color]) || 0);
       normalized.gold[color] = Math.min(gold, Math.max(needs[color] - colored, 0));
+      var virtual = Math.max(0, Number(payment && payment.virtual && payment.virtual[color]) || 0);
+      normalized.virtual[color] = Math.min(virtual, Math.max(needs[color] - colored - normalized.gold[color], 0));
     });
     var excessGold = paymentGoldTotal(normalized) - (player.tokens.gold || 0);
     if (excessGold > 0) {
@@ -3456,6 +3763,23 @@ Object.assign(I18N.de, {
         excessGold -= remove;
       });
     }
+    var excessVirtual = paymentVirtualTotal(normalized) - orientVirtualGoldCapacity(player);
+    if (excessVirtual > 0) {
+      COLORS.slice().reverse().forEach(function (color) {
+        var remove = Math.min(normalized.virtual[color], excessVirtual);
+        normalized.virtual[color] -= remove;
+        excessVirtual -= remove;
+      });
+    }
+    var discardRequirement = orientDiscardCost(card);
+    if (discardRequirement) {
+      var candidates = orientDiscardCostCandidates(player, card);
+      var selected = Array.isArray(payment && payment.discard_cards) ? payment.discard_cards.slice() : [];
+      var candidateIds = candidates.map(function (candidate) { return candidate.id; });
+      normalized.discard_cards = selected.filter(function (cardId, index) {
+        return selected.indexOf(cardId) === index && candidateIds.indexOf(cardId) >= 0;
+      }).slice(0, discardRequirement.count);
+    }
     return normalized;
   }
 
@@ -3463,28 +3787,55 @@ Object.assign(I18N.de, {
     if (!player || !card || !payment) return false;
     var needs = paymentNeeds(player, card);
     if (paymentGoldTotal(payment) > (player.tokens.gold || 0)) return false;
-    return COLORS.every(function (color) {
+    if (paymentVirtualTotal(payment) > orientVirtualGoldCapacity(player)) return false;
+    var rowsCovered = COLORS.every(function (color) {
       var colored = Number(payment.colored && payment.colored[color]) || 0;
       var gold = Number(payment.gold && payment.gold[color]) || 0;
-      return colored <= (player.tokens[color] || 0) && colored + gold === needs[color];
+      var virtual = Number(payment.virtual && payment.virtual[color]) || 0;
+      return colored <= (player.tokens[color] || 0) && colored + gold + virtual === needs[color];
     });
+    if (!rowsCovered) return false;
+    var discardRequirement = orientDiscardCost(card);
+    if (!discardRequirement) return true;
+    var selected = Array.isArray(payment.discard_cards) ? payment.discard_cards : [];
+    if (selected.length !== discardRequirement.count) return false;
+    return orientDiscardSelectionHasPriority(player, card, selected);
   }
 
-  function paymentMoveArgs(payment) {
+  function paymentMoveArgs(payment, player) {
+    var virtualIds = paymentVirtualCards(player, payment);
     return {
       tokens: paymentSpend(payment),
-      gold_as: clone(payment.gold || emptyCounts(false))
+      gold_as: clone(payment.gold || emptyCounts(false)),
+      virtual_as: clone(payment.virtual || emptyCounts(false)),
+      virtual_card_ids: virtualIds,
+      discarded_card_ids: Array.isArray(payment.discard_cards) ? payment.discard_cards.slice() : []
     };
   }
 
   function autoPaymentPlan(player, card) {
     var needs = paymentNeeds(player, card);
     var payment = emptyPaymentPlan();
+    var goldLeft = player.tokens.gold || 0;
+    var virtualLeft = orientVirtualGoldCapacity(player);
     COLORS.forEach(function (color) {
       var colored = Math.min(player.tokens[color] || 0, needs[color]);
       payment.colored[color] = colored;
-      payment.gold[color] = Math.max(needs[color] - colored, 0);
+      var remaining = Math.max(needs[color] - colored, 0);
+      var gold = Math.min(goldLeft, remaining);
+      payment.gold[color] = gold;
+      goldLeft -= gold;
+      remaining -= gold;
+      var virtual = Math.min(virtualLeft, remaining);
+      payment.virtual[color] = virtual;
+      virtualLeft -= virtual;
     });
+    var discardRequirement = orientDiscardCost(card);
+    if (discardRequirement) {
+      payment.discard_cards = orientDiscardCostCandidates(player, card).slice(0, discardRequirement.count).map(function (candidate) {
+        return candidate.id;
+      });
+    }
     return normalizePaymentPlan(player, card, payment);
   }
 
@@ -3499,7 +3850,10 @@ Object.assign(I18N.de, {
       goldNeeded += needed - coloredPay;
     });
     pay.gold = goldNeeded;
-    return { ok: goldNeeded <= (player.tokens.gold || 0), pay: pay };
+    var paymentOk = goldNeeded <= (player.tokens.gold || 0) + orientVirtualGoldCapacity(player);
+    var discardRequirement = orientDiscardCost(card);
+    var discardOk = !discardRequirement || orientDiscardCostCandidates(player, card).length >= discardRequirement.count;
+    return { ok: paymentOk && discardOk, pay: pay };
   }
 
   function spendForCard(player, pay) {
@@ -3516,7 +3870,15 @@ Object.assign(I18N.de, {
     if (!cardIsOrient(card)) return "";
     var ability = Array.isArray(card.abilities) && card.abilities[0] || {};
     if (ability.effect === "double_bonus") return t("orientDoubleBonus");
-    if (ability.effect === "virtual_gold_placeholder") return t("orientVirtualGold");
+    if (ability.effect === "virtual_gold_placeholder" || ability.effect === "virtual_gold_2") return t("orientVirtualGold");
+    if (ability.effect === "copy_bonus" && orientCardHasAbility(card, "take_level_free")) {
+      return t("orientChooseFree", { tier: orientCardAbilities(card, "take_level_free")[0].free_tier || 1 });
+    }
+    if (ability.effect === "copy_bonus") return t("orientCopyBonus");
+    if (ability.effect === "take_level_free") return t("orientFreeCard", { tier: ability.free_tier || 1 });
+    if (ability.effect === "discard_cards_cost") {
+      return t("orientDiscardCost", { count: ability.count || 2, color: TOKEN_LABEL[ability.color] || "" });
+    }
     if (!orientAbilityBuyStatus(card).ok) return t("orientAbilityPending");
     return t("orientAbilityPlaceholder");
   }
@@ -3550,6 +3912,10 @@ Object.assign(I18N.de, {
       actions.length ? '<div class="card-actions">' + actions.join("") + "</div>" : "",
       "</article>"
     ].join("");
+  }
+
+  function renderMarketEmptySlot(label) {
+    return '<div class="market-empty-slot"><span>' + escapeHtml(label || t("noFaceUpCards")) + "</span></div>";
   }
 
   function renderNoble(noble, choiceMode) {
@@ -3617,6 +3983,7 @@ Object.assign(I18N.de, {
     var active = displayPlayer();
     el.market.innerHTML = [3, 2, 1].map(function (tier) {
       var cards = state.market[tier].map(function (card, index) {
+        if (!card) return renderMarketEmptySlot(t("orientActionsPending"));
         var afford = affordability(active, card);
         return renderCard(card, {
           buy: "buy-market",
@@ -3646,8 +4013,9 @@ Object.assign(I18N.de, {
     var active = displayPlayer();
     el.market.innerHTML = [3, 2, 1].map(function (tier) {
       var cards = (state.orient_market[tier] || []).map(function (card, index) {
+        if (!card) return renderMarketEmptySlot(t("orientActionsPending"));
         var afford = affordability(active, card);
-        var abilityStatus = orientAbilityBuyStatus(card);
+        var abilityStatus = orientAbilityBuyStatus(card, active);
         var buyReason = abilityStatus.ok ? "" : t("msgOrientAbilityPending");
         return renderCard(card, {
           buy: "buy-market",
@@ -3833,25 +4201,53 @@ Object.assign(I18N.de, {
     }).map(function (color) {
       var colored = payment.colored[color] || 0;
       var gold = payment.gold[color] || 0;
-      var remaining = Math.max(needs[color] - colored - gold, 0);
+      var virtual = payment.virtual[color] || 0;
+      var remaining = Math.max(needs[color] - colored - gold - virtual, 0);
       var canAddColor = remaining > 0 && colored < (player.tokens[color] || 0);
       var canAddGold = remaining > 0 && paymentGoldTotal(payment) < (player.tokens.gold || 0);
+      var canAddVirtual = remaining > 0 && paymentVirtualTotal(payment) < orientVirtualGoldCapacity(player);
       return [
         '<div class="payment-row" style="' + gemStyle(color) + '">',
         '<div class="payment-need">',
         '<span class="requirement-tile" data-color="' + color + '" style="' + gemStyle(color) + '"><span>' + needs[color] + "</span></span>",
         '<div><strong>' + TOKEN_LABEL[color] + '</strong><span>' + t("paymentRemaining", { count: remaining }) + "</span></div>",
         "</div>",
-        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>' + TOKEN_LABEL.gold + " " + gold + "</span></div>",
+        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>' + TOKEN_LABEL.gold + " " + gold + '</span><span>' + t("orientUseVirtual") + " " + virtual + "</span></div>",
         '<div class="payment-controls">',
         '<button type="button" data-payment-add-color="' + color + '" style="' + gemStyle(color) + '" ' + (canAddColor ? "" : "disabled") + ">+ " + TOKEN_LABEL[color] + "</button>",
         '<button type="button" data-payment-remove-color="' + color + '" ' + (colored > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL[color] + "</button>",
         '<button type="button" data-payment-add-gold="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddGold ? "" : "disabled") + ">+ " + TOKEN_LABEL.gold + "</button>",
         '<button type="button" data-payment-remove-gold="' + color + '" ' + (gold > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL.gold + "</button>",
+        '<button type="button" data-payment-add-virtual="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddVirtual ? "" : "disabled") + ">+ " + t("orientUseVirtual") + "</button>",
+        '<button type="button" data-payment-remove-virtual="' + color + '" ' + (virtual > 0 ? "" : "disabled") + ">- " + t("orientUseVirtual") + "</button>",
         "</div>",
         "</div>"
       ].join("");
     });
+    var discardRequirement = orientDiscardCost(context.card);
+    if (discardRequirement) {
+      var selected = payment.discard_cards || [];
+      var candidates = orientDiscardCostCandidates(player, context.card);
+      rows.push([
+        '<div class="payment-discard-row" style="' + gemStyle(discardRequirement.color) + '">',
+        '<div class="payment-discard-head">',
+        '<strong>' + escapeHtml(t("orientPaymentDiscard")) + "</strong>",
+        '<span>' + escapeHtml(t("orientDiscardCost", { count: discardRequirement.count, color: TOKEN_LABEL[discardRequirement.color] })) + "</span>",
+        "</div>",
+        '<div class="payment-discard-cards">',
+        candidates.map(function (candidate) {
+          var active = selected.indexOf(candidate.id) >= 0;
+          return [
+            '<button type="button" class="' + (active ? "active" : "") + '" data-payment-toggle-discard-card="' + escapeHtml(candidate.id) + '" style="' + gemStyle(cardPrimaryBonusColor(candidate) || discardRequirement.color) + '">',
+            '<span>' + escapeHtml(candidate.id) + "</span>",
+            '<span>' + candidate.points + " " + escapeHtml(t("prestige")) + "</span>",
+            "</button>"
+          ].join("");
+        }).join("") || '<span class="muted compact">' + escapeHtml(t("orientNoChoices")) + "</span>",
+        "</div>",
+        "</div>"
+      ].join(""));
+    }
     return rows.length ? rows.join("") : '<p class="muted compact">' + t("noPaymentNeeded") + "</p>";
   }
 
@@ -3874,6 +4270,84 @@ Object.assign(I18N.de, {
     el.paymentOptions.innerHTML = paymentRowsHtml(context);
     el.paymentSummary.textContent = t("paymentSelected", { selected: paymentSelectedText(pendingPayment.payment) });
     el.confirmPayment.disabled = !paymentIsLegal(context.player, context.card, pendingPayment.payment);
+  }
+
+  function orientCurrentTask() {
+    var action = state && state.awaitingOrientAction;
+    return action && Array.isArray(action.queue) ? action.queue[0] : null;
+  }
+
+  function orientMarketChoiceList(tier) {
+    var choices = [];
+    [BASE_MARKET_ID, ORIENT_MARKET_ID].forEach(function (marketId) {
+      var market = marketId === ORIENT_MARKET_ID ? state.orient_market : state.market;
+      (market && market[tier] || []).forEach(function (card, index) {
+        if (!card) return;
+        choices.push({ marketId: marketId, tier: tier, index: index, card: card });
+      });
+    });
+    return choices;
+  }
+
+  function renderOrientCopyOptions(player, card) {
+    var candidates = orientCopyCandidates(player, card);
+    return candidates.map(function (candidate) {
+      var color = cardPrimaryBonusColor(candidate);
+      return [
+        '<button type="button" class="orient-choice-card" data-orient-copy-card="' + escapeHtml(candidate.id) + '" style="' + gemStyle(color || "gold") + '">',
+        renderCard(candidate, {}),
+        '<span class="orient-choice-note">' + TOKEN_LABEL[color] + "</span>",
+        "</button>"
+      ].join("");
+    }).join("") || '<p class="muted compact">' + t("orientNoChoices") + "</p>";
+  }
+
+  function renderOrientFreeOptions(tier) {
+    var choices = orientMarketChoiceList(tier);
+    return choices.map(function (choice) {
+      var value = [choice.marketId, choice.tier, choice.index].join(":");
+      return [
+        '<button type="button" class="orient-choice-card" data-orient-free-card="' + escapeHtml(value) + '">',
+        renderCard(choice.card, {}),
+        "</button>"
+      ].join("");
+    }).join("") || '<p class="muted compact">' + t("orientNoChoices") + "</p>";
+  }
+
+  function renderOrientAction() {
+    if (!el.orientActionPanel) return;
+    var action = state && state.awaitingOrientAction;
+    pendingOrientAction = action || null;
+    el.orientActionPanel.hidden = !action;
+    if (!action) {
+      el.orientActionOptions.innerHTML = "";
+      return;
+    }
+    if (el.activeHandPanel) el.activeHandPanel.open = true;
+    var task = orientCurrentTask();
+    var player = activePlayer();
+    var card = task && findPlayerPurchasedCard(player, task.card_id);
+    var title = t("orientChoiceTitle");
+    var body = t("orientChoiceBody");
+    var html = "";
+    if (!task || !card) {
+      html = '<p class="muted compact">' + t("orientNoChoices") + "</p>";
+    } else if (task.type === "copy_bonus") {
+      body = t("msgOrientChooseCopy", { card: card.id });
+      html = renderOrientCopyOptions(player, card);
+    } else if (task.type === "free_card") {
+      body = t("msgOrientChooseFree", { tier: task.tier });
+      html = renderOrientFreeOptions(task.tier);
+    }
+    if (el.orientActionTitle) el.orientActionTitle.textContent = title;
+    if (el.orientActionSummary) el.orientActionSummary.textContent = body;
+    el.orientActionOptions.innerHTML = html;
+  }
+
+  function findPlayerPurchasedCard(player, cardId) {
+    return (player && player.purchased || []).find(function (card) {
+      return card && card.id === cardId;
+    }) || null;
   }
 
   function findDevelopmentCardById(cardId) {
@@ -3930,6 +4404,22 @@ Object.assign(I18N.de, {
     return chips.length ? '<span class="log-token-set">' + chips.join("") + "</span>" : "";
   }
 
+  function logPaymentSet(payment) {
+    if (!payment) return "";
+    var html = logTokenSet(payment.tokens, payment.gold_as);
+    var virtualChips = [];
+    COLORS.forEach(function (color) {
+      var amount = Number(payment.virtual_as && payment.virtual_as[color]) || 0;
+      if (amount > 0) {
+        virtualChips.push('<span class="log-payment-route" style="' + gemStyle(color) + '">' + escapeHtml(t("orientUseVirtual")) + " -> " + TOKEN_LABEL[color] + " " + amount + "</span>");
+      }
+    });
+    (payment.discarded_card_ids || []).forEach(function (cardId) {
+      virtualChips.push('<span class="log-source-chip">' + escapeHtml(t("orientPaymentDiscard")) + " " + escapeHtml(cardId) + "</span>");
+    });
+    return html + (virtualChips.length ? '<span class="log-token-set">' + virtualChips.join("") + "</span>" : "");
+  }
+
   function logCardBadge(cardId, options) {
     var card = findDevelopmentCardById(cardId) || options && options.card;
     var hidden = options && options.hidden;
@@ -3979,10 +4469,20 @@ Object.assign(I18N.de, {
     }
     if (move.type === "buyMarket" || move.type === "buyReserved") {
       var hiddenBuy = mode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
+      var orientEffects = (args.orient_effects || []).map(function (effect) {
+        if (effect.type === "copy_bonus") {
+          return '<span class="log-source-chip">' + escapeHtml(t("orientCopyBonus")) + " " + TOKEN_LABEL[effect.color] + "</span>";
+        }
+        if (effect.type === "free_card") {
+          return '<span class="log-source-chip">' + escapeHtml(t("orientFreeCard", { tier: effect.tier })) + " " + escapeHtml(effect.card_id) + "</span>";
+        }
+        return "";
+      }).filter(Boolean).join("");
       return [
         logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier, card: args.card }),
         args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
-        args.payment ? logTokenSet(args.payment.tokens, args.payment.gold_as) : "",
+        args.payment ? logPaymentSet(args.payment) : "",
+        orientEffects,
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(t("logNobleTitle")) + "</span>" : "",
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id) + "</span>" : ""
       ].filter(Boolean).join("");
@@ -4340,6 +4840,7 @@ Object.assign(I18N.de, {
     renderDiscard();
     renderNobleChoice();
     renderPaymentChoice();
+    renderOrientAction();
     renderLog();
     renderReplayStatus();
     renderHandoffOverlay();
@@ -4371,6 +4872,7 @@ Object.assign(I18N.de, {
     if (state.turnTransition) return t("gameTurnTransition");
     if (pendingPayment) return t("gamePayment");
     if (state.awaitingDiscard) return t("gameDiscard");
+    if (state.awaitingOrientAction) return t("orientAbilityPending");
     if (state.awaitingNobleChoice) return t("gameNoble");
     if (state.endTriggered) return t("gameFinal", { turns: state.finalTurnsLeft });
     return t("gameProgress");
@@ -4593,6 +5095,125 @@ Object.assign(I18N.de, {
     afterAction(type, args);
   }
 
+  function removeMarketCardForDeferredRefill(game, ref) {
+    if (!game || !ref) return null;
+    ensureMarketStructure(game);
+    var market = ref.marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    if (!market || !market[ref.tier] || !market[ref.tier][ref.index]) return null;
+    market[ref.tier][ref.index] = null;
+    return { marketId: ref.marketId, tier: ref.tier, index: ref.index };
+  }
+
+  function refillDeferredMarketSlots(slots) {
+    (slots || []).forEach(function (slot) {
+      fillMarketSlotById(state, slot);
+    });
+  }
+
+  function orientTasksForCard(card) {
+    if (!cardIsOrient(card)) return [];
+    var tasks = [];
+    if (orientCardHasAbility(card, "copy_bonus")) {
+      tasks.push({ type: "copy_bonus", card_id: card.id });
+    }
+    orientCardAbilities(card, "take_level_free").forEach(function (ability) {
+      tasks.push({ type: "free_card", card_id: card.id, tier: Number(ability.free_tier) || 1 });
+    });
+    return tasks;
+  }
+
+  function orientActionEffects(action) {
+    if (!action) return [];
+    if (!Array.isArray(action.effects)) action.effects = [];
+    return action.effects;
+  }
+
+  function beginOrientAction(moveType, args, actor, tasks, deferredRefills) {
+    var queue = (tasks || []).filter(Boolean);
+    if (!queue.length) {
+      refillDeferredMarketSlots(deferredRefills);
+      afterAction(moveType, args);
+      return;
+    }
+    state.awaitingOrientAction = {
+      move_type: moveType,
+      args: args || {},
+      actor: actor,
+      queue: queue,
+      effects: [],
+      deferred_refills: (deferredRefills || []).filter(Boolean)
+    };
+    pendingOrientAction = state.awaitingOrientAction;
+    pendingPayment = null;
+    showMessage(t("msgOrientAbilityPending"), "ok");
+    render();
+  }
+
+  function finishOrientTask() {
+    var action = state && state.awaitingOrientAction;
+    if (!action) return;
+    action.queue.shift();
+    if (action.queue.length) {
+      showMessage(t("msgOrientAbilityPending"), "ok");
+      render();
+      return;
+    }
+    var args = action.args || {};
+    if (action.effects && action.effects.length) args.orient_effects = clone(action.effects);
+    refillDeferredMarketSlots(action.deferred_refills);
+    var moveType = action.move_type;
+    state.awaitingOrientAction = null;
+    pendingOrientAction = null;
+    showMessage("");
+    afterAction(moveType, args);
+  }
+
+  function resolveOrientCopy(cardId) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    var player = activePlayer();
+    var target = task && findPlayerPurchasedCard(player, task.card_id);
+    var source = findPlayerPurchasedCard(player, cardId);
+    if (!action || !task || task.type !== "copy_bonus" || !target || !source) return;
+    var color = cardPrimaryBonusColor(source);
+    if (!color) return;
+    var previousColor = target.copied_color;
+    if (previousColor && player.bonuses[previousColor] > 0) player.bonuses[previousColor] -= 1;
+    target.copied_color = color;
+    target.copied_from_id = source.id;
+    target.color = color;
+    target.effective_bonuses = emptyCounts(false);
+    target.effective_bonuses[color] = 1;
+    player.bonuses[color] = (player.bonuses[color] || 0) + 1;
+    orientActionEffects(action).push({ type: "copy_bonus", card_id: target.id, copied_from_id: source.id, color: color });
+    logEntry(player.name + " resolved Orient copy for " + target.id + " as " + TOKEN_LABEL[color] + ".");
+    finishOrientTask();
+  }
+
+  function resolveOrientFreeCard(value, trigger) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    var player = activePlayer();
+    if (!action || !task || task.type !== "free_card") return;
+    var ref = parseMarketActionValue(value);
+    if (ref.tier !== task.tier) return;
+    var card = marketCardAt(state, ref);
+    if (!card) return;
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    removeMarketCardForDeferredRefill(state, ref);
+    action.deferred_refills.push({ marketId: ref.marketId, tier: ref.tier, index: ref.index });
+    var acquired = purchaseRecordCard(card);
+    player.purchased.push(acquired);
+    applyCardBonuses(player, acquired);
+    var source = trigger && trigger.closest(".orient-choice-card") || cardElementForFlight(card);
+    queueFlightFromElement(source, card.color, t("orientFreeCard", { tier: ref.tier }), playerPanelTarget(".purchased-summary"));
+    orientActionEffects(action).push({ type: "free_card", source_card_id: task.card_id, card_id: acquired.id, tier: ref.tier, market_id: ref.marketId, market_slot_id: slotId, card: clone(acquired) });
+    logEntry(player.name + " took " + acquired.id + " for free with an Orient ability.");
+    var nested = orientTasksForCard(acquired);
+    action.queue.splice.apply(action.queue, [1, 0].concat(nested));
+    finishOrientTask();
+  }
+
   function scrollToPaymentPanel() {
     if (!el.paymentPanel || el.paymentPanel.hidden) return;
     if (el.activeHandPanel) el.activeHandPanel.open = true;
@@ -4600,6 +5221,12 @@ Object.assign(I18N.de, {
 
   function beginPaymentChoice(source, value, card) {
     var player = activePlayer();
+    var abilityStatus = orientAbilityBuyStatus(card, player);
+    if (!abilityStatus.ok) {
+      showMessage(abilityStatus.reason || t("msgOrientAbilityPending"));
+      render();
+      return false;
+    }
     var afford = affordability(player, card);
     if (!afford.ok) {
       showMessage(t("msgNotEnoughForCard"));
@@ -4636,7 +5263,7 @@ Object.assign(I18N.de, {
     }
     var needs = paymentNeeds(context.player, context.card);
     var payment = pendingPayment.payment;
-    var selected = (payment.colored[color] || 0) + (payment.gold[color] || 0);
+    var selected = (payment.colored[color] || 0) + (payment.gold[color] || 0) + (payment.virtual[color] || 0);
     if (kind === "colored") {
       if (delta > 0 && selected < needs[color] && (payment.colored[color] || 0) < (context.player.tokens[color] || 0)) {
         payment.colored[color] += 1;
@@ -4649,7 +5276,36 @@ Object.assign(I18N.de, {
       } else if (delta < 0 && payment.gold[color] > 0) {
         payment.gold[color] -= 1;
       }
+    } else if (kind === "virtual") {
+      if (delta > 0 && selected < needs[color] && paymentVirtualTotal(payment) < orientVirtualGoldCapacity(context.player)) {
+        payment.virtual[color] += 1;
+      } else if (delta < 0 && payment.virtual[color] > 0) {
+        payment.virtual[color] -= 1;
+      }
     }
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
+  function togglePaymentDiscardCard(cardId) {
+    if (!pendingPayment) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var requirement = orientDiscardCost(context.card);
+    if (!requirement) return;
+    var payment = pendingPayment.payment;
+    var selected = Array.isArray(payment.discard_cards) ? payment.discard_cards.slice() : [];
+    var index = selected.indexOf(cardId);
+    if (index >= 0) {
+      selected.splice(index, 1);
+    } else if (selected.length < requirement.count) {
+      selected.push(cardId);
+    }
+    payment.discard_cards = selected;
     pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
     showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
     render();
@@ -4673,22 +5329,40 @@ Object.assign(I18N.de, {
     var card = context.card;
     var purchasedCard = purchaseRecordCard(card);
     var flightSource = sourceElement || cardElementForFlight(card) || el.market;
+    var player = context.player;
+    var actor = { id: player.id, name: player.name };
+    var paymentArgs = paymentMoveArgs(payment, player);
+    var usedVirtualCards = paymentArgs.virtual_card_ids || [];
+    var discardedCostCards = payment.discard_cards || [];
     var args = {
       card_id: card.id,
-      payment: paymentMoveArgs(payment)
+      payment: paymentArgs
     };
     if (options && options.ai) args.ai = true;
-    spendForCard(context.player, paymentSpend(payment));
-    context.player.purchased.push(purchasedCard);
-    applyCardBonuses(context.player, purchasedCard);
-    logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
+    spendForCard(player, paymentSpend(payment));
+    var removedVirtual = removePurchasedCardsByIds(player, usedVirtualCards);
+    var removedDiscard = removePurchasedCardsByIds(player, discardedCostCards);
+    if (removedVirtual.length) {
+      args.payment.virtual_cards = removedVirtual.map(function (removed) { return clone(removed); });
+    }
+    if (removedDiscard.length) {
+      args.orient_discarded_cards = removedDiscard.map(function (removed) { return clone(removed); });
+    }
+    player.purchased.push(purchasedCard);
+    applyCardBonuses(player, purchasedCard);
+    logEntry(t("logBought", { player: player.name, card: card.id, points: card.points }));
+    var deferredRefills = [];
     if (context.type === "buyMarket") {
       args.tier = context.tier;
       args.market_index = context.index;
       args.market_id = context.market_id || BASE_MARKET_ID;
       args.market_slot_id = marketSlotId(state, args.market_id, context.tier, context.index);
       args.card = purchasedCard;
-      fillMarketSlotById(state, { marketId: args.market_id, tier: context.tier, index: context.index });
+      if (orientTasksForCard(purchasedCard).length) {
+        deferredRefills.push(removeMarketCardForDeferredRefill(state, { marketId: args.market_id, tier: context.tier, index: context.index }));
+      } else {
+        fillMarketSlotById(state, { marketId: args.market_id, tier: context.tier, index: context.index });
+      }
     } else {
       args.tier = card.tier;
       args.reserved_index = context.index;
@@ -4697,12 +5371,12 @@ Object.assign(I18N.de, {
       args.market_id = card.market_id || BASE_MARKET_ID;
       if (card.market_slot_id) args.market_slot_id = card.market_slot_id;
       if (card.deck_slot_id) args.deck_slot_id = card.deck_slot_id;
-      context.player.reserved.splice(context.index, 1);
+      player.reserved.splice(context.index, 1);
     }
     queueFlightFromElement(flightSource, card.color, t("buy"), playerPanelTarget(".purchased-summary"));
     pendingPayment = null;
     showMessage("");
-    afterAction(context.type, args);
+    beginOrientAction(context.type, args, actor, orientTasksForCard(purchasedCard), deferredRefills);
   }
 
   function confirmPayment() {
@@ -4733,7 +5407,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var abilityStatus = orientAbilityBuyStatus(card);
+    var abilityStatus = orientAbilityBuyStatus(card, activePlayer());
     if (!abilityStatus.ok) {
       showMessage(t("msgOrientAbilityPending"));
       render();
@@ -4755,7 +5429,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var abilityStatus = orientAbilityBuyStatus(card);
+    var abilityStatus = orientAbilityBuyStatus(card, player);
     if (!abilityStatus.ok) {
       showMessage(t("msgOrientAbilityPending"));
       render();
@@ -5070,7 +5744,7 @@ Object.assign(I18N.de, {
         event_id: "m" + moveId + ":orient-ability-window",
         channel: ORIENT_MARKET_ID,
         type: "abilityWindow",
-        status: "placeholder",
+        status: args && args.orient_effects && args.orient_effects.length ? "resolved" : "available",
         refs: clone(refs)
       });
     }
@@ -5080,7 +5754,7 @@ Object.assign(I18N.de, {
         event_id: "m" + moveId + ":orient-card-action",
         channel: ORIENT_MARKET_ID,
         type: type,
-        status: "placeholder",
+        status: "resolved",
         refs: clone(refs)
       });
     }
@@ -5166,6 +5840,7 @@ Object.assign(I18N.de, {
       },
       awaiting: {
         discard: !!game.awaitingDiscard,
+        orient_action: game.awaitingOrientAction ? clone(game.awaitingOrientAction) : null,
         noble_choice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null
       },
       end: {
@@ -5185,6 +5860,7 @@ Object.assign(I18N.de, {
     if (game.gameOver) return "Game finished";
     if (game.turnTransition) return "Turn handoff";
     if (game.awaitingDiscard) return "Active player must discard to token cap";
+    if (game.awaitingOrientAction) return "Active player must resolve an Orient ability";
     if (game.awaitingNobleChoice) return "Active player must choose one noble";
     if (game.endTriggered) return "Final round";
     return "Player turn";
@@ -5220,6 +5896,7 @@ Object.assign(I18N.de, {
       moves: [],
       initial_gamedatas: null,
       awaitingDiscard: !!game.awaitingDiscard,
+      awaitingOrientAction: game.awaitingOrientAction ? clone(game.awaitingOrientAction) : null,
       awaitingNobleChoice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null,
       endTriggered: !!game.endTriggered,
       finalTurnsLeft: game.finalTurnsLeft,
@@ -5471,6 +6148,7 @@ Object.assign(I18N.de, {
     clearTurnAdvanceTimer();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     showMessage(t("msgStateImported"), "ok");
     resetDinoBoardAiForCurrentState(true);
     saveState();
@@ -5508,22 +6186,32 @@ Object.assign(I18N.de, {
   }
 
   function bgaCaptureHasExpansionHint(payload) {
+    return bgaCaptureUnsupportedExpansionFlags(payload).length > 0;
+  }
+
+  function bgaCaptureUnsupportedExpansionFlags(payload) {
     var compatibility = payload && payload.compatibility || {};
     var detection = compatibility.expansion_detection || {};
-    if (Array.isArray(detection.active)) return detection.active.length > 0;
-    return bgaActiveExpansionFlags(payload).length > 0;
+    var active = Array.isArray(detection.active) ? detection.active : bgaActiveExpansionFlags(payload);
+    return active.filter(function (entry) {
+      return !/orient/i.test(String(entry && entry.label || ""));
+    });
   }
 
   function bgaCompatibilityHasActiveExpansion(compatibility) {
     var detection = compatibility && compatibility.expansion_detection || {};
-    if (Array.isArray(detection.active)) return detection.active.length > 0;
+    if (Array.isArray(detection.active)) {
+      return detection.active.some(function (entry) {
+        return !/orient/i.test(String(entry && entry.label || ""));
+      });
+    }
     return false;
   }
 
   function bgaCaptureExpansionDetails(payload) {
     var compatibility = payload && payload.compatibility || {};
     var detection = compatibility.expansion_detection || {};
-    var active = Array.isArray(detection.active) ? detection.active : bgaActiveExpansionFlags(payload);
+    var active = bgaCaptureUnsupportedExpansionFlags(payload);
     if (active.length) {
       return active.map(function (entry) {
         return (entry.label || "Expansion") + (entry.path ? " (" + entry.path + ")" : "");
@@ -5579,6 +6267,16 @@ Object.assign(I18N.de, {
     }
     walk(payload, "");
     return active;
+  }
+
+  function bgaInitialGamedatasOrientActive(gamedatas) {
+    if (!gamedatas || !gamedatas.market) return false;
+    var flag = gamedatas.expansion_orient;
+    var flagActive = flag === true || Number(flag) === 1 || /^(true|1|yes|on|enabled|active)$/i.test(String(flag || "").trim());
+    return flagActive || [1, 2, 3].some(function (tier) {
+      var row = gamedatas.market["orient_row_" + tier];
+      return !!(row && bgaObjectValues(row.cards).length);
+    });
   }
 
   function showBgaImportMessage(key, fromStart) {
@@ -5728,6 +6426,16 @@ Object.assign(I18N.de, {
     var points = Math.max(0, Number(fallback && fallback.points) || 0);
     var cost = normalizeCost({});
     if (db) {
+      if (Number(db.lvl) >= 11 && Number(db.lvl) <= 13) {
+        var orientCard = localOrientCardByBgaId(id);
+        if (orientCard) {
+          var mappedOrient = clone(orientCard);
+          mappedOrient.bga_id = id;
+          mappedOrient.bga_card_id = "bga-" + id;
+          mappedOrient.bga_original_id = id;
+          return mappedOrient;
+        }
+      }
       tier = Math.max(1, Math.min(3, Number(db.lvl) || tier));
       color = bgaCardTypeColor(db.type) || color;
       points = Math.max(0, Number(db.points) || 0);
@@ -5868,6 +6576,13 @@ Object.assign(I18N.de, {
     if (!gamedatas || !gamedatas.market || !gamedatas.carddb) return false;
     var market = gamedatas.market || {};
     if (market.pool) game.bank = bgaPoolToBank(market.pool);
+    if (bgaInitialGamedatasOrientActive(gamedatas)) {
+      game.ruleset = createRuleset({ modules: { orient: true } });
+      game.module_state = createModuleState(game.ruleset);
+      game.orient_market = emptyTieredMarket();
+      game.orient_decks = emptyTieredMarket();
+      if (activeMarketPage === BASE_MARKET_ID) activeMarketPage = ORIENT_MARKET_ID;
+    }
     [1, 2, 3].forEach(function (tier) {
       var row = market["row_" + tier] || {};
       var cards = bgaObjectValues(row.cards).map(function (entry) {
@@ -5878,6 +6593,19 @@ Object.assign(I18N.de, {
       game.market[tier] = cards;
       rememberSeenCards(game, cards);
       game.decks[tier] = bgaDeckPlaceholders(tier, Number(row.count) || 0);
+      if (orientEnabledForRuleset(game.ruleset)) {
+        var orientRow = market["orient_row_" + tier] || {};
+        var orientCards = bgaObjectValues(orientRow.cards).map(function (entry) {
+          return bgaCardFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, { tier: tier });
+        }).filter(function (card) {
+          return card && card.bga_id && card.bga_id !== "unknown";
+        });
+        game.orient_market[tier] = orientCards;
+        game.orient_decks[tier] = bgaDeckPlaceholders(tier, Number(orientRow.count) || 0).map(function (card) {
+          card.module = ORIENT_MARKET_ID;
+          return card;
+        });
+      }
     });
     game.bga_deck_unknown = true;
     game.nobles = bgaObjectValues(market.nobles).map(function (entry) {
@@ -5896,19 +6624,22 @@ Object.assign(I18N.de, {
     return true;
   }
 
-  function decrementBgaDeck(game, tier) {
-    if (game.decks[tier] && game.decks[tier].length) game.decks[tier].pop();
+  function decrementBgaDeck(game, tier, marketId) {
+    var decks = marketId === ORIENT_MARKET_ID ? game.orient_decks : game.decks;
+    if (decks && decks[tier] && decks[tier].length) decks[tier].pop();
   }
 
   function removeBgaMarketCard(game, card) {
     var tier = Math.max(1, Math.min(3, Number(card && card.tier) || 1));
-    var cards = game.market[tier] || [];
+    var marketId = card && card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var market = marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    var cards = market && market[tier] || [];
     var index = cards.findIndex(function (entry) {
       return entry && card && ((entry.bga_id && entry.bga_id === card.bga_id) || entry.id === card.id);
     });
     if (index >= 0) {
       cards[index] = null;
-      return { tier: tier, index: index };
+      return { tier: tier, index: index, marketId: marketId };
     }
     return null;
   }
@@ -5918,29 +6649,37 @@ Object.assign(I18N.de, {
       return entry && entry.type === "revealCard" && entry.args && entry.args.card;
     });
     if (!reveal) {
-      if (slot && game.market[slot.tier] && !game.market[slot.tier][slot.index]) game.market[slot.tier].splice(slot.index, 1);
+      if (slot) {
+        var slotMarket = slot.marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+        if (slotMarket && slotMarket[slot.tier] && !slotMarket[slot.tier][slot.index]) slotMarket[slot.tier].splice(slot.index, 1);
+      }
       return null;
     }
     var revealCard = bgaCardFromNotification(reveal, items || [], { tier: tier }, gamedatas);
     if (!revealCard || !revealCard.bga_id || revealCard.bga_id === "unknown") {
-      if (slot && game.market[slot.tier] && !game.market[slot.tier][slot.index]) game.market[slot.tier].splice(slot.index, 1);
+      if (slot) {
+        var missingMarket = slot.marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+        if (missingMarket && missingMarket[slot.tier] && !missingMarket[slot.tier][slot.index]) missingMarket[slot.tier].splice(slot.index, 1);
+      }
       return null;
     }
     var targetTier = Math.max(1, Math.min(3, Number(revealCard.tier || tier) || 1));
-    var exists = (game.market[targetTier] || []).some(function (entry) {
+    var targetMarketId = revealCard.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var targetMarket = targetMarketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    var exists = (targetMarket[targetTier] || []).some(function (entry) {
       return entry && entry.bga_id === revealCard.bga_id;
     });
     if (!exists) {
-      if (slot && slot.tier === targetTier && Number.isInteger(slot.index) && game.market[targetTier]) {
-        game.market[targetTier][slot.index] = revealCard;
+      if (slot && slot.marketId === targetMarketId && slot.tier === targetTier && Number.isInteger(slot.index) && targetMarket[targetTier]) {
+        targetMarket[targetTier][slot.index] = revealCard;
       } else {
-        var emptyIndex = (game.market[targetTier] || []).findIndex(function (entry) { return !entry; });
-        if (emptyIndex >= 0) game.market[targetTier][emptyIndex] = revealCard;
-        else game.market[targetTier].push(revealCard);
+        var emptyIndex = (targetMarket[targetTier] || []).findIndex(function (entry) { return !entry; });
+        if (emptyIndex >= 0) targetMarket[targetTier][emptyIndex] = revealCard;
+        else targetMarket[targetTier].push(revealCard);
       }
       rememberSeenCard(game, revealCard);
     }
-    decrementBgaDeck(game, targetTier);
+    decrementBgaDeck(game, targetTier, targetMarketId);
     return revealCard;
   }
 
@@ -6083,7 +6822,7 @@ Object.assign(I18N.de, {
       return player.name || "BGA Player " + (index + 1);
     }), bgaPlayers.map(function () {
       return { enabled: false, mode: null, level: "balanced" };
-    }));
+    }), { modules: { orient: bgaInitialGamedatasOrientActive(initialBgaGamedatas) } });
     game.table_seed = 0;
     game.log = ["Imported base-game BGA replay capture " + (payload.table_id || "") + "."];
     game.moves = [];
@@ -6315,6 +7054,7 @@ Object.assign(I18N.de, {
     activeMarketPage = BASE_MARKET_ID;
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     showStartMessage("");
     showMessage(t("msgReplayLoaded"), "ok");
     render();
@@ -6418,6 +7158,7 @@ Object.assign(I18N.de, {
     clearReplayStepTimer();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     showMessage(state ? t("msgReturnedLiveTable") : "");
     resetDinoBoardAiForCurrentState(false);
     render();
@@ -6444,6 +7185,7 @@ Object.assign(I18N.de, {
     clearReplayStepTimer();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     if (el.bgaFileStatus) el.bgaFileStatus.textContent = t("fileIoHint");
     showMessage(t("msgContinueFromReplay"), "ok");
     resetDinoBoardAiForCurrentState(true);
@@ -6496,6 +7238,8 @@ Object.assign(I18N.de, {
     clearTurnAdvanceTimer();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
+    pendingOrientAction = null;
     showStartMessage("");
     showMessage(t("msgGameStarted"), "ok");
     if (el.bankPanel) el.bankPanel.open = true;
@@ -6544,10 +7288,24 @@ Object.assign(I18N.de, {
           });
         }
       });
+      if (orientEnabledForRuleset(state.ruleset)) {
+        (state.orient_market[tier] || []).forEach(function (card, index) {
+          if (!card || orientCardNeedsManualChoice(card)) return;
+          var payment = autoPaymentPlan(player, card);
+          if (orientAbilityBuyStatus(card, player).ok && paymentIsLegal(player, card, payment)) {
+            actions.push({
+              type: "buy",
+              context: { type: "buyMarket", player: player, card: card, tier: tier, index: index, market_id: ORIENT_MARKET_ID },
+              payment: payment
+            });
+          }
+        });
+      }
     });
     player.reserved.forEach(function (card, index) {
+      if (orientCardNeedsManualChoice(card)) return;
       var payment = autoPaymentPlan(player, card);
-      if (orientAbilityBuyStatus(card).ok && paymentIsLegal(player, card, payment)) {
+      if (orientAbilityBuyStatus(card, player).ok && paymentIsLegal(player, card, payment)) {
         actions.push({
           type: "buy",
           context: { type: "buyReserved", player: player, card: card, index: index },
@@ -6689,7 +7447,7 @@ Object.assign(I18N.de, {
 
   function scheduleDinoBoardAiTurn() {
     if (aiTurnTimer || aiTurnInProgress) return;
-    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment || state.awaitingOrientAction) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (dinoboardAi && dinoboardAi.disabled) return;
@@ -6760,7 +7518,7 @@ Object.assign(I18N.de, {
 
   function scheduleRandomAiTurn() {
     if (aiTurnTimer) return;
-    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment || state.awaitingOrientAction) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (!state.aiThinking) {
@@ -6908,6 +7666,7 @@ Object.assign(I18N.de, {
       activeMarketPage = BASE_MARKET_ID;
       pendingTake = [];
       pendingPayment = null;
+      pendingOrientAction = saved.awaitingOrientAction || null;
       showMessage(t("msgSavedResumed"), "ok");
       resetDinoBoardAiForCurrentState(true);
       render();
@@ -6942,11 +7701,25 @@ Object.assign(I18N.de, {
       var removeColor = event.target.closest("[data-payment-remove-color]");
       var addGold = event.target.closest("[data-payment-add-gold]");
       var removeGold = event.target.closest("[data-payment-remove-gold]");
+      var addVirtual = event.target.closest("[data-payment-add-virtual]");
+      var removeVirtual = event.target.closest("[data-payment-remove-virtual]");
+      var discardCard = event.target.closest("[data-payment-toggle-discard-card]");
       if (addColor) adjustPayment("colored", addColor.dataset.paymentAddColor, 1);
       else if (removeColor) adjustPayment("colored", removeColor.dataset.paymentRemoveColor, -1);
       else if (addGold) adjustPayment("gold", addGold.dataset.paymentAddGold, 1);
       else if (removeGold) adjustPayment("gold", removeGold.dataset.paymentRemoveGold, -1);
+      else if (addVirtual) adjustPayment("virtual", addVirtual.dataset.paymentAddVirtual, 1);
+      else if (removeVirtual) adjustPayment("virtual", removeVirtual.dataset.paymentRemoveVirtual, -1);
+      else if (discardCard) togglePaymentDiscardCard(discardCard.dataset.paymentToggleDiscardCard);
     });
+    if (el.orientActionOptions) {
+      el.orientActionOptions.addEventListener("click", function (event) {
+        var copyCard = event.target.closest("[data-orient-copy-card]");
+        var freeCard = event.target.closest("[data-orient-free-card]");
+        if (copyCard) resolveOrientCopy(copyCard.dataset.orientCopyCard);
+        else if (freeCard) resolveOrientFreeCard(freeCard.dataset.orientFreeCard, freeCard);
+      });
+    }
     el.bankTokens.addEventListener("click", function (event) {
       var button = event.target.closest("[data-bank-color]");
       if (button) selectTake(button.dataset.bankColor);
@@ -7151,6 +7924,10 @@ Object.assign(I18N.de, {
       "confirm-payment",
       "clear-payment",
       "cancel-payment",
+      "orient-action-panel",
+      "orient-action-title",
+      "orient-action-summary",
+      "orient-action-options",
       "take-summary",
       "bank-tokens",
       "bank-panel",
