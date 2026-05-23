@@ -1595,6 +1595,7 @@ Object.assign(I18N.de, {
   var overlayRefreshTimer = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
+  var tapPreviewIgnoreCloseUntil = 0;
   var el = {};
 
   function byId(id) {
@@ -3851,7 +3852,12 @@ Object.assign(I18N.de, {
     return !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse), (max-width: 760px)").matches);
   }
 
-  function closeTapPreviews(except) {
+  function holdTapPreviewOpen() {
+    tapPreviewIgnoreCloseUntil = Date.now() + 650;
+  }
+
+  function closeTapPreviews(except, force) {
+    if (!except && !force && Date.now() < tapPreviewIgnoreCloseUntil) return;
     Array.from(document.querySelectorAll(".reserve-badge.preview-open, .log-card-badge.preview-open")).forEach(function (badge) {
       if (badge !== except) badge.classList.remove("preview-open");
     });
@@ -6296,6 +6302,7 @@ Object.assign(I18N.de, {
         var alreadyOpen = reservePreview.classList.contains("preview-open");
         closeTapPreviews(reservePreview);
         reservePreview.classList.toggle("preview-open", !alreadyOpen);
+        if (!alreadyOpen) holdTapPreviewOpen();
         event.stopPropagation();
         return;
       }
@@ -6319,6 +6326,7 @@ Object.assign(I18N.de, {
         var alreadyOpen = preview.classList.contains("preview-open");
         closeTapPreviews(preview);
         preview.classList.toggle("preview-open", !alreadyOpen);
+        if (!alreadyOpen) holdTapPreviewOpen();
         event.stopPropagation();
       }
     });
