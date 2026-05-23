@@ -857,7 +857,7 @@ body.replay-mode .top-replay-controls {
 
 .handoff-card {
   display: grid;
-  grid-template-columns: 46px minmax(0, 1fr) 42px;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
   width: min(440px, calc(100vw - 32px));
@@ -871,6 +871,7 @@ body.replay-mode .top-replay-controls {
     0 24px 80px rgba(0, 0, 0, 0.5),
     0 0 34px rgba(49, 215, 255, 0.22);
   backdrop-filter: blur(18px);
+  pointer-events: auto;
 }
 
 .handoff-card strong {
@@ -939,6 +940,26 @@ body.replay-mode .top-replay-controls {
   background: rgba(255, 191, 69, 0.11);
   font-size: 1.05rem;
   font-weight: 860;
+}
+
+.handoff-side {
+  display: grid;
+  justify-items: end;
+  gap: 7px;
+}
+
+.handoff-continue {
+  min-height: 36px;
+  padding: 0 12px;
+  border-color: rgba(49, 215, 255, 0.52);
+  color: #051018;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  font-size: 0.72rem;
+  font-weight: 880;
+}
+
+.handoff-continue:disabled {
+  opacity: 0.58;
 }
 
 .handoff-overlay.ai-thinking .handoff-card {
@@ -1156,6 +1177,50 @@ body.replay-mode .top-replay-controls {
   pointer-events: none;
 }
 
+.stronghold-action-panel {
+  border-color: rgba(255, 107, 93, 0.42);
+}
+
+.stronghold-action-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 8px;
+}
+
+.stronghold-choice,
+.stronghold-skip {
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid rgba(255, 107, 93, 0.28);
+  border-radius: 8px;
+  text-align: left;
+  background:
+    linear-gradient(135deg, rgba(255, 107, 93, 0.1), rgba(49, 215, 255, 0.04)),
+    rgba(9, 14, 20, 0.84);
+}
+
+.stronghold-choice-title {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  margin-bottom: 6px;
+  padding: 0 7px;
+  border: 1px solid rgba(255, 107, 93, 0.36);
+  border-radius: 999px;
+  color: #ffd5d1;
+  font-size: 0.62rem;
+  font-weight: 840;
+}
+
+.stronghold-choice .dev-card {
+  pointer-events: none;
+}
+
+.stronghold-skip {
+  color: var(--muted);
+  text-align: center;
+}
+
 .orient-choice-note {
   display: inline-flex;
   align-items: center;
@@ -1368,6 +1433,37 @@ body.replay-mode .top-replay-controls {
   color: #fff;
 }
 
+.stronghold-stack {
+  position: absolute;
+  top: 5px;
+  right: 28px;
+  z-index: 4;
+  display: inline-flex;
+  gap: 3px;
+}
+
+.stronghold-token {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--gem), white 28%);
+  border-radius: 5px 5px 2px 2px;
+  color: #10141a;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--gem), white 16%), color-mix(in srgb, var(--gem), #101824 36%));
+  box-shadow: 0 0 14px color-mix(in srgb, var(--gem), transparent 72%);
+  font-size: 0.5rem;
+  font-weight: 900;
+}
+
+.token.mini {
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0 4px;
+  font-size: 0.56rem;
+}
+
 .token-button {
   min-width: 36px;
   min-height: 36px;
@@ -1383,6 +1479,35 @@ body.replay-mode .top-replay-controls {
 .market {
   display: grid;
   gap: 8px;
+}
+
+.market-stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.75fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.market-page {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.market-page-heading {
+  display: none;
+  align-items: center;
+  min-height: 28px;
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.market-page-orient-panel .tier {
+  grid-template-columns: minmax(86px, 0.34fr) minmax(0, 1fr);
+}
+
+.market-page-orient-panel .card-grid {
+  grid-template-columns: repeat(2, minmax(112px, 190px));
 }
 
 .market-tabs {
@@ -1567,6 +1692,17 @@ body.replay-mode .top-replay-controls {
   background: rgba(255, 255, 255, 0.42);
 }
 
+.dev-card[data-card-color="wild"] {
+  color: #f7fbff;
+  border-color: rgba(255, 255, 255, 0.5);
+  border-top-color: rgba(255, 255, 255, 0.7);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(241, 234, 219, 0.72), transparent 24%),
+    radial-gradient(circle at 82% 18%, rgba(85, 167, 255, 0.62), transparent 28%),
+    radial-gradient(circle at 36% 92%, rgba(55, 232, 155, 0.56), transparent 30%),
+    linear-gradient(135deg, rgba(255, 107, 93, 0.42), rgba(255, 191, 69, 0.32) 42%, rgba(19, 28, 40, 0.92));
+}
+
 .points {
   min-width: 19px;
   color: #fff7c8;
@@ -1586,15 +1722,15 @@ body.replay-mode .top-replay-controls {
 .orient-slot-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 18px;
+  min-height: 17px;
   width: fit-content;
   max-width: 100%;
-  padding: 0 6px;
+  padding: 0 5px;
   border: 1px solid color-mix(in srgb, var(--gem), white 20%);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.13);
   color: #eef8f8;
-  font-size: 0.58rem;
+  font-size: 0.55rem;
   font-weight: 820;
   line-height: 1.1;
 }
@@ -1606,8 +1742,23 @@ body.replay-mode .top-replay-controls {
   white-space: nowrap;
 }
 
+.orient-discard-chip {
+  gap: 5px;
+}
+
+.orient-discard-icons {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.orient-discard-tile {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
 .dev-card[data-card-module="orient"] {
-  min-height: 118px;
+  min-height: 108px;
 }
 
 .dev-card[data-card-module="orient"] .card-actions {
@@ -2149,7 +2300,28 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   max-height: min(72vh, 520px);
   padding: 0;
   overflow: hidden;
-  transform: translateX(50%);
+  transform: translateX(50%) translateY(var(--hand-dock-y, 0));
+  transition: transform 220ms ease, opacity 180ms ease;
+}
+
+body.hand-dock-retracting .active-hand-panel {
+  --hand-dock-y: calc(100% + 22px);
+  opacity: 0.72;
+}
+
+body.hand-dock-entering .active-hand-panel {
+  animation: hand-dock-reenter 360ms cubic-bezier(0.18, 0.95, 0.24, 1.04);
+}
+
+@keyframes hand-dock-reenter {
+  from {
+    transform: translateX(50%) translateY(calc(100% + 22px));
+    opacity: 0.72;
+  }
+  to {
+    transform: translateX(50%) translateY(0);
+    opacity: 1;
+  }
 }
 
 .active-hand-panel[open] {
@@ -2345,6 +2517,50 @@ body.turn-locked .dev-card:focus-within .card-affordability {
 
 .purchased-summary {
   grid-template-columns: 1fr;
+}
+
+.orient-virtual-gold-row {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.orient-virtual-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.orient-virtual-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 191, 69, 0.42);
+  border-radius: 7px;
+  background:
+    linear-gradient(135deg, rgba(255, 191, 69, 0.22), rgba(255, 255, 255, 0.04)),
+    rgba(8, 13, 19, 0.78);
+}
+
+.orient-virtual-card-face {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 28px;
+  border-radius: 5px;
+  color: #10141a;
+  background: var(--gem);
+  font-size: 0.6rem;
+  font-weight: 900;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.orient-virtual-tokens {
+  display: inline-flex;
+  gap: 2px;
 }
 
 .log-panel {
@@ -2712,6 +2928,36 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     grid-template-columns: repeat(4, minmax(100px, 1fr));
   }
 
+  .market-stack {
+    display: block;
+    overflow: hidden;
+  }
+
+  .market-page-heading {
+    display: flex;
+  }
+
+  .market-page-base .market-page-base-panel,
+  .market-page-orient .market-page-orient-panel {
+    display: grid;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .market-page-base .market-page-orient-panel,
+  .market-page-orient .market-page-base-panel {
+    display: none;
+    opacity: 0;
+  }
+
+  .market-page-orient-panel .tier {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .market-page-orient-panel .card-grid {
+    grid-template-columns: repeat(2, minmax(100px, 1fr));
+  }
+
   .card-actions button[data-short-label] {
     font-size: 0;
   }
@@ -3040,6 +3286,45 @@ body.turn-locked .dev-card:focus-within .card-affordability {
     padding: 8px;
   }
 
+  .market-stack {
+    display: block;
+    overflow: hidden;
+  }
+
+  .market-page {
+    transition: transform 220ms ease, opacity 180ms ease;
+  }
+
+  .market-page-heading {
+    display: flex;
+  }
+
+  .market-page-base-panel,
+  .market-page-orient-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .market-page-base .market-page-base-panel,
+  .market-page-orient .market-page-orient-panel {
+    display: grid;
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .market-page-base .market-page-orient-panel,
+  .market-page-orient .market-page-base-panel {
+    display: none;
+    opacity: 0;
+  }
+
+  .market-page-orient-panel .tier {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .market-page-orient-panel .card-grid {
+    grid-template-columns: none;
+  }
+
   .payment-workspace,
   .payment-row {
     grid-template-columns: 1fr;
@@ -3129,7 +3414,7 @@ body.turn-locked .dev-card:focus-within .card-affordability {
   }
 
   .dev-card[data-card-module="orient"] {
-    min-height: 104px;
+    min-height: 98px;
   }
 
   .dev-card h3 {

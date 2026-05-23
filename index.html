@@ -17,7 +17,7 @@
         <p class="eyebrow">Personal lab</p>
         <h1 id="site-title">ZephyrLabs</h1>
         <p class="summary">
-          A quiet workspace for web game tables, BGA replay tooling, and small automation experiments.
+          A quiet workspace for Gem Table, replay data tooling, game AI, and research notes.
         </p>
       </header>
 
@@ -27,7 +27,7 @@
           <a class="project-card gem-card" href="splendor-table.html">
             <span class="project-kind">Playable table</span>
             <strong>Gem Table</strong>
-            <span>Unofficial base-game gem table with local multiplayer, replay import/export, and BGA-style action logs.</span>
+            <span>Unofficial Splendor-style table with local multiplayer, replay import/export, AI hooks, and expansion work in progress.</span>
           </a>
 
           <a
@@ -38,19 +38,45 @@
           >
             <span class="project-kind">Replay tool</span>
             <strong>BoardReplayLab</strong>
-            <span>A crawler and converter for downloading BGA replay JSON data. Current target: Splendor base game, no expansion.</span>
+            <span>A lab repo for replay capture and conversion tools. Current module: Splendor replay data for Gem Table and AI training.</span>
           </a>
+
+          <a
+            class="project-card video-card"
+            href="https://space.bilibili.com/231033317?spm_id_from=333.40164.0.0"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span class="project-kind">Video index</span>
+            <strong>Bilibili</strong>
+            <span>Commentary videos and replay notes, starting with the Arena rank-1 match breakdown.</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="video-feature" aria-labelledby="video-title">
+        <div class="section-heading">
+          <h2 id="video-title">Featured video</h2>
+          <a href="https://www.bilibili.com/video/BV1JNooBvEhd/?spm_id_from=333.1387.0.0" target="_blank" rel="noreferrer">Open on Bilibili</a>
+        </div>
+        <div class="video-frame">
+          <iframe
+            src="https://player.bilibili.com/player.html?bvid=BV1JNooBvEhd&autoplay=0"
+            title="Arena rank-1 match breakdown"
+            loading="lazy"
+            allowfullscreen
+          ></iframe>
         </div>
       </section>
 
       <section class="todo" aria-labelledby="todo-title">
         <h2 id="todo-title">Todo</h2>
         <ul>
-          <li>Connect Gem Table to AI-assisted play.</li>
-          <li>Harden BGA base-game replay conversion.</li>
-          <li>Add expansion support after rule and data mapping are complete.</li>
-          <li>Develop automation tooling for trading workflows.</li>
-          <li>Work toward the CASI snowboard instructor pathway.</li>
+          <li>Build a more robust AlphaZero-style training pipeline with real-player replay data.</li>
+          <li>Train AI policies for The Sun Never Sets expansion modules.</li>
+          <li>Develop Tampermonkey scripts that improve the BGA play and replay experience.</li>
+          <li>Prototype quantitative stock models and evaluation dashboards.</li>
+          <li>Publish structured explanation videos for Gem Table, replay data, and AI training progress.</li>
         </ul>
       </section>
     </main>
