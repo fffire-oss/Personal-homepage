@@ -288,13 +288,13 @@ h2 {
   box-shadow: var(--shadow);
 }
 
-.bilibili-title-row {
+.video-title-row {
   display: flex;
   gap: clamp(16px, 2.4vw, 28px);
   align-items: center;
 }
 
-.bilibili-title-row h1 {
+.video-title-row h1 {
   flex: 1 1 auto;
   min-width: 0;
   margin: 0;
@@ -302,136 +302,29 @@ h2 {
   white-space: nowrap;
 }
 
-.bilibili-title-row .bilibili-emblem-link {
+.video-title-row .video-profile-link {
   flex: 0 0 auto;
-  width: clamp(72px, 8vw, 116px);
-}
-
-.bilibili-portal {
-  display: grid;
-  place-items: center;
-  min-height: min(44vh, 440px);
-  margin-bottom: 18px;
-  border: 1px solid var(--line);
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid rgba(49, 215, 255, 0.34);
   border-radius: 8px;
-  background:
-    radial-gradient(circle at 50% 46%, rgba(0, 174, 236, 0.22), transparent 38%),
-    linear-gradient(135deg, rgba(0, 174, 236, 0.1), rgba(255, 107, 157, 0.09)),
-    var(--panel);
-  box-shadow: var(--shadow);
+  color: var(--cyan);
+  background: rgba(49, 215, 255, 0.06);
+  font-size: 0.82rem;
+  font-weight: 760;
+  white-space: nowrap;
 }
 
-.bilibili-emblem-link {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: clamp(170px, 28vw, 260px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(0, 174, 236, 0.28), transparent 54%),
-    radial-gradient(circle at 30% 22%, rgba(255, 255, 255, 0.14), transparent 28%);
-  transition: transform 180ms ease, filter 180ms ease;
+.video-title-row .video-profile-link:hover,
+.section-heading a:hover {
+  border-color: rgba(49, 215, 255, 0.58);
+  background: rgba(49, 215, 255, 0.12);
 }
 
-.bilibili-emblem-link::before,
-.bilibili-emblem-link::after {
-  content: "";
-  position: absolute;
-  inset: 8%;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 215, 255, 0.26);
-  transform: rotate(16deg);
-}
-
-.bilibili-emblem-link::after {
-  inset: 18%;
-  border-color: rgba(255, 107, 157, 0.34);
-  transform: rotate(-24deg);
-}
-
-.bilibili-emblem-link:hover {
-  transform: translateY(-5px) scale(1.03);
-  filter: drop-shadow(0 0 34px rgba(0, 174, 236, 0.42));
-}
-
-.bilibili-emblem-link:active {
-  transform: translateY(1px) scale(0.98);
-}
-
-.bilibili-emblem {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  place-items: center;
-  width: 66%;
-  aspect-ratio: 1.28;
-  border: 2px solid rgba(227, 250, 255, 0.78);
-  border-radius: 18px;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08)),
-    linear-gradient(135deg, #00aeec, #fb7299);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    0 24px 80px rgba(0, 174, 236, 0.34);
-}
-
-.bilibili-emblem::before,
-.bilibili-emblem::after {
-  content: "";
-  position: absolute;
-  top: -22%;
-  width: 24%;
-  height: 38%;
-  border-radius: 999px;
-  background: #e9fbff;
-  transform-origin: bottom center;
-}
-
-.bilibili-emblem::before {
-  left: 24%;
-  transform: rotate(-32deg);
-}
-
-.bilibili-emblem::after {
-  right: 24%;
-  transform: rotate(32deg);
-}
-
-.bilibili-face {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 72%;
-  height: 58%;
-}
-
-.bilibili-eye {
-  position: absolute;
-  top: 18%;
-  width: 17%;
-  height: 28%;
-  border-radius: 50%;
-  background: #061015;
-  box-shadow: 0 0 18px rgba(255, 255, 255, 0.38);
-}
-
-.bilibili-eye.left {
-  left: 18%;
-}
-
-.bilibili-eye.right {
-  right: 18%;
-}
-
-.bilibili-mouth {
-  position: absolute;
-  bottom: 10%;
-  width: 44%;
-  height: 18%;
-  border: 4px solid #061015;
-  border-top: 0;
-  border-radius: 0 0 999px 999px;
+.video-description {
+  margin: -4px 0 16px;
+  color: rgba(244, 248, 251, 0.76);
+  line-height: 1.58;
 }
 
 .video-frame {
@@ -441,6 +334,23 @@ h2 {
   border-radius: 8px;
   background: #03060a;
   aspect-ratio: 16 / 9;
+}
+
+.video-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+  background:
+    linear-gradient(145deg, rgba(49, 215, 255, 0.08), transparent 48%),
+    rgba(3, 6, 10, 0.82);
+}
+
+.video-frame.has-embed .video-placeholder {
+  display: none;
 }
 
 .video-frame iframe {
