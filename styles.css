@@ -295,7 +295,11 @@ h2 {
 }
 
 .bilibili-title-row h1 {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
+  font-size: clamp(3.25rem, 8vw, 7.6rem);
+  white-space: nowrap;
 }
 
 .bilibili-title-row .bilibili-emblem-link {
