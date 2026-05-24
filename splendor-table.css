@@ -3176,9 +3176,11 @@ body.hand-dock-entering .active-hand-panel {
 }
 
 .active-reserved {
+  --active-reserved-card-height: 128px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(112px, 160px));
   gap: 10px 12px;
+  align-items: start;
   justify-content: start;
   min-width: 0;
 }
@@ -3187,6 +3189,64 @@ body.hand-dock-entering .active-hand-panel {
   display: grid;
   gap: 8px;
   width: min(160px, 100%);
+}
+
+.active-reserved .dev-card {
+  height: var(--active-reserved-card-height);
+  min-height: var(--active-reserved-card-height);
+}
+
+.active-reserved .dev-card h3 {
+  line-height: 1.08;
+}
+
+.active-reserved .dev-card[data-card-module="orient"] {
+  gap: 3px;
+  height: var(--active-reserved-card-height);
+  min-height: var(--active-reserved-card-height);
+}
+
+.active-reserved .dev-card[data-card-module="orient"] .card-module-badge {
+  height: 17px;
+  min-height: 17px;
+  padding: 0 4px;
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+.active-reserved .dev-card[data-card-module="orient"] .cost-row {
+  gap: 3px;
+  row-gap: 2px;
+}
+
+.active-reserved .dev-card[data-card-module="orient"] .cost-pill {
+  min-height: 16px;
+  padding: 0 4px;
+  gap: 3px;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.active-reserved .dev-card[data-card-module="orient"] .cost-pill .gem-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.active-reserved .dev-card[data-card-module="orient"] .orient-ability-row {
+  flex-wrap: nowrap;
+  gap: 3px;
+  row-gap: 2px;
+  overflow: hidden;
+}
+
+.active-reserved .dev-card[data-card-module="orient"] .orient-ability-chip {
+  flex: 0 0 auto;
+  max-width: calc(50% - 2px);
+  min-height: 16px;
+  padding: 0 4px;
+  font-size: 0.48rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .reserve-origin {
@@ -4510,11 +4570,74 @@ body.hand-dock-entering .active-hand-panel {
   }
 
   .active-reserved {
+    --active-reserved-card-height: 126px;
     grid-template-columns: none;
     grid-auto-flow: column;
     grid-auto-columns: minmax(126px, 48vw);
     overflow-x: auto;
     overscroll-behavior-inline: contain;
+  }
+
+  .active-reserved-item {
+    width: 100%;
+  }
+
+  .active-reserved .dev-card {
+    height: var(--active-reserved-card-height);
+    min-height: var(--active-reserved-card-height);
+    padding: 5px;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] {
+    gap: 2px;
+    height: var(--active-reserved-card-height);
+    min-height: var(--active-reserved-card-height);
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] h3 {
+    gap: 3px;
+    font-size: 0.6rem;
+    line-height: 1.04;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .card-module-badge {
+    height: 15px;
+    min-height: 15px;
+    padding: 0 3px;
+    font-size: 0.45rem;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .cost-row {
+    gap: 2px;
+    row-gap: 1px;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .cost-pill {
+    min-height: 14px;
+    padding: 0 3px;
+    gap: 2px;
+    font-size: 0.5rem;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .cost-pill .gem-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .orient-ability-row {
+    gap: 2px;
+    min-height: 14px;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .orient-ability-chip {
+    min-height: 14px;
+    padding: 0 2px;
+    font-size: 0.4rem;
+  }
+
+  .active-reserved .dev-card[data-card-module="orient"] .card-actions button {
+    min-height: 23px;
+    padding: 0 3px;
   }
 }
 
