@@ -1,6 +1,9 @@
 (function () {
   "use strict";
 
+  var GemTableRules = window.GemTableRules;
+  if (!GemTableRules) throw new Error("GemTableRules must be loaded before splendor-table.js.");
+
   var STORAGE_KEY = "zephyrlabs-gem-table-save-v3";
   var LEGACY_STORAGE_KEYS = ["zephyrlabs-gem-table-save-v2", "zephyrlabs-gem-table-save-v1"];
   var SCHEMA = "zephyrlabs-gemtable-bga-v1";
@@ -3184,27 +3187,7 @@ Object.assign(I18N.de, {
   }
 
   function strongholdSummaryFromHolders(holders, perspective) {
-    var summary = {
-      players: [],
-      counts: {},
-      count: 0,
-      owner: "",
-      locked: false
-    };
-    (Array.isArray(holders) ? holders : []).forEach(function (holder) {
-      var playerIndex = Number(holder);
-      if (!Number.isInteger(playerIndex)) return;
-      summary.counts[playerIndex] = (summary.counts[playerIndex] || 0) + 1;
-      summary.count += 1;
-    });
-    summary.players = Object.keys(summary.counts).map(function (key) {
-      return Number(key);
-    }).sort(function (a, b) { return a - b; });
-    summary.owner = summary.players.length === 1 ? String(summary.players[0]) : "";
-    summary.locked = summary.players.some(function (playerIndex) {
-      return Number.isInteger(Number(perspective)) && playerIndex !== Number(perspective);
-    });
-    return summary;
+    return GemTableRules.strongholdSummaryFromHolders(holders, perspective);
   }
 
   function strongholdSlotSummary(game, slotId, perspective) {
@@ -3305,8 +3288,9 @@ Object.assign(I18N.de, {
   function strongholdAccessStatus(slotId, playerIndex) {
     if (!state || !strongholdsEnabledForRuleset(state.ruleset) || !slotId) return { ok: true };
     var summary = strongholdSlotSummary(state, slotId, playerIndex);
-    if (!summary.count || !summary.locked) return { ok: true };
-    return { ok: false, reason: t("strongholdBlocked") };
+    var status = GemTableRules.strongholdAccessStatusFromSummary(summary);
+    if (status.ok) return { ok: true };
+    return { ok: false, reason: t(status.reasonKey || "strongholdBlocked") };
   }
 
   function strongholdActionKindForSlot(slotId, playerIndex) {
@@ -3475,32 +3459,7 @@ Object.assign(I18N.de, {
   }
 
   function effectiveCardBonuses(card) {
-    var bonuses = emptyCounts(false);
-    if (!card) return bonuses;
-    if (cardIsOrient(card)) {
-      if (card.copied_color && COLORS.indexOf(card.copied_color) >= 0) {
-        bonuses[card.copied_color] = 1;
-        return bonuses;
-      }
-      var explicit = card.orient_effective && card.orient_effective.bonus || card.effective_bonuses;
-      COLORS.forEach(function (color) {
-        bonuses[color] = Math.max(0, Number(explicit && explicit[color]) || 0);
-      });
-      (card.abilities || []).forEach(function (ability) {
-        if (!ability || (ability.effect !== "double_bonus" && ability.effect !== "fixed_bonus")) return;
-        var color = ability.bonus_color || card.printed_color || card.color;
-        if (COLORS.indexOf(color) >= 0 && bonuses[color] === 0) {
-          bonuses[color] = Math.max(1, Number(ability.bonus_count) || (ability.effect === "double_bonus" ? 2 : 1));
-        }
-      });
-      var fallbackColor = card.printed_color || card.color;
-      if (!COLORS.some(function (color) { return bonuses[color] > 0; }) && COLORS.indexOf(fallbackColor) >= 0) {
-        bonuses[fallbackColor] = Math.max(1, Number(card.bga_carddb && card.bga_carddb.nbBonus) || 1);
-      }
-      return bonuses;
-    }
-    if (COLORS.indexOf(card.color) >= 0) bonuses[card.color] = 1;
-    return bonuses;
+    return GemTableRules.effectiveCardBonuses(card, { colors: COLORS, orientMarketId: ORIENT_MARKET_ID });
   }
 
   function orientVirtualGoldMetadata(card) {
@@ -4282,18 +4241,7 @@ Object.assign(I18N.de, {
   }
 
   function bonusDisplaySummary(counts, player, color) {
-    var total = Number(counts && counts[color]) || 0;
-    if (!player || !Array.isArray(player.purchased)) {
-      return { cards: total, extra: 0, total: total };
-    }
-    var cards = 0;
-    player.purchased.forEach(function (card) {
-      var amount = Number(effectiveCardBonuses(card)[color]) || 0;
-      if (amount <= 0) return;
-      cards += 1;
-    });
-    var extra = Math.max(0, total - cards);
-    return { cards: cards, extra: extra, total: total };
+    return GemTableRules.bonusDisplaySummary(counts, player, color, { colors: COLORS, orientMarketId: ORIENT_MARKET_ID });
   }
 
   function bonusesHtml(counts, player) {
@@ -9349,17 +9297,7 @@ Object.assign(I18N.de, {
 
   function replayUrlFromQuery() {
     if (!window.URLSearchParams) return "";
-    var params = new URLSearchParams(window.location.search || "");
-    var value = params.get("replayUrl") || params.get("replay");
-    if (!value) return "";
-    try {
-      var url = new URL(value, window.location.origin);
-      if (url.origin !== window.location.origin) return "";
-      if (!/^\/api\/bga\/replay\//.test(url.pathname)) return "";
-      return url.pathname + url.search;
-    } catch (error) {
-      return "";
-    }
+    return GemTableRules.replayUrlFromQuery(window.location.search || "", window.location.origin);
   }
 
   function loadReplayFromQuery() {
