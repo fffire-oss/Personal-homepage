@@ -4669,6 +4669,36 @@ Object.assign(I18N.de, {
     ].join("");
   }
 
+  function noblePreviewHtml(noble) {
+    if (!noble) return "";
+    return [
+      '<span class="player-noble-preview" role="tooltip">',
+      '<span class="player-noble-preview-title"><strong>' + escapeHtml(noble.name || noble.id) + "</strong><span>" + escapeHtml(noble.points + " " + t("prestige")) + "</span></span>",
+      '<span class="requirement-row">' + requirementHtml(noble.req || {}) + "</span>",
+      "</span>"
+    ].join("");
+  }
+
+  function playerNoblesHtml(player) {
+    var nobles = player && Array.isArray(player.nobles) ? player.nobles : [];
+    var body = nobles.length ? nobles.map(function (noble, index) {
+      var edgeClass = index >= Math.max(0, nobles.length - 2) ? " edge-right" : "";
+      return [
+        '<span class="player-noble-badge' + edgeClass + '" data-noble-preview-toggle="true" tabindex="0" role="button" data-player-noble-id="' + escapeHtml(noble.id) + '">',
+        '<span class="player-noble-points">' + escapeHtml(noble.points) + "</span>",
+        '<span class="player-noble-name">' + escapeHtml(noble.name || noble.id) + "</span>",
+        noblePreviewHtml(noble),
+        "</span>"
+      ].join("");
+    }).join("") : '<span class="player-noble-empty">' + escapeHtml(t("none")) + "</span>";
+    return [
+      '<div class="player-nobles-section">',
+      '<span class="label">' + escapeHtml(t("nobles")) + " (" + nobles.length + ")</span>",
+      '<div class="player-noble-list">' + body + "</div>",
+      "</div>"
+    ].join("");
+  }
+
   function orientVirtualGoldZoneHtml(player) {
     var cards = availableOrientVirtualGoldCards(player);
     if (!cards.length) return "";
@@ -5050,7 +5080,6 @@ Object.assign(I18N.de, {
     var visibleIndex = displayCurrentIndex();
     el.players.innerHTML = state.players.map(function (player, playerIndex) {
       var reservedCards = renderReservedSummary(player);
-      var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : t("none");
       var aiBadgeKey = player.ai && player.ai.provider === "dinoboard" ? "aiBadgeFormat" : "randomAiBadgeFormat";
       var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t(aiBadgeKey, { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
@@ -5064,7 +5093,8 @@ Object.assign(I18N.de, {
         strongholdStockHtml(playerIndex),
         "</div>",
         '<div><span class="label">' + t("reserved") + " (" + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
-        '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: nobleText })) + "</span></div>",
+        playerNoblesHtml(player),
+        '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: player.nobles.length })) + "</span></div>",
         "</article>"
       ].join("");
     }).join("");
@@ -6136,7 +6166,7 @@ Object.assign(I18N.de, {
 
   function closeTapPreviews(except, force) {
     if (!except && !force && Date.now() < tapPreviewIgnoreCloseUntil) return;
-    Array.from(document.querySelectorAll(".reserve-badge.preview-open, .log-card-badge.preview-open")).forEach(function (badge) {
+    Array.from(document.querySelectorAll(".reserve-badge.preview-open, .log-card-badge.preview-open, .player-noble-badge.preview-open")).forEach(function (badge) {
       if (badge !== except) badge.classList.remove("preview-open");
     });
   }
@@ -10123,6 +10153,16 @@ Object.assign(I18N.de, {
         event.stopPropagation();
         return;
       }
+      var noblePreview = event.target.closest("[data-noble-preview-toggle]");
+      if (noblePreview) {
+        var nobleOpen = noblePreview.classList.contains("preview-open");
+        closeTapPreviews(noblePreview, true);
+        closeBonusPreviews();
+        noblePreview.classList.toggle("preview-open", !nobleOpen);
+        if (!nobleOpen) holdTapPreviewOpen();
+        event.stopPropagation();
+        return;
+      }
       var reservePreview = event.target.closest("[data-reserve-preview-toggle]");
       if (reservePreview && reservePreviewTapMode()) {
         var alreadyOpen = reservePreview.classList.contains("preview-open");
@@ -10136,7 +10176,7 @@ Object.assign(I18N.de, {
       if (button) buyReserved(button.dataset.buyReserved, button);
     });
     document.addEventListener("click", function () {
-      if (reservePreviewTapMode()) closeTapPreviews();
+      closeTapPreviews(null, true);
       closeBonusPreviews();
     });
     [el.logSafeMode, el.logFullMode].forEach(function (button) {
