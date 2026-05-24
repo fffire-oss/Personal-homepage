@@ -3872,10 +3872,24 @@ body.hand-dock-entering .active-hand-panel {
   box-shadow:
     0 28px 74px rgba(0, 0, 0, 0.44),
     0 0 58px color-mix(in srgb, var(--gem), transparent 48%);
+  overflow: hidden;
+  padding: 0 6px;
   font-weight: 900;
+  font-size: 0.78rem;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   pointer-events: none;
   transform: translate(calc(var(--from-x) - var(--w) / 2), calc(var(--from-y) - var(--h) / 2)) scale(0.82) rotate(-4deg);
   animation: cardFlight 1280ms cubic-bezier(.18,.78,.22,1) forwards;
+}
+
+.flight-card.stronghold-flight {
+  border-top-width: 4px;
+  border-radius: 7px;
+  font-size: 0.68rem;
+  letter-spacing: 0;
 }
 
 @keyframes cardFlight {

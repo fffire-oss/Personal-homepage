@@ -4209,13 +4209,15 @@ Object.assign(I18N.de, {
       var rect = target.getBoundingClientRect();
       var node = document.createElement("div");
       node.className = "flight-card";
+      var isStrongholdFlight = /^SH(?:\+|>|-)$/.test(String(flight.label || ""));
+      if (isStrongholdFlight) node.classList.add("stronghold-flight");
       node.style.setProperty("--gem", GEM_HEX[flight.color] || GEM_HEX.gold);
       node.style.setProperty("--from-x", flight.from.x + "px");
       node.style.setProperty("--from-y", flight.from.y + "px");
       node.style.setProperty("--to-x", rect.left + rect.width / 2 + "px");
       node.style.setProperty("--to-y", rect.top + rect.height / 2 + "px");
-      node.style.setProperty("--w", Math.max(62, flight.from.width * 0.82) + "px");
-      node.style.setProperty("--h", Math.max(82, flight.from.height * 0.82) + "px");
+      node.style.setProperty("--w", (isStrongholdFlight ? 46 : Math.max(62, flight.from.width * 0.82)) + "px");
+      node.style.setProperty("--h", (isStrongholdFlight ? 42 : Math.max(82, flight.from.height * 0.82)) + "px");
       node.textContent = flight.label;
       document.body.append(node);
       node.addEventListener("animationend", function () {
@@ -5570,6 +5572,12 @@ Object.assign(I18N.de, {
     return strongholdEffectTitleKey(effects[0]);
   }
 
+  function strongholdFlightLabel(type) {
+    if (type === "place") return "SH+";
+    if (type === "remove") return "SH-";
+    return "SH>";
+  }
+
   function playerNameForMove(move) {
     var fromNotification = move && move.notification && move.notification.args && move.notification.args.player_name;
     if (fromNotification) return fromNotification;
@@ -5818,7 +5826,10 @@ Object.assign(I18N.de, {
     if (move.type === "reserveDeck") return t("blind");
     if (move.type === "reserveMarket") return t("reserve");
     if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") return t("buy");
-    if (move.type === "strongholdMove") return t(strongholdMoveTitleKey(move));
+    if (move.type === "strongholdMove") {
+      var effect = args.stronghold_effects && args.stronghold_effects[0] || {};
+      return strongholdFlightLabel(effect.type);
+    }
     if (move.type === "chooseNoble") return t("logNobleTitle");
     return moveTitle(move);
   }
@@ -6994,7 +7005,7 @@ Object.assign(I18N.de, {
       return;
     }
     holders.push(playerIndex);
-    queueFlightFromElement(document.querySelector('.player-card[data-player-index="' + playerIndex + '"] .stronghold-stock-token') || document.querySelector('.player-card[data-player-index="' + playerIndex + '"]'), strongholdPlayerColor(playerIndex), t("strongholdPlace"), trigger && trigger.closest("[data-market-slot-id]") || cardElementForFlight(marketCardAt(state, ref)));
+    queueFlightFromElement(document.querySelector('.player-card[data-player-index="' + playerIndex + '"] .stronghold-stock-token') || document.querySelector('.player-card[data-player-index="' + playerIndex + '"]'), strongholdPlayerColor(playerIndex), strongholdFlightLabel("place"), trigger && trigger.closest("[data-market-slot-id]") || cardElementForFlight(marketCardAt(state, ref)));
     finishStrongholdAction({ type: "place", slot_id: slotId, player_index: playerIndex });
   }
 
@@ -7019,7 +7030,7 @@ Object.assign(I18N.de, {
     if (!sourceHolders.length) delete state.strongholds.placements[sourceSlot];
     strongholdsAtSlot(state, slotId).push(playerIndex);
     var sourceSelector = '[data-market-slot-id="' + String(sourceSlot).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"] .stronghold-token[data-player-index="' + playerIndex + '"]';
-    queueFlightFromElement(document.querySelector(sourceSelector), strongholdPlayerColor(playerIndex), t("strongholdMove"), trigger && trigger.closest("[data-market-slot-id]") || cardElementForFlight(marketCardAt(state, ref)));
+    queueFlightFromElement(document.querySelector(sourceSelector), strongholdPlayerColor(playerIndex), strongholdFlightLabel("move"), trigger && trigger.closest("[data-market-slot-id]") || cardElementForFlight(marketCardAt(state, ref)));
     finishStrongholdAction({ type: "move", from_slot_id: sourceSlot, slot_id: slotId, player_index: playerIndex });
   }
 
@@ -7038,7 +7049,7 @@ Object.assign(I18N.de, {
     if (removeIndex < 0) return;
     var removedPlayer = holders.splice(removeIndex, 1)[0];
     if (!holders.length) delete state.strongholds.placements[slotId];
-    queueFlightFromElement(trigger && trigger.querySelector && trigger.querySelector('.stronghold-token[data-player-index="' + removedPlayer + '"]') || trigger && trigger.closest("[data-market-slot-id]"), strongholdPlayerColor(removedPlayer), t("strongholdRemove"), '.player-card[data-player-index="' + removedPlayer + '"] .stronghold-stock-token');
+    queueFlightFromElement(trigger && trigger.querySelector && trigger.querySelector('.stronghold-token[data-player-index="' + removedPlayer + '"]') || trigger && trigger.closest("[data-market-slot-id]"), strongholdPlayerColor(removedPlayer), strongholdFlightLabel("remove"), '.player-card[data-player-index="' + removedPlayer + '"] .stronghold-stock-token');
     finishStrongholdAction({ type: "remove", slot_id: slotId, player_index: playerIndex, removed_player_index: removedPlayer });
   }
 
