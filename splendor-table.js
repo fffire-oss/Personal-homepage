@@ -172,6 +172,12 @@
       logDiscardTitle: "Return token",
       logNobleTitle: "Noble",
       logGameTitle: "Game",
+      logStrongholdPlaceTitle: "Place stronghold",
+      logStrongholdMoveTitle: "Move stronghold",
+      logStrongholdRemoveTitle: "Remove stronghold",
+      logStrongholdTarget: "Target",
+      logStrongholdFrom: "From",
+      logStrongholdTo: "To",
       logBlindCard: "Blind tier {tier}",
       logUnknownCard: "Unknown card",
       logGoldTaken: "Gold taken",
@@ -1454,6 +1460,12 @@ Object.assign(I18N.de, {
     logDiscardTitle: "\u5f52\u8fd8\u5b9d\u77f3",
     logNobleTitle: "\u8d35\u65cf",
     logGameTitle: "\u724c\u5c40",
+    logStrongholdPlaceTitle: "\u653e\u7f6e\u8981\u585e",
+    logStrongholdMoveTitle: "\u79fb\u52a8\u8981\u585e",
+    logStrongholdRemoveTitle: "\u79fb\u9664\u8981\u585e",
+    logStrongholdTarget: "\u76ee\u6807",
+    logStrongholdFrom: "\u4ece",
+    logStrongholdTo: "\u5230",
     logBlindCard: "{tier} \u7ea7\u6697\u724c",
     logUnknownCard: "\u672a\u77e5\u5361\u724c",
     logGoldTaken: "\u83b7\u5f97\u9ec4\u91d1",
@@ -1475,6 +1487,12 @@ Object.assign(I18N.de, {
     logDiscardTitle: "\u6b78\u9084\u5bf6\u77f3",
     logNobleTitle: "\u8cb4\u65cf",
     logGameTitle: "\u724c\u5c40",
+    logStrongholdPlaceTitle: "\u653e\u7f6e\u8981\u585e",
+    logStrongholdMoveTitle: "\u79fb\u52d5\u8981\u585e",
+    logStrongholdRemoveTitle: "\u79fb\u9664\u8981\u585e",
+    logStrongholdTarget: "\u76ee\u6a19",
+    logStrongholdFrom: "\u5f9e",
+    logStrongholdTo: "\u5230",
     logBlindCard: "{tier} \u7d1a\u6697\u724c",
     logUnknownCard: "\u672a\u77e5\u5361\u724c",
     logGoldTaken: "\u7372\u5f97\u9ec3\u91d1",
@@ -1556,6 +1574,9 @@ Object.assign(I18N.de, {
     orientDiscardPriorityHint: "\u5148\u5f03\u5e26\u4e07\u80fd\u6807\u8bb0\u7684\u724c\uff0c\u518d\u5f03\u666e\u901a\u724c\u3002",
     orientDiscardPriorityBadge: "\u5148",
     orientNoChoices: "\u6ca1\u6709\u53ef\u9009\u7684\u4e1c\u65b9\u80fd\u529b\u76ee\u6807\u3002",
+    strongholdPlace: "\u653e\u7f6e",
+    strongholdMove: "\u79fb\u52a8",
+    strongholdRemove: "\u79fb\u9664",
     msgOrientAbilityPending: "\u8bf7\u5148\u7ed3\u7b97\u5f85\u5904\u7406\u7684\u4e1c\u65b9\u80fd\u529b\u3002",
     msgOrientCopyNeedsBonus: "\u5148\u590d\u5236\u4e00\u5f20\u52a0\u6210\u724c\u3002",
     msgOrientDiscardNeedsCards: "\u5148\u5f03 {count} \u5f20 {color} \u724c\u3002",
@@ -1638,6 +1659,9 @@ Object.assign(I18N.de, {
     orientDiscardPriorityHint: "\u5148\u68c4\u5e36\u842c\u80fd\u6a19\u8a18\u7684\u724c\uff0c\u518d\u68c4\u666e\u901a\u724c\u3002",
     orientDiscardPriorityBadge: "\u5148",
     orientNoChoices: "\u6c92\u6709\u53ef\u9078\u7684\u6771\u65b9\u80fd\u529b\u76ee\u6a19\u3002",
+    strongholdPlace: "\u653e\u7f6e",
+    strongholdMove: "\u79fb\u52d5",
+    strongholdRemove: "\u79fb\u9664",
     msgOrientAbilityPending: "\u8acb\u5148\u7d50\u7b97\u5f85\u8655\u7406\u7684\u6771\u65b9\u80fd\u529b\u3002",
     msgOrientCopyNeedsBonus: "\u5148\u8907\u88fd\u4e00\u5f35\u52a0\u6210\u724c\u3002",
     msgOrientDiscardNeedsCards: "\u5148\u68c4 {count} \u5f35 {color} \u724c\u3002",
@@ -5335,6 +5359,61 @@ Object.assign(I18N.de, {
     return null;
   }
 
+  function replayStateForMove(move) {
+    return move && move.state_after && (move.state_after.source_state || move.state_after) || state;
+  }
+
+  function marketRefFromSlotId(game, slotId) {
+    if (!game || !slotId) return null;
+    ensureMarketStructure(game);
+    var target = String(slotId);
+    var markets = [BASE_MARKET_ID, ORIENT_MARKET_ID];
+    for (var m = 0; m < markets.length; m += 1) {
+      var marketId = markets[m];
+      var groups = game.market_slots && game.market_slots[marketId] || {};
+      for (var tier = 1; tier <= 3; tier += 1) {
+        var slots = groups[tier] || groups[String(tier)] || [];
+        var index = Array.isArray(slots) ? slots.indexOf(target) : -1;
+        if (index >= 0) return { marketId: marketId, tier: tier, index: index, slotId: target };
+      }
+    }
+    var compactMatch = target.match(/^(base|orient)-t(\d+)-s(\d+)$/);
+    if (compactMatch) {
+      return {
+        marketId: compactMatch[1] === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+        tier: Number(compactMatch[2]) || 1,
+        index: Math.max(0, (Number(compactMatch[3]) || 1) - 1),
+        slotId: target
+      };
+    }
+    var bgaStyleMatch = target.match(/^(base|orient):t(\d+):s(\d+)$/);
+    if (bgaStyleMatch) {
+      return {
+        marketId: bgaStyleMatch[1] === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+        tier: Number(bgaStyleMatch[2]) || 1,
+        index: Math.max(0, Number(bgaStyleMatch[3]) || 0),
+        slotId: target
+      };
+    }
+    return null;
+  }
+
+  function cardForMarketSlotId(game, slotId) {
+    var ref = marketRefFromSlotId(game, slotId);
+    return ref ? marketCardAt(game, ref) : null;
+  }
+
+  function strongholdEffectTitleKey(effect) {
+    if (effect && effect.type === "place") return "logStrongholdPlaceTitle";
+    if (effect && effect.type === "remove") return "logStrongholdRemoveTitle";
+    return "logStrongholdMoveTitle";
+  }
+
+  function strongholdMoveTitleKey(move) {
+    var effects = move && move.args && move.args.stronghold_effects || [];
+    return strongholdEffectTitleKey(effects[0]);
+  }
+
   function playerNameForMove(move) {
     var fromNotification = move && move.notification && move.notification.args && move.notification.args.player_name;
     if (fromNotification) return fromNotification;
@@ -5345,6 +5424,7 @@ Object.assign(I18N.de, {
   }
 
   function moveTitle(move) {
+    if (move && move.type === "strongholdMove") return t(strongholdMoveTitleKey(move));
     var byType = {
       takeTokens: "logTakeTokensTitle",
       reserveMarket: "logReserveTitle",
@@ -5430,6 +5510,30 @@ Object.assign(I18N.de, {
     ].join("");
   }
 
+  function logStrongholdSlotTarget(move, slotId, labelKey) {
+    if (!slotId) return "";
+    var card = cardForMarketSlotId(replayStateForMove(move), slotId);
+    var target = card
+      ? logCardBadge(card.id, { card: card, tier: card.tier })
+      : '<span class="log-source-chip">' + escapeHtml(slotId) + "</span>";
+    return '<span class="log-source-chip">' + escapeHtml(t(labelKey)) + "</span>" + target;
+  }
+
+  function logStrongholdMoveBody(move) {
+    var effects = move && move.args && move.args.stronghold_effects || [];
+    if (!effects.length) return move.notification && move.notification.log ? escapeHtml(move.notification.log) : escapeHtml(t("logStrongholdMoveTitle"));
+    return effects.map(function (effect) {
+      var chunks = [logStrongholdEffects([effect])];
+      if (effect.type === "move") {
+        chunks.push(logStrongholdSlotTarget(move, effect.from_slot_id, "logStrongholdFrom"));
+        chunks.push(logStrongholdSlotTarget(move, effect.slot_id, "logStrongholdTo"));
+      } else {
+        chunks.push(logStrongholdSlotTarget(move, effect.slot_id, "logStrongholdTarget"));
+      }
+      return chunks.filter(Boolean).join("");
+    }).join("");
+  }
+
   function renderLogMoveBody(move) {
     return renderMoveBody(move, logMode);
   }
@@ -5474,6 +5578,9 @@ Object.assign(I18N.de, {
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(t("logNobleTitle")) + "</span>" : "",
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id) + "</span>" : ""
       ].filter(Boolean).join("");
+    }
+    if (move.type === "strongholdMove") {
+      return logStrongholdMoveBody(move);
     }
     if (move.type === "chooseNoble") {
       return '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id || t("logNobleTitle")) + "</span>";
@@ -5555,6 +5662,7 @@ Object.assign(I18N.de, {
     if (move.type === "reserveDeck") return t("blind");
     if (move.type === "reserveMarket") return t("reserve");
     if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") return t("buy");
+    if (move.type === "strongholdMove") return t(strongholdMoveTitleKey(move));
     if (move.type === "chooseNoble") return t("logNobleTitle");
     return moveTitle(move);
   }
@@ -5587,6 +5695,22 @@ Object.assign(I18N.de, {
       color = args.card && args.card.color || "gold";
       source = cardElementForFlight(args.card || { id: args.card_id }) || (move.type === "buyReserved" ? el.activeHandPanel : el.market);
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".purchased-summary");
+    } else if (move.type === "strongholdMove") {
+      var effect = args.stronghold_effects && args.stronghold_effects[0] || {};
+      var actor = replayMoveActor(move);
+      var targetCard = cardForMarketSlotId(replayStateForMove(move), effect.slot_id);
+      color = strongholdPlayerColor(Number(effect.player_index) || 0);
+      if (effect.type === "place") {
+        source = replayPlayerSourceElement(actor.id, ".stronghold-stock-token") || replayPlayerSourceElement(actor.id, ".player-card");
+        targetSelector = targetCard ? '[data-card-id="' + String(targetCard.id).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]' : ".market-panel";
+      } else if (effect.type === "remove") {
+        source = targetCard ? cardElementForFlight(targetCard) : el.market;
+        targetSelector = playerPanelTargetForPlayerId(actor.id, ".stronghold-stock");
+      } else {
+        var sourceCard = cardForMarketSlotId(replayStateForMove(move), effect.from_slot_id);
+        source = sourceCard ? cardElementForFlight(sourceCard) : el.market;
+        targetSelector = targetCard ? '[data-card-id="' + String(targetCard.id).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]' : ".market-panel";
+      }
     } else if (move.type === "chooseNoble") {
       source = document.querySelector('[data-noble-id="' + String(args.noble_id || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]') || document.querySelector(".noble-card") || el.nobles;
       color = "gold";
