@@ -156,8 +156,9 @@
       strongholdSelectTarget: "Select a market card for your stronghold.",
       strongholdSelectSource: "Select one of your strongholds, or an opponent card with exactly one stronghold.",
       strongholdConquestTitle: "Conquest available",
-      strongholdConquestBody: "Click a card with 3 of your strongholds to buy it now, or continue without conquest.",
+      strongholdConquestBody: "Choose a conquest purchase below, or continue without conquest.",
       strongholdConquest: "Conquest",
+      strongholdConquestBuy: "Buy conquest card",
       strongholdConquestSkip: "Continue",
       strongholdNoLegalTarget: "That card is not a legal stronghold target.",
       strongholdPlaceTargets: "Place targets",
@@ -1583,6 +1584,11 @@ Object.assign(I18N.de, {
     strongholdPlace: "\u653e\u7f6e",
     strongholdMove: "\u79fb\u52a8",
     strongholdRemove: "\u79fb\u9664",
+    strongholdConquestTitle: "\u53ef\u5f81\u670d",
+    strongholdConquestBody: "\u5728\u4e0b\u65b9\u9009\u62e9\u5f81\u670d\u8d2d\u4e70\uff0c\u6216\u8005\u8df3\u8fc7\u5f81\u670d\u3002",
+    strongholdConquest: "\u5f81\u670d",
+    strongholdConquestBuy: "\u8d2d\u4e70\u5f81\u670d\u5361",
+    strongholdConquestSkip: "\u8df3\u8fc7",
     msgOrientAbilityPending: "\u8bf7\u5148\u7ed3\u7b97\u5f85\u5904\u7406\u7684\u4e1c\u65b9\u80fd\u529b\u3002",
     msgOrientCopyNeedsBonus: "\u5148\u590d\u5236\u4e00\u5f20\u52a0\u6210\u724c\u3002",
     msgOrientDiscardNeedsCards: "\u5148\u5f03 {count} \u5f20 {color} \u724c\u3002",
@@ -1670,6 +1676,11 @@ Object.assign(I18N.de, {
     strongholdPlace: "\u653e\u7f6e",
     strongholdMove: "\u79fb\u52d5",
     strongholdRemove: "\u79fb\u9664",
+    strongholdConquestTitle: "\u53ef\u5f81\u670d",
+    strongholdConquestBody: "\u5728\u4e0b\u65b9\u9078\u64c7\u5f81\u670d\u8cfc\u8cb7\uff0c\u6216\u8005\u8df3\u904e\u5f81\u670d\u3002",
+    strongholdConquest: "\u5f81\u670d",
+    strongholdConquestBuy: "\u8cfc\u8cb7\u5f81\u670d\u5361",
+    strongholdConquestSkip: "\u8df3\u904e",
     msgOrientAbilityPending: "\u8acb\u5148\u7d50\u7b97\u5f85\u8655\u7406\u7684\u6771\u65b9\u80fd\u529b\u3002",
     msgOrientCopyNeedsBonus: "\u5148\u8907\u88fd\u4e00\u5f35\u52a0\u6210\u724c\u3002",
     msgOrientDiscardNeedsCards: "\u5148\u68c4 {count} \u5f35 {color} \u724c\u3002",
@@ -5385,15 +5396,52 @@ Object.assign(I18N.de, {
     return '<div class="stronghold-selection-hint">' + escapeHtml(strongholdActionPrompt()) + "</div>";
   }
 
+  function marketActionValueFromRef(ref) {
+    if (!ref) return "";
+    return (ref.marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID + ":" : "") + ref.tier + ":" + ref.index;
+  }
+
+  function strongholdConquestChoiceButton(ref) {
+    var value = marketActionValueFromRef(ref);
+    return [
+      '<button type="button" class="stronghold-choice stronghold-conquest-choice" data-stronghold-conquest-buy="' + escapeHtml(value) + '">',
+      '<span class="stronghold-choice-title">' + escapeHtml(t("strongholdConquestBuy")) + "</span>",
+      renderCard(ref.card, {
+        value: value,
+        slotId: ref.slotId,
+        strongholdSummary: strongholdSlotSummary(state, ref.slotId, state.current),
+        conquestEligible: true
+      }),
+      "</button>"
+    ].join("");
+  }
+
+  function strongholdConquestOptionsHtml() {
+    var choices = strongholdConquestChoices(state, state.current);
+    var choiceHtml = choices.length
+      ? choices.map(strongholdConquestChoiceButton).join("")
+      : '<div class="stronghold-selection-hint">' + escapeHtml(t("strongholdNoLegalTarget")) + "</div>";
+    return [
+      '<section class="stronghold-choice-group stronghold-conquest-options">',
+      '<span class="stronghold-choice-group-title">' + escapeHtml(t("strongholdConquest")) + "</span>",
+      '<div class="stronghold-choice-grid stronghold-conquest-grid">' + choiceHtml + "</div>",
+      '<div class="stronghold-conquest-actions">',
+      '<button type="button" class="stronghold-skip" data-stronghold-conquest-skip="true">' + escapeHtml(t("strongholdConquestSkip")) + "</button>",
+      "</div>",
+      "</section>"
+    ].join("");
+  }
+
   function renderStrongholdAction() {
     if (!el.strongholdActionPanel) return;
     var conquest = state && state.awaitingStrongholdConquest;
     if (conquest) {
+      if (el.activeHandPanel) el.activeHandPanel.open = true;
       el.strongholdActionPanel.hidden = false;
       if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdConquestTitle");
       if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = t("strongholdConquestBody");
       if (el.strongholdActionOptions) {
-        el.strongholdActionOptions.innerHTML = '<button type="button" class="stronghold-skip" data-stronghold-conquest-skip="true">' + escapeHtml(t("strongholdConquestSkip")) + "</button>";
+        el.strongholdActionOptions.innerHTML = strongholdConquestOptionsHtml();
       }
       return;
     }
@@ -9846,11 +9894,13 @@ Object.assign(I18N.de, {
         var source = event.target.closest("[data-stronghold-source]");
         var remove = event.target.closest("[data-stronghold-remove]");
         var skip = event.target.closest("[data-stronghold-skip]");
+        var conquestBuy = event.target.closest("[data-stronghold-conquest-buy]");
         var conquestSkip = event.target.closest("[data-stronghold-conquest-skip]");
         if (place) resolveStrongholdPlace(place.dataset.strongholdPlace, place);
         else if (move) resolveStrongholdMove(move.dataset.strongholdMove, move);
         else if (source) resolveStrongholdCardClick(source.dataset.strongholdSource, source);
         else if (remove) resolveStrongholdRemove(remove.dataset.strongholdRemove, remove);
+        else if (conquestBuy) beginStrongholdConquestPayment(conquestBuy.dataset.strongholdConquestBuy, conquestBuy);
         else if (conquestSkip) skipStrongholdConquest();
       });
     }
@@ -9861,9 +9911,11 @@ Object.assign(I18N.de, {
     el.market.addEventListener("click", function (event) {
       if (state && state.awaitingStrongholdConquest) {
         var conquestTarget = event.target.closest("[data-stronghold-target]");
-        if (conquestTarget) {
+        if (conquestTarget || event.target.closest(".dev-card") || event.target.closest("[data-buy-market], [data-reserve-market], [data-reserve-deck]")) {
           event.preventDefault();
-          beginStrongholdConquestPayment(conquestTarget.dataset.strongholdTarget, conquestTarget);
+          if (el.activeHandPanel) el.activeHandPanel.open = true;
+          showMessage(t("strongholdConquestBody"), "ok");
+          render();
           return;
         }
       }

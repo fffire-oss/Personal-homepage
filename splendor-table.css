@@ -1495,6 +1495,10 @@ body.replay-mode .top-replay-controls {
   min-width: 0;
 }
 
+.stronghold-conquest-grid {
+  grid-template-columns: repeat(auto-fill, minmax(138px, 164px));
+}
+
 .stronghold-choice,
 .stronghold-skip {
   min-width: 0;
@@ -1505,6 +1509,19 @@ body.replay-mode .top-replay-controls {
   background:
     linear-gradient(135deg, rgba(255, 107, 93, 0.1), rgba(49, 215, 255, 0.04)),
     rgba(9, 14, 20, 0.84);
+}
+
+.stronghold-conquest-choice {
+  border-color: rgba(255, 191, 69, 0.4);
+  background:
+    linear-gradient(135deg, rgba(255, 191, 69, 0.14), rgba(255, 107, 93, 0.08)),
+    rgba(9, 14, 20, 0.88);
+}
+
+.stronghold-conquest-choice:hover,
+.stronghold-conquest-choice:focus-visible {
+  border-color: rgba(255, 220, 126, 0.72);
+  box-shadow: 0 0 24px rgba(255, 191, 69, 0.18);
 }
 
 .stronghold-choice-title {
@@ -1522,6 +1539,17 @@ body.replay-mode .top-replay-controls {
 
 .stronghold-choice .dev-card {
   pointer-events: none;
+}
+
+.stronghold-conquest-actions {
+  display: flex;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.stronghold-conquest-actions .stronghold-skip {
+  min-width: min(170px, 100%);
+  text-align: center;
 }
 
 .stronghold-selection-hint {
@@ -1816,8 +1844,7 @@ body.replay-mode .top-replay-controls {
   line-height: 1;
 }
 
-body.stronghold-selecting .dev-card[data-stronghold-target],
-body.stronghold-conquest-selecting .dev-card[data-stronghold-target] {
+body.stronghold-selecting .dev-card[data-stronghold-target] {
   cursor: pointer;
 }
 
@@ -1887,7 +1914,6 @@ body.stronghold-selecting .dev-card.stronghold-action-remove {
 }
 
 body.stronghold-selecting .dev-card[data-stronghold-target]:hover,
-body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
 .dev-card.stronghold-selected-source,
 .dev-card.stronghold-conquest-target {
   border-color: rgba(255, 191, 69, 0.8);
