@@ -24,6 +24,7 @@
   var AI_MIN_THINK_MS = 2000;
   var REPLAY_STEP_DELAY_MS = 1800;
   var REPLAY_AUTO_DELAY_MS = 420;
+  var DEFAULT_TABLE_SEED = 20260524;
   var marketOrientWrapSyncScheduled = false;
   var GEM_HEX = {
     white: "#f1eadb",
@@ -2421,24 +2422,86 @@ Object.assign(I18N.de, {
     return copy;
   }
 
-  function randomSeed() {
-    return (Date.now() ^ Math.floor(Math.random() * 4294967295)) >>> 0;
-  }
-
-  function generateDeck(tier, size, seed) {
+  function generateDeck(tier, size) {
     var deck = (DEVELOPMENT_CARDS[tier] || []).map(clone);
     if (deck.length !== size && window.console && window.console.warn) {
       window.console.warn("Unexpected development deck size", tier, deck.length, size);
     }
-    return shuffle(deck, (seed || 7000) + tier * 101);
+    return deck;
   }
 
-  function generateOrientDeck(tier, seed) {
-    return shuffle((ORIENT_CARDS[tier] || []).map(clone), (seed || 9000) + tier * 379);
+  function generateOrientDeck(tier) {
+    return (ORIENT_CARDS[tier] || []).map(clone);
   }
 
   function emptyTieredMarket() {
     return { 1: [], 2: [], 3: [] };
+  }
+
+  function createDeckDrawState() {
+    return {
+      base: { 1: 0, 2: 0, 3: 0 },
+      orient: { 1: 0, 2: 0, 3: 0 }
+    };
+  }
+
+  function normalizeDeckDrawState(value) {
+    var normalized = createDeckDrawState();
+    [BASE_MARKET_ID, ORIENT_MARKET_ID].forEach(function (marketId) {
+      var source = value && value[marketId] || {};
+      [1, 2, 3].forEach(function (tier) {
+        normalized[marketId][tier] = Math.max(0, Math.floor(Number(source[tier] || source[String(tier)]) || 0));
+      });
+    });
+    return normalized;
+  }
+
+  function inferDeckDrawState(game) {
+    var inferred = createDeckDrawState();
+    [1, 2, 3].forEach(function (tier) {
+      var baseRemaining = game && game.decks && Array.isArray(game.decks[tier]) ? game.decks[tier].length : TIER_SIZES[tier];
+      var orientTotal = (ORIENT_CARDS[tier] || []).length;
+      var orientRemaining = game && game.orient_decks && Array.isArray(game.orient_decks[tier]) ? game.orient_decks[tier].length : orientTotal;
+      inferred[BASE_MARKET_ID][tier] = Math.max(0, TIER_SIZES[tier] - baseRemaining);
+      inferred[ORIENT_MARKET_ID][tier] = Math.max(0, orientTotal - orientRemaining);
+    });
+    return inferred;
+  }
+
+  function deckDrawStateFor(game, marketId, tier) {
+    if (!game.deck_draw_state || typeof game.deck_draw_state !== "object") {
+      game.deck_draw_state = inferDeckDrawState(game);
+    }
+    game.deck_draw_state = normalizeDeckDrawState(game.deck_draw_state);
+    var bucket = marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    return {
+      bucket: bucket,
+      tier: Number(tier) || 1,
+      count: game.deck_draw_state[bucket][Number(tier) || 1] || 0
+    };
+  }
+
+  function deckDrawSeed(game, marketId, tier, drawIndex) {
+    var tableSeed = Number(game && game.table_seed);
+    if (!Number.isFinite(tableSeed)) tableSeed = DEFAULT_TABLE_SEED;
+    var marketSalt = marketId === ORIENT_MARKET_ID ? 0x9e3779b9 : 0x85ebca6b;
+    return (tableSeed + marketSalt + (Number(tier) || 1) * 100003 + (Number(drawIndex) || 0) * 9176) >>> 0;
+  }
+
+  function deckForMarket(game, marketId, tier) {
+    var decks = marketId === ORIENT_MARKET_ID ? game.orient_decks : game.decks;
+    return decks && decks[tier] || null;
+  }
+
+  function drawCardFromDeck(game, marketId, tier) {
+    var deck = deckForMarket(game, marketId, tier);
+    if (!Array.isArray(deck) || deck.length === 0) return null;
+    var drawState = deckDrawStateFor(game, marketId, tier);
+    var rng = makeRng(deckDrawSeed(game, drawState.bucket, drawState.tier, drawState.count));
+    var index = Math.floor(rng() * deck.length);
+    var card = deck.splice(index, 1)[0] || null;
+    game.deck_draw_state[drawState.bucket][drawState.tier] = drawState.count + 1;
+    return card;
   }
 
   function marketSlotIdFor(marketId, tier, index) {
@@ -2577,12 +2640,16 @@ Object.assign(I18N.de, {
 
   function ensureMarketStructure(game) {
     if (!game) return game;
+    if (!Number.isFinite(Number(game.table_seed))) game.table_seed = DEFAULT_TABLE_SEED;
     if (!game.market) game.market = emptyTieredMarket();
     if (!game.decks) game.decks = emptyTieredMarket();
     game.market = normalizeTieredMarket(game.market);
     game.decks = normalizeTieredDecks(game.decks);
     game.orient_market = normalizeTieredMarket(game.orient_market);
     game.orient_decks = normalizeTieredDecks(game.orient_decks);
+    game.deck_draw_state = game.deck_draw_state && typeof game.deck_draw_state === "object"
+      ? normalizeDeckDrawState(game.deck_draw_state)
+      : inferDeckDrawState(game);
     if (!game.market_slots || typeof game.market_slots !== "object") game.market_slots = createMarketSlots();
     ensureMarketSlotGroup(game, BASE_MARKET_ID, BASE_MARKET_SLOT_COUNT, game.market);
     ensureMarketSlotGroup(game, ORIENT_MARKET_ID, ORIENT_MARKET_SLOT_COUNT, game.orient_market);
@@ -2591,7 +2658,7 @@ Object.assign(I18N.de, {
       var generatedOrientDecks = false;
       [1, 2, 3].forEach(function (tier) {
         if (!orientWasInitialized && game.orient_market[tier].length === 0 && game.orient_decks[tier].length === 0) {
-          game.orient_decks[tier] = generateOrientDeck(tier, (Number(game.table_seed) || 9000) + 4000);
+          game.orient_decks[tier] = generateOrientDeck(tier);
           refillOrientMarket(game, tier);
           generatedOrientDecks = true;
         }
@@ -2701,18 +2768,24 @@ Object.assign(I18N.de, {
     });
     if (!hasUnknown) return;
     var seen = collectSeenCardsByTier(game);
-    var seed = randomSeed();
+    var seed = Number(game.table_seed) || DEFAULT_TABLE_SEED;
     game.table_seed = seed;
+    game.deck_draw_state = normalizeDeckDrawState(game.deck_draw_state);
     [1, 2, 3].forEach(function (tier) {
       var hiddenMarketSlots = [];
       (game.market[tier] || []).forEach(function (card, index) {
         if (isBgaHiddenCard(card)) hiddenMarketSlots.push(index);
       });
-      var candidates = shuffle((DEVELOPMENT_CARDS[tier] || []).filter(function (card) {
+      var candidates = (DEVELOPMENT_CARDS[tier] || []).filter(function (card) {
         return seen[tier].indexOf(card.id) < 0;
-      }).map(clone), seed + tier * 5099 + (Number(game.next_move_id) || 0) * 37);
+      }).map(clone);
+      game.decks[tier] = candidates;
+      game.deck_draw_state[BASE_MARKET_ID][tier] = Math.max(
+        game.deck_draw_state[BASE_MARKET_ID][tier] || 0,
+        TIER_SIZES[tier] - candidates.length
+      );
       hiddenMarketSlots.forEach(function (index) {
-        var replacement = candidates.pop();
+        var replacement = drawCardFromDeck(game, BASE_MARKET_ID, tier);
         if (replacement) {
           game.market[tier][index] = replacement;
           rememberSeenCard(game, replacement);
@@ -2720,7 +2793,6 @@ Object.assign(I18N.de, {
           game.market[tier].splice(index, 1);
         }
       });
-      game.decks[tier] = candidates;
     });
     game.bga_deck_unknown = false;
     game.bga_continued_deck_seed = seed;
@@ -2749,17 +2821,17 @@ Object.assign(I18N.de, {
   function createGame(playerCount, names, aiSettings, options) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
-    var tableSeed = randomSeed();
+    var tableSeed = Number(options && options.seed) || DEFAULT_TABLE_SEED;
     var ruleset = createRuleset(options || {});
     var decks = {
-      1: generateDeck(1, TIER_SIZES[1], tableSeed),
-      2: generateDeck(2, TIER_SIZES[2], tableSeed + 1009),
-      3: generateDeck(3, TIER_SIZES[3], tableSeed + 2003)
+      1: generateDeck(1, TIER_SIZES[1]),
+      2: generateDeck(2, TIER_SIZES[2]),
+      3: generateDeck(3, TIER_SIZES[3])
     };
     var orientDecks = orientEnabledForRuleset(ruleset) ? {
-      1: generateOrientDeck(1, tableSeed + 4001),
-      2: generateOrientDeck(2, tableSeed + 5003),
-      3: generateOrientDeck(3, tableSeed + 6007)
+      1: generateOrientDeck(1),
+      2: generateOrientDeck(2),
+      3: generateOrientDeck(3)
     } : emptyTieredMarket();
     var game = {
       schema: SCHEMA,
@@ -2795,6 +2867,7 @@ Object.assign(I18N.de, {
       market: { 1: [], 2: [], 3: [] },
       orient_decks: orientDecks,
       orient_market: emptyTieredMarket(),
+      deck_draw_state: createDeckDrawState(),
       market_slots: createMarketSlots(),
       strongholds: { placements: {} },
       seen_cards: emptySeenCards(),
@@ -2837,7 +2910,7 @@ Object.assign(I18N.de, {
 
   function refillMarket(game, tier) {
     while (game.market[tier].length < 4 && game.decks[tier].length > 0) {
-      game.market[tier].push(game.decks[tier].pop());
+      game.market[tier].push(drawCardFromDeck(game, BASE_MARKET_ID, tier));
     }
   }
 
@@ -2845,13 +2918,13 @@ Object.assign(I18N.de, {
     if (!game.orient_market) game.orient_market = emptyTieredMarket();
     if (!game.orient_decks) game.orient_decks = emptyTieredMarket();
     while (game.orient_market[tier].length < ORIENT_MARKET_SLOT_COUNT && game.orient_decks[tier].length > 0) {
-      game.orient_market[tier].push(game.orient_decks[tier].pop());
+      game.orient_market[tier].push(drawCardFromDeck(game, ORIENT_MARKET_ID, tier));
     }
   }
 
   function fillMarketSlot(game, tier, index) {
     if (!game || !game.market[tier]) return null;
-    var replacement = game.decks[tier] && game.decks[tier].length ? game.decks[tier].pop() : null;
+    var replacement = game.decks[tier] && game.decks[tier].length ? drawCardFromDeck(game, BASE_MARKET_ID, tier) : null;
     if (replacement) {
       game.market[tier][index] = replacement;
       rememberSeenCard(game, replacement);
@@ -2864,7 +2937,7 @@ Object.assign(I18N.de, {
 
   function fillOrientMarketSlot(game, tier, index) {
     if (!game || !game.orient_market || !game.orient_market[tier]) return null;
-    var replacement = game.orient_decks[tier] && game.orient_decks[tier].length ? game.orient_decks[tier].pop() : null;
+    var replacement = game.orient_decks[tier] && game.orient_decks[tier].length ? drawCardFromDeck(game, ORIENT_MARKET_ID, tier) : null;
     if (replacement) {
       game.orient_market[tier][index] = replacement;
       rememberSeenCard(game, replacement);
@@ -5864,9 +5937,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var decks = ref.marketId === ORIENT_MARKET_ID ? state.orient_decks : state.decks;
-    var deck = decks && decks[ref.tier] || [];
-    var card = deck.pop();
+    var card = drawCardFromDeck(state, ref.marketId, ref.tier);
     if (!card) {
       showMessage(t("msgDeckEmpty"));
       render();
@@ -7050,6 +7121,7 @@ Object.assign(I18N.de, {
       market: clone(game.market),
       market_slots: clone(game.market_slots || createMarketSlots()),
       orient_market: clone(game.orient_market || emptyTieredMarket()),
+      deck_draw_state: clone(normalizeDeckDrawState(game.deck_draw_state)),
       strongholds: clone(game.strongholds || { placements: {} }),
       nobles: clone(game.nobles),
       decks_remaining: {
@@ -7114,6 +7186,7 @@ Object.assign(I18N.de, {
       market_slots: clone(game.market_slots || createMarketSlots()),
       orient_decks: clone(game.orient_decks || emptyTieredMarket()),
       orient_market: clone(game.orient_market || emptyTieredMarket()),
+      deck_draw_state: clone(normalizeDeckDrawState(game.deck_draw_state)),
       strongholds: clone(game.strongholds || { placements: {} }),
       seen_cards: clone(collectSeenCardsByTier(game)),
       bga_deck_unknown: !!game.bga_deck_unknown,
@@ -7152,6 +7225,7 @@ Object.assign(I18N.de, {
       market: cloneOr(gamedatas.market, {}),
       market_slots: cloneOr(gamedatas.market_slots, gamedatas.source_state && gamedatas.source_state.market_slots || {}),
       orient_market: cloneOr(gamedatas.orient_market, gamedatas.source_state && gamedatas.source_state.orient_market || {}),
+      deck_draw_state: cloneOr(gamedatas.deck_draw_state, gamedatas.source_state && gamedatas.source_state.deck_draw_state || createDeckDrawState()),
       strongholds: cloneOr(gamedatas.strongholds, gamedatas.source_state && gamedatas.source_state.strongholds || { placements: {} }),
       nobles: cloneOr(gamedatas.nobles, []),
       decks_remaining: cloneOr(gamedatas.decks_remaining, {}),
