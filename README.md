@@ -4,7 +4,8 @@ Static personal homepage for ZephyrLabs projects.
 
 ## What It Contains
 
-- `index.html`: minimal ZephyrLabs landing page with Gem Table, BoardReplayLab, Bilibili links, and a short todo list.
+- `index.html`: minimal ZephyrLabs landing page with Gem Table, BoardReplayLab, Video Hub links, and a short todo list.
+- `videohub.html`: video index for match analysis and project notes.
 - `splendor-table.html`: Gem Table, an unofficial Splendor-style local table.
 - `splendor-table.js`: local game logic, replay import/export, BGA-style action logs, hot-seat play, and random AI fallback.
 - `splendor-table.css`: Gem Table layout and interaction styling.
@@ -21,7 +22,6 @@ Static personal homepage for ZephyrLabs projects.
 
 - [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): replay capture/conversion lab. The current Splendor module exports supported BGA replay data for Gem Table and AI workflows.
 - [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard): upstream board-game AI framework reference used by the Gem Table Smart AI deployment.
-- [Bilibili](https://space.bilibili.com/231033317?spm_id_from=333.40164.0.0): video index for match analysis and project notes.
 
 ## Local Preview
 
