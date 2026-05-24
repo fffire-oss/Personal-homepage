@@ -144,6 +144,8 @@
       paymentVirtualHint: "One Orient gold card may be discarded for up to 2 wild gold in this purchase.",
       paymentVirtualOverpayHint: "The Orient gold card has unused value. If a real token is not needed, tap it again to keep it.",
       orientNoChoices: "No legal Orient choice is available.",
+      orientDirectClickHint: "Click a highlighted market card to resolve this ability.",
+      orientCopyDirectClickHint: "Open your bonus preview, then click a highlighted purchased card to copy it.",
       strongholdActionTitle: "Stronghold move",
       strongholdActionBody: "After buying a card, place, move, or remove one stronghold.",
       strongholdPlace: "Place",
@@ -1575,7 +1577,9 @@ Object.assign(I18N.de, {
     orientPaymentDiscard: "\u5f03\u724c",
     orientDiscardPriorityHint: "\u5148\u5f03\u5e26\u4e07\u80fd\u6807\u8bb0\u7684\u724c\uff0c\u518d\u5f03\u666e\u901a\u724c\u3002",
     orientDiscardPriorityBadge: "\u5148",
-    orientNoChoices: "\u6ca1\u6709\u53ef\u9009\u7684\u4e1c\u65b9\u80fd\u529b\u76ee\u6807\u3002",
+      orientNoChoices: "\u6ca1\u6709\u53ef\u9009\u7684\u4e1c\u65b9\u80fd\u529b\u76ee\u6807\u3002",
+      orientDirectClickHint: "\u76f4\u63a5\u70b9\u51fb\u5e02\u573a\u91cc\u9ad8\u4eae\u7684\u5361\u724c\u6765\u7ed3\u7b97\u8fd9\u4e2a\u80fd\u529b\u3002",
+      orientCopyDirectClickHint: "\u6253\u5f00\u5956\u52b1\u9884\u89c8\uff0c\u7136\u540e\u76f4\u63a5\u70b9\u51fb\u9ad8\u4eae\u7684\u5df2\u8d2d\u5361\u6765\u590d\u5236\u3002",
     strongholdPlace: "\u653e\u7f6e",
     strongholdMove: "\u79fb\u52a8",
     strongholdRemove: "\u79fb\u9664",
@@ -1660,7 +1664,9 @@ Object.assign(I18N.de, {
     orientPaymentDiscard: "\u68c4\u724c",
     orientDiscardPriorityHint: "\u5148\u68c4\u5e36\u842c\u80fd\u6a19\u8a18\u7684\u724c\uff0c\u518d\u68c4\u666e\u901a\u724c\u3002",
     orientDiscardPriorityBadge: "\u5148",
-    orientNoChoices: "\u6c92\u6709\u53ef\u9078\u7684\u6771\u65b9\u80fd\u529b\u76ee\u6a19\u3002",
+      orientNoChoices: "\u6c92\u6709\u53ef\u9078\u7684\u6771\u65b9\u80fd\u529b\u76ee\u6a19\u3002",
+      orientDirectClickHint: "\u76f4\u63a5\u9ede\u64ca\u5e02\u5834\u88e1\u9ad8\u4eae\u7684\u5361\u724c\u4f86\u7d50\u7b97\u9019\u500b\u80fd\u529b\u3002",
+      orientCopyDirectClickHint: "\u6253\u958b\u734e\u52f5\u9810\u89bd\uff0c\u7136\u5f8c\u76f4\u63a5\u9ede\u64ca\u9ad8\u4eae\u7684\u5df2\u8cfc\u5361\u4f86\u8907\u88fd\u3002",
     strongholdPlace: "\u653e\u7f6e",
     strongholdMove: "\u79fb\u52d5",
     strongholdRemove: "\u79fb\u9664",
@@ -4250,8 +4256,10 @@ Object.assign(I18N.de, {
     });
     var title = t("bonusCardsTitle", { color: TOKEN_LABEL[color] });
     var body = cards.length ? cards.map(function (card) {
+      var copyChoice = orientCopyChoiceForPurchasedCard(player, card);
+      var copyAttrs = copyChoice ? ' data-orient-copy-card="' + escapeHtml(card.id) + '"' : "";
       return [
-        '<span class="bonus-card-row">',
+        '<span class="bonus-card-row' + (copyChoice ? " orient-copy-target" : "") + '"' + copyAttrs + '>',
         '<span class="bonus-card-main"><strong>' + escapeHtml(card.id) + '</strong><span>' + t("tier") + " " + card.tier + " / " + card.points + " " + t("prestige") + "</span></span>",
         '<span class="bonus-card-cost">' + costHtml(card.cost) + "</span>",
         "</span>"
@@ -4280,7 +4288,8 @@ Object.assign(I18N.de, {
       var previewAttrs = player ? ' data-bonus-preview-toggle="true" tabindex="0" role="button"' : "";
       var summary = bonusDisplaySummary(counts, player, color);
       var extraBadge = summary.extra > 0 ? '<span class="bonus-extra-badge">+' + summary.extra + "</span>" : "";
-      return '<span class="bonus-pill" data-color="' + color + '" data-bonus-cards="' + summary.cards + '" data-bonus-extra="' + summary.extra + '" data-bonus-total="' + summary.total + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + summary.total + " from " + summary.cards + " cards" + (summary.extra ? " plus " + summary.extra : "") + '"' + previewAttrs + '><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span class="bonus-count">' + summary.cards + "</span>" + extraBadge + bonusCardsPreviewHtml(player, color) + "</span>";
+      var copyColor = orientCopyChoiceForColor(player, color);
+      return '<span class="bonus-pill' + (copyColor ? " orient-copy-color" : "") + '" data-color="' + color + '" data-bonus-cards="' + summary.cards + '" data-bonus-extra="' + summary.extra + '" data-bonus-total="' + summary.total + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + summary.total + " from " + summary.cards + " cards" + (summary.extra ? " plus " + summary.extra : "") + '"' + previewAttrs + '><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span class="bonus-count">' + summary.cards + "</span>" + extraBadge + bonusCardsPreviewHtml(player, color) + "</span>";
     }).join("");
   }
 
@@ -4595,6 +4604,8 @@ Object.assign(I18N.de, {
     var strongholdBadge = strongholdBadgeHtml(strongholdSummary);
     var strongholdAttrs = strongholdDataAttrs(strongholdSummary);
     var strongholdTarget = controls.value ? ' data-stronghold-target="' + escapeHtml(controls.value) + '"' : "";
+    var orientFreeAttr = controls.orientFreeValue && !controls.orientChoiceDisabled ? ' data-orient-free-card="' + escapeHtml(controls.orientFreeValue) + '"' : "";
+    var orientChoiceReasonAttr = controls.orientChoiceReason ? ' data-orient-choice-reason="' + escapeHtml(controls.orientChoiceReason) + '"' : "";
     var slotAttr = controls.slotId ? ' data-market-slot-id="' + escapeHtml(controls.slotId) + '"' : "";
     var costRow = hasCost(card.cost) ? '<div class="cost-row">' + costHtml(card.cost) + "</div>" : "";
     var strongholdSelectedSource = state && state.awaitingStrongholdAction && state.awaitingStrongholdAction.selected_source_slot_id && controls.slotId === state.awaitingStrongholdAction.selected_source_slot_id;
@@ -4606,6 +4617,8 @@ Object.assign(I18N.de, {
     if (controls.conquestEligible) cardClasses.push("stronghold-conquest-target");
     if (controls.strongholdBlocked) cardClasses.push("stronghold-blocked");
     if (controls.strongholdActionKind) cardClasses.push("stronghold-action-" + controls.strongholdActionKind);
+    if (controls.orientChoiceTarget) cardClasses.push("orient-choice-target");
+    if (controls.orientChoiceDisabled) cardClasses.push("orient-choice-disabled");
     var actions = [];
     if (controls.buy) {
       var buyTitle = controls.buyDisabledReason ? ' title="' + escapeHtml(controls.buyDisabledReason) + '"' : "";
@@ -4615,7 +4628,7 @@ Object.assign(I18N.de, {
       actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + escapeHtml(t("reserveShort")) + "</button>");
     }
     return [
-      '<article class="' + cardClasses.join(" ") + '" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '"' + strongholdTarget + slotAttr + strongholdAttrs + ' style="' + gemStyle(card.color) + '">',
+      '<article class="' + cardClasses.join(" ") + '" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '"' + strongholdTarget + orientFreeAttr + orientChoiceReasonAttr + slotAttr + strongholdAttrs + ' style="' + gemStyle(card.color) + '">',
       '<h3><span class="card-title-main"><span class="card-title-line"><span class="card-tier-text">' + t("tier") + " " + card.tier + "</span>" + titleMarks + "</span>" + idHtml + '</span><span class="points">' + card.points + "</span></h3>",
       strongholdBadge,
       moduleBadge,
@@ -4738,6 +4751,7 @@ Object.assign(I18N.de, {
         var afford = affordability(active, card);
         var strongholdAccess = strongholdAccessStatus(slotId, state.current);
         var strongholdActionKind = strongholdActionKindForSlot(slotId, state.current);
+        var orientChoice = orientFreeChoiceForSlot(BASE_MARKET_ID, tier, index, slotId);
         return renderCard(card, {
           buy: "buy-market",
           reserve: "reserve-market",
@@ -4750,7 +4764,11 @@ Object.assign(I18N.de, {
           conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
           buyDisabled: !canAct() || !afford.ok || !strongholdAccess.ok,
           buyDisabledReason: strongholdAccess.reason,
-          reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok
+          reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok,
+          orientChoiceTarget: !!orientChoice,
+          orientChoiceDisabled: !!(orientChoice && !orientChoice.ok),
+          orientChoiceReason: orientChoice && orientChoice.reason,
+          orientFreeValue: orientChoice && orientChoice.value
         });
       }).join("");
       return [
@@ -4780,6 +4798,7 @@ Object.assign(I18N.de, {
         var strongholdAccess = strongholdAccessStatus(slotId, state.current);
         var strongholdActionKind = strongholdActionKindForSlot(slotId, state.current);
         var buyReason = abilityStatus.ok ? "" : t("msgOrientAbilityPending");
+        var orientChoice = orientFreeChoiceForSlot(ORIENT_MARKET_ID, tier, index, slotId);
         return renderCard(card, {
           buy: "buy-market",
           reserve: "reserve-market",
@@ -4793,7 +4812,11 @@ Object.assign(I18N.de, {
           statusText: abilityStatus.ok ? "" : abilityStatus.reason,
           buyDisabled: !canAct() || !afford.ok || !abilityStatus.ok || !strongholdAccess.ok,
           buyDisabledReason: strongholdAccess.reason || buyReason,
-          reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok
+          reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok,
+          orientChoiceTarget: !!orientChoice,
+          orientChoiceDisabled: !!(orientChoice && !orientChoice.ok),
+          orientChoiceReason: orientChoice && orientChoice.reason,
+          orientFreeValue: orientChoice && orientChoice.value
         });
       }).join("");
       var deckCount = state.orient_decks && state.orient_decks[tier] ? state.orient_decks[tier].length : 0;
@@ -5233,6 +5256,38 @@ Object.assign(I18N.de, {
     return choices;
   }
 
+  function orientFreeChoiceForSlot(marketId, tier, index, slotId) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    if (!action || !task || task.type !== "free_card") return null;
+    if ((Number(tier) || 0) !== (Number(task.tier) || 0)) return null;
+    var value = [marketId, tier, index].join(":");
+    var access = strongholdAccessStatus(slotId, state.current);
+    return {
+      value: value,
+      ok: !!access.ok,
+      reason: access.reason || t("strongholdBlocked")
+    };
+  }
+
+  function orientCopyChoiceForPurchasedCard(player, card) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    var active = activePlayer();
+    if (!action || !task || task.type !== "copy_bonus" || !player || !card || !active || player.id !== active.id) return false;
+    var target = findPlayerPurchasedCard(player, task.card_id);
+    if (!target) return false;
+    return orientCopyCandidates(player, target).some(function (candidate) {
+      return candidate && candidate.id === card.id;
+    });
+  }
+
+  function orientCopyChoiceForColor(player, color) {
+    return !!(player && player.purchased || []).some(function (card) {
+      return effectiveCardBonuses(card)[color] > 0 && orientCopyChoiceForPurchasedCard(player, card);
+    });
+  }
+
   function renderOrientCopyOptions(player, card) {
     var candidates = orientCopyCandidates(player, card);
     return candidates.map(function (candidate) {
@@ -5273,8 +5328,8 @@ Object.assign(I18N.de, {
       el.orientActionOptions.innerHTML = "";
       return;
     }
-    if (el.activeHandPanel) el.activeHandPanel.open = true;
     var task = orientCurrentTask();
+    if (el.activeHandPanel && (!task || (task.type !== "free_card" && task.type !== "copy_bonus"))) el.activeHandPanel.open = true;
     var player = activePlayer();
     var card = task && findPlayerPurchasedCard(player, task.card_id);
     var title = t("orientChoiceTitle");
@@ -5284,13 +5339,14 @@ Object.assign(I18N.de, {
       html = '<p class="muted compact">' + t("orientNoChoices") + "</p>";
     } else if (task.type === "copy_bonus") {
       body = t("msgOrientChooseCopy", { card: card.id });
-      html = renderOrientCopyOptions(player, card);
+      html = '<p class="orient-direct-choice-note">' + escapeHtml(t("orientCopyDirectClickHint")) + "</p>";
     } else if (task.type === "free_card") {
       body = t("msgOrientChooseFree", { tier: task.tier });
-      html = renderOrientFreeOptions(task.tier);
+      html = '<p class="orient-direct-choice-note">' + escapeHtml(t("orientDirectClickHint")) + "</p>";
     }
     if (el.orientActionTitle) el.orientActionTitle.textContent = title;
     if (el.orientActionSummary) el.orientActionSummary.textContent = body;
+    el.orientActionOptions.classList.toggle("orient-action-options-direct", !!(task && (task.type === "free_card" || task.type === "copy_bonus")));
     el.orientActionOptions.innerHTML = html;
   }
 
@@ -5934,6 +5990,9 @@ Object.assign(I18N.de, {
     document.documentElement.classList.toggle("game-active-root", !!state);
     document.body.classList.toggle("turn-locked", !!(state && (state.turnTransition || state.aiThinking)));
     document.body.classList.toggle("replay-mode", !!(state && state.mode === "replay"));
+    var currentOrientTask = orientCurrentTask();
+    document.body.classList.toggle("orient-free-selecting", !!(currentOrientTask && currentOrientTask.type === "free_card"));
+    document.body.classList.toggle("orient-copy-selecting", !!(currentOrientTask && currentOrientTask.type === "copy_bonus"));
     document.body.classList.toggle("stronghold-selecting", !!(state && state.awaitingStrongholdAction));
     document.body.classList.toggle("stronghold-conquest-selecting", !!(state && state.awaitingStrongholdConquest));
 
@@ -6315,7 +6374,7 @@ Object.assign(I18N.de, {
     };
     pendingOrientAction = state.awaitingOrientAction;
     pendingPayment = null;
-    showMessage(t("msgOrientAbilityPending"), "ok");
+    showMessage(queue[0].type === "free_card" ? t("msgOrientChooseFree", { tier: queue[0].tier }) : queue[0].type === "copy_bonus" ? t("msgOrientChooseCopy", { card: queue[0].card_id }) : t("msgOrientAbilityPending"), "ok");
     render();
   }
 
@@ -6324,7 +6383,7 @@ Object.assign(I18N.de, {
     if (!action) return;
     action.queue.shift();
     if (action.queue.length) {
-      showMessage(t("msgOrientAbilityPending"), "ok");
+      showMessage(action.queue[0].type === "free_card" ? t("msgOrientChooseFree", { tier: action.queue[0].tier }) : action.queue[0].type === "copy_bonus" ? t("msgOrientChooseCopy", { card: action.queue[0].card_id }) : t("msgOrientAbilityPending"), "ok");
       render();
       return;
     }
@@ -9051,6 +9110,37 @@ Object.assign(I18N.de, {
     scrollToGameTable();
   }
 
+  function replayUrlFromQuery() {
+    if (!window.URLSearchParams) return "";
+    var params = new URLSearchParams(window.location.search || "");
+    var value = params.get("replayUrl") || params.get("replay");
+    if (!value) return "";
+    try {
+      var url = new URL(value, window.location.origin);
+      if (url.origin !== window.location.origin) return "";
+      if (!/^\/api\/bga\/replay\//.test(url.pathname)) return "";
+      return url.pathname + url.search;
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function loadReplayFromQuery() {
+    var replayUrl = replayUrlFromQuery();
+    if (!replayUrl) return;
+    setStartMode("replay");
+    showStartMessage(t("msgBgaServerQueued", { table: "cache" }), "ok");
+    fetch(replayUrl, { cache: "no-store" }).then(function (response) {
+      if (!response.ok) throw new Error(String(response.status));
+      return response.json();
+    }).then(function (payload) {
+      loadReplayPayload(payload, "", true);
+    }).catch(function (error) {
+      showStartMessage(t("msgBgaServerFailed", { message: error && error.message || "unknown error" }));
+      render();
+    });
+  }
+
   function stepReplay(delta) {
     if (!replayData || state.mode !== "replay") return;
     if (state.turnTransition && state.turnTransition.replay) return;
@@ -9785,6 +9875,27 @@ Object.assign(I18N.de, {
           return;
         }
       }
+      if (state && state.awaitingOrientAction) {
+        var orientFreeTarget = event.target.closest("[data-orient-free-card]");
+        if (orientFreeTarget) {
+          event.preventDefault();
+          resolveOrientFreeCard(orientFreeTarget.dataset.orientFreeCard, orientFreeTarget);
+          return;
+        }
+        var orientBlockedTarget = event.target.closest(".orient-choice-disabled");
+        if (orientBlockedTarget) {
+          event.preventDefault();
+          showMessage(orientBlockedTarget.dataset.orientChoiceReason || t("strongholdBlocked"));
+          render();
+          return;
+        }
+        if (event.target.closest(".dev-card")) {
+          var task = orientCurrentTask();
+          if (task && task.type === "free_card") showMessage(t("msgOrientChooseFree", { tier: task.tier }), "ok");
+          event.preventDefault();
+          return;
+        }
+      }
       var reserveMarketButton = event.target.closest("[data-reserve-market]");
       var reserveDeckButton = event.target.closest("[data-reserve-deck]");
       var buyMarketButton = event.target.closest("[data-buy-market]");
@@ -9797,6 +9908,12 @@ Object.assign(I18N.de, {
       }
     });
     el.players.addEventListener("click", function (event) {
+      var orientCopyTarget = event.target.closest("[data-orient-copy-card]");
+      if (orientCopyTarget && state && state.awaitingOrientAction) {
+        event.preventDefault();
+        resolveOrientCopy(orientCopyTarget.dataset.orientCopyCard);
+        return;
+      }
       var bonusPreview = event.target.closest("[data-bonus-preview-toggle]");
       if (bonusPreview) {
         var bonusOpen = bonusPreview.classList.contains("preview-open");
@@ -9857,6 +9974,12 @@ Object.assign(I18N.de, {
       if (button) buyReserved(button.dataset.buyReserved, button);
     });
     el.activeBonusRow.addEventListener("click", function (event) {
+      var orientCopyTarget = event.target.closest("[data-orient-copy-card]");
+      if (orientCopyTarget && state && state.awaitingOrientAction) {
+        event.preventDefault();
+        resolveOrientCopy(orientCopyTarget.dataset.orientCopyCard);
+        return;
+      }
       var bonusPreview = event.target.closest("[data-bonus-preview-toggle]");
       if (!bonusPreview) return;
       var bonusOpen = bonusPreview.classList.contains("preview-open");
@@ -10089,6 +10212,7 @@ Object.assign(I18N.de, {
     renderNameFields();
     wireEvents();
     render();
+    loadReplayFromQuery();
 
     installDebugHooks();
   }
