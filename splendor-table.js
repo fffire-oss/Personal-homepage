@@ -2931,6 +2931,10 @@ Object.assign(I18N.de, {
     });
   }
 
+  function playerStrongholdSymbol(playerIndex) {
+    return String((Number(playerIndex) || 0) + 1);
+  }
+
   function canPlaceOrMoveStrongholdToSlot(game, slotId, playerIndex) {
     var holders = strongholdsAtSlot(game, slotId);
     if (holders.some(function (holder) { return holder !== playerIndex; })) return false;
@@ -4145,10 +4149,29 @@ Object.assign(I18N.de, {
     return t("orientAbilityPlaceholder");
   }
 
+  function orientAbilityShortLabel(ability) {
+    if (!ability) return "";
+    if (ability.effect === "double_bonus") return "2x";
+    if (ability.effect === "virtual_gold_placeholder" || ability.effect === "virtual_gold_2") return "Au2";
+    if (ability.effect === "copy_bonus") return "Copy";
+    if (ability.effect === "take_level_free") return "Free T" + (ability.free_tier || 1);
+    if (ability.effect === "fixed_bonus") return "";
+    return orientAbilityLabel({ module: ORIENT_MARKET_ID, abilities: [ability] });
+  }
+
+  function orientCardOrdinal(card) {
+    var tier = Number(card && card.tier) || 0;
+    var cards = ORIENT_CARDS[tier] || [];
+    var rawId = String(card && card.id || "");
+    var rawBgaId = String(card && card.bga_id || rawId.replace(/^orient-/, ""));
+    var index = cards.findIndex(function (entry) {
+      return entry && (entry.id === rawId || String(entry.bga_id || "") === rawBgaId);
+    });
+    return index >= 0 ? String(index + 1).padStart(2, "0") : rawBgaId;
+  }
+
   function orientCardDisplayId(card) {
-    var raw = String(card && card.id || "");
-    var suffix = raw.replace(/^orient-/, "");
-    return "orient-t" + (card && card.tier || "") + "-" + suffix;
+    return "orient-t" + (card && card.tier || "") + "-" + orientCardOrdinal(card);
   }
 
   function orientDiscardCostHtml(card) {
@@ -4163,17 +4186,26 @@ Object.assign(I18N.de, {
 
   function orientAbilityHtml(card) {
     if (!cardIsOrient(card)) return "";
-    return orientDiscardCostHtml(card) || '<span class="orient-ability-chip">' + escapeHtml(orientAbilityLabel(card)) + "</span>";
+    var discard = orientDiscardCostHtml(card);
+    if (discard) return discard;
+    var chips = orientCardAbilities(card).map(function (ability) {
+      var label = orientAbilityShortLabel(ability);
+      if (!label) return "";
+      var title = orientAbilityLabel({ module: ORIENT_MARKET_ID, abilities: [ability] });
+      return '<span class="orient-ability-chip" title="' + escapeHtml(title) + '">' + escapeHtml(label) + "</span>";
+    }).filter(Boolean);
+    return chips.length ? '<div class="orient-ability-row">' + chips.join("") + "</div>" : "";
   }
 
   function renderCard(card, controls) {
     controls = controls || {};
-    var buyAttr = controls.buy ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
-    var reserveAttr = controls.reserve ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
+    var buyAttr = controls.buy && !controls.buyDisabled ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
+    var reserveAttr = controls.reserve && !controls.reserveDisabled ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
     var afford = controls.afford;
     var affordText = controls.statusText || (afford ? (afford.ok ? t("affordable") : t("needTokens")) : "");
     var cardModule = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
-    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(orientCardDisplayId(card)) + "</span>" : "";
+    var moduleTitle = card && card.bga_id ? ' title="' + escapeHtml("BGA card id: " + card.bga_id) + '"' : "";
+    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge"' + moduleTitle + ">" + escapeHtml(orientCardDisplayId(card)) + "</span>" : "";
     var abilityBadge = cardModule === ORIENT_MARKET_ID ? orientAbilityHtml(card) : "";
     var strongholdBadge = (controls.strongholds || []).length ? '<div class="stronghold-stack">' + controls.strongholds.map(function (playerIndex) {
       var color = strongholdPlayerColor(playerIndex);
@@ -4405,11 +4437,20 @@ Object.assign(I18N.de, {
     el.market.innerHTML = renderBaseMarket();
   }
 
+  function syncMarketPageClasses() {
+    if (!el.market) return;
+    var orientEnabled = state && orientEnabledForRuleset(state.ruleset);
+    el.market.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+    el.market.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+    el.market.classList.toggle("market-has-orient", !!orientEnabled);
+  }
+
   function switchMarketPage(page) {
     if (!state || page === activeMarketPage) return;
     if (page === ORIENT_MARKET_ID && !orientEnabledForRuleset(state.ruleset)) return;
     activeMarketPage = page === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
-    render();
+    syncMarketPageClasses();
+    renderMarketTabs();
   }
 
   function handleMarketSwipeStart(event) {
