@@ -4346,10 +4346,11 @@ Object.assign(I18N.de, {
     var strongholdAttrs = strongholdDataAttrs(strongholdSummary);
     var strongholdTarget = controls.value ? ' data-stronghold-target="' + escapeHtml(controls.value) + '"' : "";
     var slotAttr = controls.slotId ? ' data-market-slot-id="' + escapeHtml(controls.slotId) + '"' : "";
-    var idHtml = cardModule === ORIENT_MARKET_ID ? "" : '<br><span class="card-id">' + card.id + "</span>";
     var costRow = hasCost(card.cost) ? '<div class="cost-row">' + costHtml(card.cost) + "</div>" : "";
     var strongholdSelectedSource = state && state.awaitingStrongholdAction && state.awaitingStrongholdAction.selected_source_slot_id && controls.slotId === state.awaitingStrongholdAction.selected_source_slot_id;
     var strongholdLockMark = controls.strongholdBlocked ? '<span class="stronghold-lock-text" title="' + escapeHtml(t("strongholdBlocked")) + '" aria-label="' + escapeHtml(t("strongholdBlocked")) + '">&#128274;</span>' : "";
+    var idHtml = cardModule === ORIENT_MARKET_ID ? "" : '<span class="card-id">' + card.id + "</span>";
+    var titleMarks = '<span class="card-title-marks">' + colorMarkHtml(card.color, "card-color-mark") + strongholdLockMark + "</span>";
     var cardClasses = ["dev-card"];
     if (strongholdSelectedSource) cardClasses.push("stronghold-selected-source");
     if (controls.conquestEligible) cardClasses.push("stronghold-conquest-target");
@@ -4365,7 +4366,7 @@ Object.assign(I18N.de, {
     }
     return [
       '<article class="' + cardClasses.join(" ") + '" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '"' + strongholdTarget + slotAttr + strongholdAttrs + ' style="' + gemStyle(card.color) + '">',
-      "<h3><span>" + t("tier") + " " + card.tier + " " + colorMarkHtml(card.color, "card-color-mark") + strongholdLockMark + idHtml + '</span><span class="points">' + card.points + "</span></h3>",
+      '<h3><span class="card-title-main"><span class="card-title-line"><span class="card-tier-text">' + t("tier") + " " + card.tier + "</span>" + titleMarks + "</span>" + idHtml + '</span><span class="points">' + card.points + "</span></h3>",
       strongholdBadge,
       moduleBadge,
       costRow,
