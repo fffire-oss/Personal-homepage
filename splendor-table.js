@@ -24,7 +24,7 @@
   var AI_MIN_THINK_MS = 2000;
   var REPLAY_STEP_DELAY_MS = 1800;
   var REPLAY_AUTO_DELAY_MS = 420;
-  var DEFAULT_TABLE_SEED = 20260524;
+  var LEGACY_TABLE_SEED_FALLBACK = 20260524;
   var marketOrientWrapSyncScheduled = false;
   var GEM_HEX = {
     white: "#f1eadb",
@@ -2422,6 +2422,20 @@ Object.assign(I18N.de, {
     return copy;
   }
 
+  function generateTableSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+      var values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0] >>> 0;
+    }
+    return (Date.now() ^ Math.floor(Math.random() * 4294967295)) >>> 0;
+  }
+
+  function normalizeTableSeed(value) {
+    var seed = Number(value);
+    return Number.isFinite(seed) ? seed >>> 0 : generateTableSeed();
+  }
+
   function generateDeck(tier, size) {
     var deck = (DEVELOPMENT_CARDS[tier] || []).map(clone);
     if (deck.length !== size && window.console && window.console.warn) {
@@ -2483,7 +2497,7 @@ Object.assign(I18N.de, {
 
   function deckDrawSeed(game, marketId, tier, drawIndex) {
     var tableSeed = Number(game && game.table_seed);
-    if (!Number.isFinite(tableSeed)) tableSeed = DEFAULT_TABLE_SEED;
+    if (!Number.isFinite(tableSeed)) tableSeed = LEGACY_TABLE_SEED_FALLBACK;
     var marketSalt = marketId === ORIENT_MARKET_ID ? 0x9e3779b9 : 0x85ebca6b;
     return (tableSeed + marketSalt + (Number(tier) || 1) * 100003 + (Number(drawIndex) || 0) * 9176) >>> 0;
   }
@@ -2640,7 +2654,7 @@ Object.assign(I18N.de, {
 
   function ensureMarketStructure(game) {
     if (!game) return game;
-    if (!Number.isFinite(Number(game.table_seed))) game.table_seed = DEFAULT_TABLE_SEED;
+    if (!Number.isFinite(Number(game.table_seed))) game.table_seed = generateTableSeed();
     if (!game.market) game.market = emptyTieredMarket();
     if (!game.decks) game.decks = emptyTieredMarket();
     game.market = normalizeTieredMarket(game.market);
@@ -2768,7 +2782,8 @@ Object.assign(I18N.de, {
     });
     if (!hasUnknown) return;
     var seen = collectSeenCardsByTier(game);
-    var seed = Number(game.table_seed) || DEFAULT_TABLE_SEED;
+    var existingSeed = Number(game.table_seed);
+    var seed = Number.isFinite(existingSeed) ? existingSeed : generateTableSeed();
     game.table_seed = seed;
     game.deck_draw_state = normalizeDeckDrawState(game.deck_draw_state);
     [1, 2, 3].forEach(function (tier) {
@@ -2821,7 +2836,7 @@ Object.assign(I18N.de, {
   function createGame(playerCount, names, aiSettings, options) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
-    var tableSeed = Number(options && options.seed) || DEFAULT_TABLE_SEED;
+    var tableSeed = normalizeTableSeed(options && options.seed);
     var ruleset = createRuleset(options || {});
     var decks = {
       1: generateDeck(1, TIER_SIZES[1]),
