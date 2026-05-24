@@ -4432,6 +4432,53 @@ body.hand-dock-entering .active-hand-panel {
   }
 }
 
+@media (max-width: 1180px) {
+  .market.market-has-orient {
+    overflow: hidden;
+  }
+
+  .market.market-has-orient .market-stack {
+    display: block;
+    overflow: visible;
+    transform: none;
+  }
+
+  .market.market-page-base .market-page-orient-panel,
+  .market.market-page-orient .market-page-base-panel {
+    display: none;
+  }
+
+  .market.market-page-base .market-page-base-panel,
+  .market.market-page-orient .market-page-orient-panel {
+    display: grid;
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .market-page {
+    grid-template-rows: none;
+  }
+
+  .market-page .tier,
+  .market-page-orient-panel .tier {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    height: auto;
+  }
+
+  .market-page .deck-box {
+    order: 1;
+    min-height: auto;
+    height: auto;
+  }
+
+  .market-page .card-grid {
+    order: 2;
+    min-height: 0;
+    height: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
