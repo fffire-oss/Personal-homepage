@@ -4458,6 +4458,11 @@ Object.assign(I18N.de, {
     if (!el.marketTabBase || !el.marketTabOrient) return;
     var orientEnabled = !!(state && orientEnabledForRuleset(state.ruleset));
     if (!orientEnabled && activeMarketPage === ORIENT_MARKET_ID) activeMarketPage = BASE_MARKET_ID;
+    if (el.marketTabs) {
+      el.marketTabs.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+      el.marketTabs.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+      el.marketTabs.classList.toggle("market-has-orient", orientEnabled);
+    }
     [
       [el.marketTabBase, BASE_MARKET_ID, true],
       [el.marketTabOrient, ORIENT_MARKET_ID, orientEnabled]
@@ -4613,6 +4618,15 @@ Object.assign(I18N.de, {
     el.market.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
     el.market.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
     el.market.classList.toggle("market-has-orient", !!orientEnabled);
+    if (el.marketTabs) {
+      el.marketTabs.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+      el.marketTabs.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+      el.marketTabs.classList.toggle("market-has-orient", !!orientEnabled);
+    }
+    var basePanel = el.market.querySelector(".market-page-base-panel");
+    var orientPanel = el.market.querySelector(".market-page-orient-panel");
+    if (basePanel) basePanel.setAttribute("aria-hidden", activeMarketPage === BASE_MARKET_ID ? "false" : "true");
+    if (orientPanel) orientPanel.setAttribute("aria-hidden", activeMarketPage === ORIENT_MARKET_ID ? "false" : "true");
   }
 
   function switchMarketPage(page) {
@@ -4623,22 +4637,57 @@ Object.assign(I18N.de, {
     renderMarketTabs();
   }
 
+  function marketSwipePoint(event) {
+    return event.touches && event.touches[0] || event.changedTouches && event.changedTouches[0] || event;
+  }
+
+  function clearMarketSwipeDrag() {
+    if (!el.market) return;
+    el.market.classList.remove("market-dragging");
+    el.market.style.removeProperty("--market-drag-x");
+  }
+
   function handleMarketSwipeStart(event) {
     if (!state || !orientEnabledForRuleset(state.ruleset)) return;
     if (!(window.matchMedia && window.matchMedia("(max-width: 1180px)").matches)) return;
-    var point = event.touches && event.touches[0] || event;
-    marketSwipeStart = { x: point.clientX, y: point.clientY };
+    if (event.type === "pointerdown" && event.button !== undefined && event.button !== 0) return;
+    var point = marketSwipePoint(event);
+    marketSwipeStart = { x: point.clientX, y: point.clientY, page: activeMarketPage, dragging: false };
+  }
+
+  function handleMarketSwipeMove(event) {
+    if (!marketSwipeStart || !el.market) return;
+    var point = marketSwipePoint(event);
+    var dx = point.clientX - marketSwipeStart.x;
+    var dy = point.clientY - marketSwipeStart.y;
+    var absDx = Math.abs(dx);
+    if (!marketSwipeStart.dragging && (absDx < 10 || absDx < Math.abs(dy) * 1.15)) return;
+    var width = el.market.getBoundingClientRect().width || window.innerWidth || 1;
+    var allowedDx = marketSwipeStart.page === BASE_MARKET_ID ? Math.min(0, dx) : Math.max(0, dx);
+    var clampedDx = Math.max(-width, Math.min(width, allowedDx));
+    marketSwipeStart.dragging = true;
+    el.market.classList.add("market-dragging");
+    el.market.style.setProperty("--market-drag-x", Math.round(clampedDx) + "px");
   }
 
   function handleMarketSwipeEnd(event) {
     if (!marketSwipeStart) return;
-    var point = event.changedTouches && event.changedTouches[0] || event;
+    var point = marketSwipePoint(event);
     var dx = point.clientX - marketSwipeStart.x;
     var dy = point.clientY - marketSwipeStart.y;
     marketSwipeStart = null;
-    if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.35) return;
+    if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.35) {
+      clearMarketSwipeDrag();
+      return;
+    }
     if (dx < 0) switchMarketPage(ORIENT_MARKET_ID);
     else switchMarketPage(BASE_MARKET_ID);
+    clearMarketSwipeDrag();
+  }
+
+  function handleMarketSwipeCancel() {
+    marketSwipeStart = null;
+    clearMarketSwipeDrag();
   }
 
   function reservedSourceText(card) {
@@ -8819,9 +8868,14 @@ Object.assign(I18N.de, {
     }
     if (el.market) {
       el.market.addEventListener("touchstart", handleMarketSwipeStart, { passive: true });
+      el.market.addEventListener("touchmove", handleMarketSwipeMove, { passive: true });
       el.market.addEventListener("touchend", handleMarketSwipeEnd, { passive: true });
+      el.market.addEventListener("touchcancel", handleMarketSwipeCancel, { passive: true });
       el.market.addEventListener("pointerdown", handleMarketSwipeStart);
+      el.market.addEventListener("pointermove", handleMarketSwipeMove);
       el.market.addEventListener("pointerup", handleMarketSwipeEnd);
+      el.market.addEventListener("pointercancel", handleMarketSwipeCancel);
+      el.market.addEventListener("pointerleave", handleMarketSwipeCancel);
     }
     el.languageSelect.addEventListener("change", function () {
       currentLocale = I18N[el.languageSelect.value] ? el.languageSelect.value : "en";
