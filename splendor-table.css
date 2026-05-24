@@ -3187,13 +3187,16 @@ body.hand-dock-entering .active-hand-panel {
 
 .active-reserved-item {
   display: grid;
+  grid-template-rows: 24px var(--active-reserved-card-height);
   gap: 8px;
   width: min(160px, 100%);
 }
 
 .active-reserved .dev-card {
+  block-size: var(--active-reserved-card-height);
   height: var(--active-reserved-card-height);
   min-height: var(--active-reserved-card-height);
+  max-height: var(--active-reserved-card-height);
 }
 
 .active-reserved .dev-card h3 {
@@ -3202,8 +3205,10 @@ body.hand-dock-entering .active-hand-panel {
 
 .active-reserved .dev-card[data-card-module="orient"] {
   gap: 3px;
+  block-size: var(--active-reserved-card-height);
   height: var(--active-reserved-card-height);
   min-height: var(--active-reserved-card-height);
+  max-height: var(--active-reserved-card-height);
 }
 
 .active-reserved .dev-card[data-card-module="orient"] .card-module-badge {
@@ -3252,6 +3257,7 @@ body.hand-dock-entering .active-hand-panel {
 .reserve-origin {
   width: fit-content;
   max-width: none;
+  height: 24px;
   min-height: 24px;
   padding: 4px 8px;
   border: 1px solid var(--line);
@@ -4435,6 +4441,14 @@ body.hand-dock-entering .active-hand-panel {
     font-size: 0.58rem;
   }
 
+  .market .dev-card[data-card-module="orient"] .card-actions button[data-short-label] {
+    font-size: 0;
+  }
+
+  .market .dev-card[data-card-module="orient"] .card-actions button[data-short-label]::after {
+    font-size: 0.58rem;
+  }
+
   .player-setup-row {
     grid-template-columns: 1fr;
   }
@@ -4579,19 +4593,24 @@ body.hand-dock-entering .active-hand-panel {
   }
 
   .active-reserved-item {
+    grid-template-rows: 24px var(--active-reserved-card-height);
     width: 100%;
   }
 
   .active-reserved .dev-card {
+    block-size: var(--active-reserved-card-height);
     height: var(--active-reserved-card-height);
     min-height: var(--active-reserved-card-height);
+    max-height: var(--active-reserved-card-height);
     padding: 5px;
   }
 
   .active-reserved .dev-card[data-card-module="orient"] {
     gap: 2px;
+    block-size: var(--active-reserved-card-height);
     height: var(--active-reserved-card-height);
     min-height: var(--active-reserved-card-height);
+    max-height: var(--active-reserved-card-height);
   }
 
   .active-reserved .dev-card[data-card-module="orient"] h3 {
