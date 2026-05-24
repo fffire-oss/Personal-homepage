@@ -5416,8 +5416,8 @@ Object.assign(I18N.de, {
     ].join("");
   }
 
-  function strongholdConquestOptionsHtml() {
-    var choices = strongholdConquestChoices(state, state.current);
+  function strongholdConquestOptionsHtml(conquest) {
+    var choices = strongholdConquestChoices(state, strongholdConquestPlayerIndex(conquest), conquest && conquest.targets);
     var choiceHtml = choices.length
       ? choices.map(strongholdConquestChoiceButton).join("")
       : '<div class="stronghold-selection-hint">' + escapeHtml(t("strongholdNoLegalTarget")) + "</div>";
@@ -5441,7 +5441,7 @@ Object.assign(I18N.de, {
       if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdConquestTitle");
       if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = t("strongholdConquestBody");
       if (el.strongholdActionOptions) {
-        el.strongholdActionOptions.innerHTML = strongholdConquestOptionsHtml();
+        el.strongholdActionOptions.innerHTML = strongholdConquestOptionsHtml(conquest);
       }
       return;
     }
@@ -6814,9 +6814,59 @@ Object.assign(I18N.de, {
     resolveConquestOrTokenCapOrTurn(type, args, actor);
   }
 
-  function strongholdConquestChoices(game, playerIndex) {
+  function strongholdConquestTargetFromRef(ref) {
+    return ref ? {
+      marketId: ref.marketId,
+      tier: ref.tier,
+      index: ref.index,
+      slotId: ref.slotId,
+      card_id: ref.card && ref.card.id || ""
+    } : null;
+  }
+
+  function refFromStrongholdConquestTarget(game, target) {
+    if (!game || !target) return null;
+    var ref = {
+      marketId: target.marketId || BASE_MARKET_ID,
+      tier: Number(target.tier) || 1,
+      index: Number(target.index) || 0
+    };
+    ref.card = marketCardAt(game, ref);
+    ref.slotId = target.slotId || marketSlotId(game, ref.marketId, ref.tier, ref.index);
+    if (target.card_id && ref.card && ref.card.id !== target.card_id) return null;
+    return ref.card ? ref : null;
+  }
+
+  function strongholdConquestCandidateRefs(game, targets) {
+    if (!Array.isArray(targets) || !targets.length) return marketRefsForStrongholds(game);
+    return targets.map(function (target) {
+      return refFromStrongholdConquestTarget(game, target);
+    }).filter(Boolean);
+  }
+
+  function strongholdConquestPlayerIndex(conquest) {
+    if (!state || !Array.isArray(state.players)) return 0;
+    var stored = Number(conquest && conquest.player_index);
+    if (Number.isInteger(stored) && state.players[stored]) return stored;
+    var actorId = conquest && conquest.actor && conquest.actor.id;
+    if (actorId) {
+      var actorIndex = state.players.findIndex(function (player) {
+        return String(player.id) === String(actorId);
+      });
+      if (actorIndex >= 0) return actorIndex;
+    }
+    return state.current;
+  }
+
+  function syncCurrentForStrongholdConquest(conquest) {
+    var playerIndex = strongholdConquestPlayerIndex(conquest);
+    if (state && state.players[playerIndex]) state.current = playerIndex;
+    return playerIndex;
+  }
+
+  function strongholdConquestChoices(game, playerIndex, targets) {
     if (!strongholdsEnabledForRuleset(game.ruleset)) return [];
-    return marketRefsForStrongholds(game).filter(function (ref) {
+    return strongholdConquestCandidateRefs(game, targets).filter(function (ref) {
       var card = marketCardAt(game, ref);
       if (!card || !strongholdConquestSlotEligible(game, ref.slotId, playerIndex)) return false;
       var player = game.players[playerIndex];
@@ -6831,7 +6881,10 @@ Object.assign(I18N.de, {
     state.awaitingStrongholdConquest = {
       move_type: parentAction.move_type,
       args: clone(parentAction.args || {}),
-      actor: clone(parentAction.actor || { id: activePlayer().id, name: activePlayer().name })
+      actor: clone(parentAction.actor || { id: activePlayer().id, name: activePlayer().name }),
+      player_index: playerIndex,
+      player_id: state.players[playerIndex] && state.players[playerIndex].id || "",
+      targets: choices.map(strongholdConquestTargetFromRef).filter(Boolean)
     };
     showMessage(t("strongholdConquestBody"), "ok");
     saveState();
@@ -6842,6 +6895,7 @@ Object.assign(I18N.de, {
   function skipStrongholdConquest() {
     var conquest = state && state.awaitingStrongholdConquest;
     if (!conquest) return;
+    syncCurrentForStrongholdConquest(conquest);
     state.awaitingStrongholdConquest = null;
     showMessage("");
     resolveTokenCapOrNoblesOrTurn(conquest.move_type, conquest.args || {}, conquest.actor || { id: activePlayer().id, name: activePlayer().name });
@@ -6850,10 +6904,11 @@ Object.assign(I18N.de, {
   function beginStrongholdConquestPayment(value, trigger) {
     var conquest = state && state.awaitingStrongholdConquest;
     if (!conquest) return false;
+    var playerIndex = syncCurrentForStrongholdConquest(conquest);
     var ref = parseMarketActionValue(value);
     var card = marketCardAt(state, ref);
     var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
-    if (!card || !strongholdConquestSlotEligible(state, slotId, state.current)) {
+    if (!card || !strongholdConquestSlotEligible(state, slotId, playerIndex)) {
       showMessage(t("strongholdNoLegalTarget"));
       render();
       return true;
@@ -7651,6 +7706,78 @@ Object.assign(I18N.de, {
       gamedatas: compactGamedatasForExport(payload.gamedatas),
       moves: compactMovesForExport(payload.moves)
     };
+  }
+
+  function replayPayloadLooksBgaDerived(payload) {
+    if (!payload) return false;
+    if (payload.bga_table_id) return true;
+    var label = [payload.source, payload.source_schema].map(function (value) {
+      return String(value || "");
+    }).join(" ");
+    return /boardgamearena|boardreplaylab|\bbga\b/i.test(label);
+  }
+
+  function replayPlayerOrderFromGamedatas(gamedatas) {
+    var source = gamedatas && gamedatas.source_state;
+    if (source && Array.isArray(source.players) && source.players.length) {
+      return source.players.map(function (player) {
+        return player && player.id;
+      }).filter(Boolean);
+    }
+    if (Array.isArray(gamedatas && gamedatas.playerorder) && gamedatas.playerorder.length) {
+      return gamedatas.playerorder.slice();
+    }
+    var players = gamedatas && gamedatas.players || {};
+    return Object.keys(players);
+  }
+
+  function replayPlayerIndexLookup(playerOrder) {
+    var lookup = {};
+    (playerOrder || []).forEach(function (playerId, index) {
+      lookup[String(playerId)] = index;
+    });
+    return lookup;
+  }
+
+  function replayRoundFromGamedatas(gamedatas) {
+    var source = gamedatas && gamedatas.source_state;
+    return Math.max(1, Number(source && source.round) || Number(gamedatas && gamedatas.table && gamedatas.table.round) || 1);
+  }
+
+  function writeReplayTurnProgress(gamedatas, playerOrder, playerIndex, round) {
+    if (!gamedatas || playerIndex < 0) return;
+    var playerId = playerOrder[playerIndex] || null;
+    if (gamedatas.source_state) {
+      gamedatas.source_state.current = playerIndex;
+      gamedatas.source_state.round = round;
+    }
+    gamedatas.table = gamedatas.table || {};
+    gamedatas.table.round = round;
+    if (playerId) {
+      gamedatas.table.current_player_id = playerId;
+      gamedatas.table.active_player_id = playerId;
+      gamedatas.gamestate = gamedatas.gamestate || {};
+      gamedatas.gamestate.active_player = playerId;
+    }
+  }
+
+  function normalizeBgaReplayTurnProgress(compactPayload, sourcePayload) {
+    if (!compactPayload || !Array.isArray(compactPayload.moves) || !replayPayloadLooksBgaDerived(sourcePayload)) return compactPayload;
+    var playerOrder = replayPlayerOrderFromGamedatas(compactPayload.gamedatas);
+    if (!playerOrder.length) return compactPayload;
+    var playerIndexById = replayPlayerIndexLookup(playerOrder);
+    var round = replayRoundFromGamedatas(compactPayload.gamedatas);
+    var lastPlayerIndex = null;
+    compactPayload.moves.forEach(function (move) {
+      var playerIndex = playerIndexById[String(move && move.player_id || "")];
+      if (!Number.isInteger(playerIndex)) return;
+      if (lastPlayerIndex !== null && playerIndex !== lastPlayerIndex && playerIndex < lastPlayerIndex) {
+        round += 1;
+      }
+      lastPlayerIndex = playerIndex;
+      writeReplayTurnProgress(move.state_after, playerOrder, playerIndex, round);
+    });
+    return compactPayload;
   }
 
   function compactStateForPersistence(game) {
@@ -8499,6 +8626,25 @@ Object.assign(I18N.de, {
     return players.slice(0, 4);
   }
 
+  function createBgaReplayTurnTracker(game) {
+    return {
+      round: Math.max(1, Number(game && game.round) || 1),
+      lastPlayerIndex: null
+    };
+  }
+
+  function syncBgaReplayTurnProgress(game, player, tracker) {
+    if (!game || !player || !tracker) return;
+    var playerIndex = game.players.indexOf(player);
+    if (playerIndex < 0) return;
+    if (tracker.lastPlayerIndex !== null && playerIndex !== tracker.lastPlayerIndex && playerIndex < tracker.lastPlayerIndex) {
+      tracker.round += 1;
+    }
+    tracker.lastPlayerIndex = playerIndex;
+    game.current = playerIndex;
+    game.round = tracker.round;
+  }
+
   function bgaDeckPlaceholders(tier, count) {
     var cards = [];
     for (var index = 0; index < Math.max(0, Number(count) || 0); index += 1) {
@@ -8925,11 +9071,13 @@ Object.assign(I18N.de, {
     });
     applyBgaInitialGamedatas(game, initialBgaGamedatas);
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
+    var turnTracker = createBgaReplayTurnTracker(game);
 
     groupBgaPacketsByMove(data.logs).forEach(function (group) {
       var converted = applyBgaMoveGroup(game, group, playerLookup, initialBgaGamedatas);
       if (!converted) return;
       var actor = converted.player;
+      syncBgaReplayTurnProgress(game, actor, turnTracker);
       var move = {
         move_id: game.next_move_id,
         type: converted.type,
@@ -9123,7 +9271,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var compactPayload = compactReplayPayload(payload);
+    var compactPayload = normalizeBgaReplayTurnProgress(compactReplayPayload(payload), payload);
     if (!compactPayload || !compactPayload.gamedatas || !Array.isArray(compactPayload.moves)) {
       if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
       else showMessage(t("msgLoadReplayExpected"));
