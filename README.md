@@ -41,11 +41,10 @@ The homepage is designed as static HTML/CSS/JS. The production domain may also r
 
 Gem Table Smart AI uses [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard) behind the same-origin `/api/dinoboard` reverse proxy. The server-side AI runtime is separate from this static homepage:
 
-- Homepage static files are served from `<site-root>`; production should continue syncing this repository's `main` branch after the PR is merged.
-- DinoBoard is deployed separately at `<dinoboard-root>`.
-- The DinoBoard FastAPI process runs privately on `127.0.0.1:8001` through `dinoboard-ai.service`.
-- Caddy exposes only the same-origin route `/api/dinoboard/*` and proxies it to `127.0.0.1:8001`.
-- Before ICP approval, test through `https://<your-domain>`; after the domain is available, keep the same reverse-proxy handler under the domain site.
+- Homepage static files can be served from any chosen site root and synced from this repository's `main` branch.
+- DinoBoard is deployed separately as a private local service.
+- The AI service should bind only to loopback and be exposed through the same-origin `/api/dinoboard/*` route.
+- Do not commit raw production network addresses, cookies, SSH paths, account names, or other private deployment values.
 - AI abuse protection is implemented in DinoBoard FastAPI rate limits plus a `fail2ban` jail that watches `RATE_LIMIT` journal lines.
 
-See [DinoBoard AI deployment](docs/dinoboard-ai-deployment.md) for the exact systemd unit, Caddy block, runtime dependency install, rate limits, fail2ban rules, and AI strength tiers.
+See [DinoBoard AI deployment](docs/dinoboard-ai-deployment.md) for sanitized systemd/Caddy templates, runtime dependency install, rate limits, fail2ban rules, and AI strength tiers.
