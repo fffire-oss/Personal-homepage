@@ -2285,6 +2285,10 @@ body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
 }
 
 .orient-ability-chip {
+  height: 19px;
+  max-height: 19px;
+  flex: 0 0 auto;
+  align-self: flex-start;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2352,6 +2356,8 @@ body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
 .orient-ability-row {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: 4px;
   min-width: 0;
 }
@@ -2401,6 +2407,9 @@ body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
 }
 
 .market .dev-card[data-card-module="orient"] .orient-ability-chip {
+  height: 16px;
+  max-height: 16px;
+  align-self: flex-start;
   min-height: 16px;
   padding: 0 4px;
   font-size: 0.48rem;
@@ -3239,6 +3248,8 @@ body.hand-dock-entering .active-hand-panel {
 
 .active-reserved .dev-card[data-card-module="orient"] .orient-ability-row {
   flex-wrap: nowrap;
+  align-items: flex-start;
+  align-content: flex-start;
   gap: 3px;
   row-gap: 2px;
   overflow: hidden;
@@ -3246,6 +3257,9 @@ body.hand-dock-entering .active-hand-panel {
 
 .active-reserved .dev-card[data-card-module="orient"] .orient-ability-chip {
   flex: 0 0 auto;
+  height: 16px;
+  max-height: 16px;
+  align-self: flex-start;
   max-width: calc(50% - 2px);
   min-height: 16px;
   padding: 0 4px;
@@ -4347,13 +4361,19 @@ body.hand-dock-entering .active-hand-panel {
 
   .market .dev-card[data-card-module="orient"] .orient-ability-row {
     flex-wrap: nowrap;
+    align-items: flex-start;
+    align-content: flex-start;
     gap: 2px;
     overflow: hidden;
     min-height: 14px;
+    max-height: 14px;
   }
 
   .market .dev-card[data-card-module="orient"] .orient-ability-chip {
     flex: 0 0 auto;
+    height: 14px;
+    max-height: 14px;
+    align-self: flex-start;
     max-width: calc(50% - 1px);
     min-height: 14px;
     padding: 0 2px;
@@ -4644,11 +4664,17 @@ body.hand-dock-entering .active-hand-panel {
   }
 
   .active-reserved .dev-card[data-card-module="orient"] .orient-ability-row {
+    align-items: flex-start;
+    align-content: flex-start;
     gap: 2px;
     min-height: 14px;
+    max-height: 14px;
   }
 
   .active-reserved .dev-card[data-card-module="orient"] .orient-ability-chip {
+    height: 14px;
+    max-height: 14px;
+    align-self: flex-start;
     min-height: 14px;
     padding: 0 2px;
     font-size: 0.4rem;
@@ -4661,6 +4687,26 @@ body.hand-dock-entering .active-hand-panel {
 }
 
 @media (hover: none), (pointer: coarse), (max-width: 760px) {
+  .dev-card:hover {
+    border-color: color-mix(in srgb, var(--gem), transparent 42%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.12),
+      0 16px 38px rgba(0, 0, 0, 0.24);
+    transform: none;
+  }
+
+  .dev-card:hover::before {
+    opacity: 0;
+    transform: translateX(-24%);
+  }
+
+  .dev-card:hover .card-affordability,
+  .dev-card:focus-within .card-affordability {
+    opacity: 0;
+    filter: none;
+    transform: translateY(5px) scale(0.98);
+  }
+
   .reserve-badge:hover .reserve-preview,
   .reserve-badge:focus-within .reserve-preview,
   .log-card-badge:hover .reserve-preview,
