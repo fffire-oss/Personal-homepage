@@ -2361,7 +2361,50 @@ body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
 }
 
 .market .dev-card[data-card-module="orient"] {
+  gap: 3px;
   min-height: 0;
+}
+
+.market .dev-card[data-card-module="orient"] h3 {
+  line-height: 1.08;
+}
+
+.market .dev-card[data-card-module="orient"] .card-module-badge {
+  height: 17px;
+  min-height: 17px;
+  padding: 0 4px;
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+.market .dev-card[data-card-module="orient"] .cost-row {
+  gap: 3px;
+  row-gap: 2px;
+}
+
+.market .dev-card[data-card-module="orient"] .cost-pill {
+  min-height: 16px;
+  padding: 0 4px;
+  gap: 3px;
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.market .dev-card[data-card-module="orient"] .cost-pill .gem-dot {
+  width: 8px;
+  height: 8px;
+}
+
+.market .dev-card[data-card-module="orient"] .orient-ability-row {
+  gap: 3px;
+  row-gap: 2px;
+}
+
+.market .dev-card[data-card-module="orient"] .orient-ability-chip {
+  min-height: 16px;
+  padding: 0 4px;
+  font-size: 0.48rem;
+  line-height: 1;
 }
 
 .dev-card[data-card-module="orient"] .card-actions {
@@ -4240,19 +4283,45 @@ body.hand-dock-entering .active-hand-panel {
     flex-wrap: nowrap;
     gap: 2px;
     overflow: hidden;
+    min-height: 14px;
   }
 
   .market .dev-card[data-card-module="orient"] .orient-ability-chip {
     flex: 0 0 auto;
-    min-height: 15px;
+    max-width: calc(50% - 1px);
+    min-height: 14px;
     padding: 0 2px;
-    font-size: 0.43rem;
+    font-size: 0.39rem;
     letter-spacing: 0;
+    line-height: 1;
     white-space: nowrap;
+  }
+
+  .market .dev-card[data-card-module="orient"] {
+    gap: 2px;
+    padding: 4px;
+  }
+
+  .market .dev-card[data-card-module="orient"] h3 {
+    gap: 3px;
+    font-size: 0.58rem;
+    line-height: 1.04;
+  }
+
+  .market .dev-card[data-card-module="orient"] .card-module-badge {
+    height: 14px;
+    min-height: 14px;
+    padding: 0 3px;
+    font-size: 0.43rem;
   }
 
   .cost-row {
     gap: 3px;
+  }
+
+  .market .dev-card[data-card-module="orient"] .cost-row {
+    gap: 2px;
+    row-gap: 1px;
   }
 
   .cost-pill {
@@ -4262,9 +4331,25 @@ body.hand-dock-entering .active-hand-panel {
     font-size: 0.56rem;
   }
 
-  .cost-dot {
+  .cost-pill .gem-dot {
     width: 7px;
     height: 7px;
+  }
+
+  .market .dev-card[data-card-module="orient"] .cost-pill {
+    min-height: 14px;
+    padding: 0 2px;
+    gap: 2px;
+    font-size: 0.49rem;
+  }
+
+  .market .dev-card[data-card-module="orient"] .cost-pill .gem-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .market .dev-card[data-card-module="orient"] .card-actions {
+    gap: 3px;
   }
 
   .card-affordability {
@@ -4282,6 +4367,12 @@ body.hand-dock-entering .active-hand-panel {
   .card-actions button {
     min-height: 24px;
     padding: 0 3px;
+  }
+
+  .market .dev-card[data-card-module="orient"] .card-actions button {
+    min-height: 22px;
+    padding: 0 2px;
+    font-size: 0.58rem;
   }
 
   .player-setup-row {
