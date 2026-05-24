@@ -18,7 +18,7 @@
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
-  var TURN_SWITCH_READY_MS = 2000;
+  var TURN_SWITCH_READY_MS = 3000;
   var HAND_DOCK_RETRACT_MS = 260;
   var HAND_DOCK_REENTER_MS = 360;
   var AI_MIN_THINK_MS = 2000;
@@ -98,7 +98,7 @@
       move: "Move",
       aiPlayers: "AI players",
       aiUnavailableTitle: "DinoBoard AI",
-      aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
+      aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
       returnTokens: "Return tokens",
       returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
       chooseOneNoble: "Choose one noble",
@@ -267,8 +267,8 @@
       msgDeckEmpty: "That deck is empty.",
       msgNotEnoughForCard: "Not enough tokens or gold for that card.",
       msgOrientAbilityPending: "Resolve the pending Orient ability first.",
-      msgOrientCopyNeedsBonus: "This Orient card must copy one of your existing bonus cards.",
-      msgOrientDiscardNeedsCards: "This Orient card requires discarding {count} {color} development cards.",
+      msgOrientCopyNeedsBonus: "Copy a bonus first.",
+      msgOrientDiscardNeedsCards: "Discard {count} {color} cards first.",
       msgOrientChooseCopy: "Choose a card for {card} to copy.",
       msgOrientChooseFree: "Choose a free tier {tier} card.",
       msgChoosePayment: "Choose the payment for {card}.",
@@ -375,7 +375,7 @@
     move: "步数",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须归还宝石，直到持有数量不超过 10 个，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -454,7 +454,7 @@
     clearSave: "清除存檔",
     currentPlayer: "當前玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u53ea\u652f\u63f4 2 \u4eba\u57fa\u790e\u7248\u7480\u74a8\u5bf6\u77f3\uff1b\u64f4\u5145\u5c40\u66ab\u6642\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
     noTakeSelected: "尚未選擇拿取。",
     selectedTokens: "已選擇：{tokens}。合法拿取為 3 個不同顏色，或從數量不少於 4 的同色堆拿 2 個。",
     confirmTake: "確認拿取",
@@ -502,7 +502,7 @@
     move: "手番",
     aiPlayers: "AI プレイヤー",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
+    aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは所持トークンが10個以下になるまで返してから、貴族または次の手番を解決します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -588,7 +588,7 @@
     move: "Coup",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs. Si plusieurs sieges utilisent l'IA, le premier siege choisi utilise DinoBoard et les autres utilisent l'IA aleatoire.",
+    aiUnavailableBody: "DinoBoard AI prend seulement en charge le jeu de base a 2 joueurs. Les extensions utilisent l'IA aleatoire pour l'instant.",
     returnTokens: "Rendre des jetons",
     chooseOneNoble: "Choisir un noble",
     bank: "Banque",
@@ -667,7 +667,7 @@
     move: "Zug",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische aktiv. Wenn mehrere Sitze KI verwenden, nutzt der zuerst ausgewaehlte Sitz DinoBoard und die anderen nutzen Zufalls-KI.",
+    aiUnavailableBody: "DinoBoard AI unterstuetzt derzeit nur das 2-Spieler-Basisspiel. Erweiterungen nutzen vorerst Zufalls-KI.",
     returnTokens: "Marker zurückgeben",
     chooseOneNoble: "Einen Adligen wählen",
     bank: "Bank",
@@ -739,7 +739,7 @@
     move: "Movimiento",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores. Si varios asientos usan IA, el primer asiento elegido usa DinoBoard y los demas usan IA aleatoria.",
+    aiUnavailableBody: "DinoBoard AI solo admite partidas base de 2 jugadores. Las expansiones usan IA aleatoria por ahora.",
     returnTokens: "Devolver fichas",
     chooseOneNoble: "Elegir un noble",
     bank: "Banco",
@@ -845,7 +845,7 @@
     move: "\u6b65\u6570",
     aiPlayers: "AI \u73a9\u5bb6",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
     bank: "\u94f6\u884c",
     confirmTake: "\u786e\u8ba4\u62ff\u53d6",
     clear: "\u6e05\u9664",
@@ -879,7 +879,7 @@
     currentPlayer: "\u7576\u524d\u73a9\u5bb6",
     restartGame: "\u91cd\u65b0\u958b\u59cb",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u53ea\u652f\u63f4 2 \u4eba\u57fa\u790e\u7248\u7480\u74a8\u5bf6\u77f3\uff1b\u64f4\u5145\u5c40\u66ab\u6642\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
     actionLog: "\u884c\u52d5\u65e5\u8a8c",
     privateHand: "\u79c1\u4eba\u624b\u724c",
     buy: "\u8cfc\u8cb7",
@@ -981,7 +981,7 @@
     aiBadgeFormat: "DinoBoard AI\uff1a{level}",
     randomAiBadgeFormat: "\u968f\u673a AI\uff1a{level}",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须把宝石归还到 10 枚或更少，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -1122,7 +1122,7 @@
     move: "步數",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u53ea\u652f\u63f4 2 \u4eba\u57fa\u790e\u7248\u7480\u74a8\u5bf6\u77f3\uff1b\u64f4\u5145\u5c40\u66ab\u6642\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
     gameAiThinking: "AI \u601d\u8003\u4e2d",
     gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
     msgSwitchingPlayer: "\u672c\u56de\u5408\u7d50\u675f\uff0c{seconds} \u79d2\u5f8c\u5207\u63db\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
@@ -1212,7 +1212,7 @@
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "AIプレイヤー",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
+    aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは、貴族判定または次の手番に進む前にトークンを10個以下まで返します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -1284,7 +1284,7 @@
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs. Si plusieurs sieges utilisent l'IA, le premier siege choisi utilise DinoBoard et les autres utilisent l'IA aleatoire.",
+    aiUnavailableBody: "DinoBoard AI prend seulement en charge le jeu de base a 2 joueurs. Les extensions utilisent l'IA aleatoire pour l'instant.",
     returnTokens: "Rendre des jetons",
     returnTokensBody: "Le joueur actif doit revenir a 10 jetons ou moins avant les nobles ou le prochain tour.",
     chooseOneNoble: "Choisir un noble",
@@ -1345,7 +1345,7 @@ Object.assign(I18N.de, {
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische aktiv. Wenn mehrere Sitze KI verwenden, nutzt der zuerst ausgewaehlte Sitz DinoBoard und die anderen nutzen Zufalls-KI.",
+    aiUnavailableBody: "DinoBoard AI unterstuetzt derzeit nur das 2-Spieler-Basisspiel. Erweiterungen nutzen vorerst Zufalls-KI.",
     returnTokens: "Marker zurueckgeben",
     returnTokensBody: "Der aktive Spieler muss auf 10 oder weniger Marker zurueckgeben, bevor Adlige oder der naechste Zug abgewickelt werden.",
     chooseOneNoble: "Einen Adligen waehlen",
@@ -1402,7 +1402,7 @@ Object.assign(I18N.de, {
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores. Si varios asientos usan IA, el primer asiento elegido usa DinoBoard y los demas usan IA aleatoria.",
+    aiUnavailableBody: "DinoBoard AI solo admite partidas base de 2 jugadores. Las expansiones usan IA aleatoria por ahora.",
     returnTokens: "Devolver fichas",
     returnTokensBody: "El jugador activo debe devolver fichas hasta tener 10 o menos antes de resolver nobles o el siguiente turno.",
     chooseOneNoble: "Elegir un noble",
@@ -1547,8 +1547,8 @@ Object.assign(I18N.de, {
     orientPaymentDiscard: "\u5f03\u724c",
     orientNoChoices: "\u6ca1\u6709\u53ef\u9009\u7684\u4e1c\u65b9\u80fd\u529b\u76ee\u6807\u3002",
     msgOrientAbilityPending: "\u8bf7\u5148\u7ed3\u7b97\u5f85\u5904\u7406\u7684\u4e1c\u65b9\u80fd\u529b\u3002",
-    msgOrientCopyNeedsBonus: "\u8fd9\u5f20\u4e1c\u65b9\u724c\u9700\u8981\u590d\u5236\u4f60\u5df2\u6709\u7684\u52a0\u6210\u724c\u3002",
-    msgOrientDiscardNeedsCards: "\u8fd9\u5f20\u4e1c\u65b9\u724c\u9700\u8981\u5f03 {count} \u5f20 {color} \u53d1\u5c55\u724c\u3002",
+    msgOrientCopyNeedsBonus: "\u5148\u590d\u5236\u4e00\u5f20\u52a0\u6210\u724c\u3002",
+    msgOrientDiscardNeedsCards: "\u5148\u5f03 {count} \u5f20 {color} \u724c\u3002",
     msgOrientChooseCopy: "\u4e3a {card} \u9009\u62e9\u8981\u590d\u5236\u7684\u724c\u3002",
     msgOrientChooseFree: "\u9009\u62e9\u4e00\u5f20\u514d\u8d39 {tier} \u7ea7\u724c\u3002"
   });
@@ -1623,8 +1623,8 @@ Object.assign(I18N.de, {
     orientPaymentDiscard: "\u68c4\u724c",
     orientNoChoices: "\u6c92\u6709\u53ef\u9078\u7684\u6771\u65b9\u80fd\u529b\u76ee\u6a19\u3002",
     msgOrientAbilityPending: "\u8acb\u5148\u7d50\u7b97\u5f85\u8655\u7406\u7684\u6771\u65b9\u80fd\u529b\u3002",
-    msgOrientCopyNeedsBonus: "\u9019\u5f35\u6771\u65b9\u724c\u9700\u8981\u8907\u88fd\u4f60\u5df2\u6709\u7684\u52a0\u6210\u724c\u3002",
-    msgOrientDiscardNeedsCards: "\u9019\u5f35\u6771\u65b9\u724c\u9700\u8981\u68c4 {count} \u5f35 {color} \u767c\u5c55\u724c\u3002",
+    msgOrientCopyNeedsBonus: "\u5148\u8907\u88fd\u4e00\u5f35\u52a0\u6210\u724c\u3002",
+    msgOrientDiscardNeedsCards: "\u5148\u68c4 {count} \u5f35 {color} \u724c\u3002",
     msgOrientChooseCopy: "\u70ba {card} \u9078\u64c7\u8981\u8907\u88fd\u7684\u724c\u3002",
     msgOrientChooseFree: "\u9078\u64c7\u4e00\u5f35\u514d\u8cbb {tier} \u7d1a\u724c\u3002"
   });
@@ -1721,6 +1721,7 @@ Object.assign(I18N.de, {
   var replayJumpClickValue = null;
   var activeMarketPage = BASE_MARKET_ID;
   var overlayRefreshTimer = null;
+  var overlayProgressFrame = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
   var tapPreviewIgnoreCloseUntil = 0;
@@ -1844,6 +1845,10 @@ Object.assign(I18N.de, {
 
   function strongholdsEnabledForRuleset(ruleset) {
     return normalizeRuleset(ruleset).modules.strongholds === true;
+  }
+
+  function dinoBoardSupportsRuleset(ruleset) {
+    return activeRulesetModules(ruleset).length === 0;
   }
 
   function ensureStateRuleset(game) {
@@ -2454,6 +2459,7 @@ Object.assign(I18N.de, {
           return sum + (ORIENT_CARDS[tier] || []).length;
         }, 0),
         market_slot_count: ORIENT_MARKET_SLOT_COUNT,
+        deck_initialized: false,
         event_schema: MOVE_EVENT_SCHEMA
       },
       strongholds: {
@@ -2470,12 +2476,19 @@ Object.assign(I18N.de, {
     var base = createModuleState(game.ruleset);
     var existing = game.module_state && typeof game.module_state === "object" ? game.module_state : {};
     var orient = existing.orient && typeof existing.orient === "object" ? existing.orient : {};
+    var strongholds = existing.strongholds && typeof existing.strongholds === "object" ? existing.strongholds : {};
     game.module_state = {
       orient: Object.assign({}, base.orient, orient, {
         enabled: base.orient.enabled,
         status: base.orient.enabled ? (orient.status === "placeholder_market" ? "supported" : orient.status || "supported") : "disabled",
         catalog_schema: ORIENT_CATALOG_SCHEMA,
         market_slot_count: ORIENT_MARKET_SLOT_COUNT,
+        event_schema: MOVE_EVENT_SCHEMA
+      }),
+      strongholds: Object.assign({}, base.strongholds, strongholds, {
+        enabled: base.strongholds.enabled,
+        status: base.strongholds.enabled ? (strongholds.status || "supported") : "disabled",
+        tokens_per_player: 3,
         event_schema: MOVE_EVENT_SCHEMA
       })
     };
@@ -2515,6 +2528,34 @@ Object.assign(I18N.de, {
     });
   }
 
+  function tieredCardsHaveAny(value) {
+    return [1, 2, 3].some(function (tier) {
+      var cards = value && (value[tier] || value[String(tier)]);
+      return Array.isArray(cards) && cards.some(Boolean);
+    });
+  }
+
+  function orientDecksAlreadyInitialized(game) {
+    if (!game) return false;
+    var orientState = game.module_state && game.module_state.orient || {};
+    return orientState.deck_initialized === true ||
+      tieredCardsHaveAny(game.orient_market) ||
+      tieredCardsHaveAny(game.orient_decks) ||
+      Number(game.next_move_id || 1) > 1 ||
+      !!game.bga_deck_unknown;
+  }
+
+  function setOrientDecksInitialized(game) {
+    if (!game) return;
+    if (!game.module_state || typeof game.module_state !== "object") {
+      game.module_state = createModuleState(game.ruleset);
+    }
+    if (!game.module_state.orient || typeof game.module_state.orient !== "object") {
+      game.module_state.orient = createModuleState(game.ruleset).orient;
+    }
+    game.module_state.orient.deck_initialized = true;
+  }
+
   function ensureMarketStructure(game) {
     if (!game) return game;
     if (!game.market) game.market = emptyTieredMarket();
@@ -2527,12 +2568,16 @@ Object.assign(I18N.de, {
     ensureMarketSlotGroup(game, BASE_MARKET_ID, BASE_MARKET_SLOT_COUNT, game.market);
     ensureMarketSlotGroup(game, ORIENT_MARKET_ID, ORIENT_MARKET_SLOT_COUNT, game.orient_market);
     if (orientEnabledForRuleset(game.ruleset)) {
+      var orientWasInitialized = orientDecksAlreadyInitialized(game);
+      var generatedOrientDecks = false;
       [1, 2, 3].forEach(function (tier) {
-        if (game.orient_market[tier].length === 0 && game.orient_decks[tier].length === 0) {
+        if (!orientWasInitialized && game.orient_market[tier].length === 0 && game.orient_decks[tier].length === 0) {
           game.orient_decks[tier] = generateOrientDeck(tier, (Number(game.table_seed) || 9000) + 4000);
           refillOrientMarket(game, tier);
+          generatedOrientDecks = true;
         }
       });
+      if (generatedOrientDecks || orientWasInitialized) setOrientDecksInitialized(game);
     }
     return game;
   }
@@ -2759,6 +2804,7 @@ Object.assign(I18N.de, {
       rememberSeenCards(game, game.market[tier]);
       if (orientEnabledForRuleset(game.ruleset)) refillOrientMarket(game, tier);
     });
+    if (orientEnabledForRuleset(game.ruleset)) setOrientDecksInitialized(game);
     game.log.unshift("Started " + playerCount + "-player local table.");
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
     return game;
@@ -2818,6 +2864,14 @@ Object.assign(I18N.de, {
       tier: Number(parts.length === 3 ? parts[1] : parts[0]),
       index: Number(parts.length === 3 ? parts[2] : parts[1])
     };
+  }
+
+  function parseDeckActionValue(value) {
+    var parts = String(value || "").split(":");
+    if (parts.length >= 2 && parts[0] === ORIENT_MARKET_ID) {
+      return { marketId: ORIENT_MARKET_ID, tier: Number(parts[1]) || 1 };
+    }
+    return { marketId: BASE_MARKET_ID, tier: Number(parts[0]) || 1 };
   }
 
   function marketCardAt(game, ref) {
@@ -3218,7 +3272,7 @@ Object.assign(I18N.de, {
   }
 
   function dinoBoardAiSeatFor(game) {
-    if (!game || game.players.length !== 2) return -1;
+    if (!game || game.players.length !== 2 || !dinoBoardSupportsRuleset(game.ruleset)) return -1;
     var seats = enabledAiSeats(game);
     if (!seats.length) return -1;
     seats.sort(function (a, b) {
@@ -3925,6 +3979,21 @@ Object.assign(I18N.de, {
     return selected;
   }
 
+  function paymentTokenUsefulMax(context, payment, color) {
+    if (!context || !context.player || !context.card || ALL_TOKENS.indexOf(color) < 0) return 0;
+    var selected = paymentSelectedTokenCounts(payment);
+    var needs = paymentNeeds(context.player, context.card);
+    var available = Number(context.player.tokens[color]) || 0;
+    if (color !== "gold") return Math.min(available, needs[color] || 0);
+    var coloredCovered = COLORS.reduce(function (sum, neededColor) {
+      return sum + Math.min(Number(selected[neededColor]) || 0, needs[neededColor] || 0);
+    }, 0);
+    var totalNeed = COLORS.reduce(function (sum, neededColor) {
+      return sum + (needs[neededColor] || 0);
+    }, 0);
+    return Math.min(available, Math.max(0, totalNeed - coloredCovered));
+  }
+
   function normalizePaymentPlan(player, card, payment) {
     var needs = paymentNeeds(player, card);
     var normalized = emptyPaymentPlan();
@@ -4076,13 +4145,20 @@ Object.assign(I18N.de, {
     return t("orientAbilityPlaceholder");
   }
 
+  function orientCardDisplayId(card) {
+    var raw = String(card && card.id || "");
+    var suffix = raw.replace(/^orient-/, "");
+    return "orient-t" + (card && card.tier || "") + "-" + suffix;
+  }
+
   function orientDiscardCostHtml(card) {
     var discardCost = orientDiscardCost(card);
     if (!discardCost) return "";
     var tiles = Array.from({ length: discardCost.count }).map(function () {
       return '<span class="requirement-tile orient-discard-tile" data-color="' + discardCost.color + '" style="' + gemStyle(discardCost.color) + '"><span></span></span>';
     }).join("");
-    return '<span class="orient-ability-chip orient-discard-chip"><span>' + escapeHtml(t("orientDiscardCost", { count: discardCost.count })) + '</span><span class="orient-discard-icons">' + tiles + "</span></span>";
+    var title = t("msgOrientDiscardNeedsCards", { count: discardCost.count, color: TOKEN_LABEL[discardCost.color] });
+    return '<span class="orient-ability-chip orient-discard-chip" title="' + escapeHtml(title) + '"><span class="orient-discard-icons">' + tiles + "</span></span>";
   }
 
   function orientAbilityHtml(card) {
@@ -4097,7 +4173,7 @@ Object.assign(I18N.de, {
     var afford = controls.afford;
     var affordText = controls.statusText || (afford ? (afford.ok ? t("affordable") : t("needTokens")) : "");
     var cardModule = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
-    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(t("orientModule") + " " + card.id) + "</span>" : "";
+    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(orientCardDisplayId(card)) + "</span>" : "";
     var abilityBadge = cardModule === ORIENT_MARKET_ID ? orientAbilityHtml(card) : "";
     var strongholdBadge = (controls.strongholds || []).length ? '<div class="stronghold-stack">' + controls.strongholds.map(function (playerIndex) {
       var color = strongholdPlayerColor(playerIndex);
@@ -4108,9 +4184,11 @@ Object.assign(I18N.de, {
     var idHtml = cardModule === ORIENT_MARKET_ID ? "" : '<br><span class="card-id">' + card.id + "</span>";
     var costRow = hasCost(card.cost) ? '<div class="cost-row">' + costHtml(card.cost) + "</div>" : "";
     var strongholdSelectedSource = state && state.awaitingStrongholdAction && state.awaitingStrongholdAction.selected_source_slot_id && controls.slotId === state.awaitingStrongholdAction.selected_source_slot_id;
+    var strongholdLockBadge = controls.strongholdBlocked ? '<span class="stronghold-lock-badge">' + escapeHtml(t("strongholdBlocked")) + "</span>" : "";
     var cardClasses = ["dev-card"];
     if (strongholdSelectedSource) cardClasses.push("stronghold-selected-source");
     if (controls.conquestEligible) cardClasses.push("stronghold-conquest-target");
+    if (controls.strongholdBlocked) cardClasses.push("stronghold-blocked");
     var actions = [];
     if (controls.buy) {
       var buyTitle = controls.buyDisabledReason ? ' title="' + escapeHtml(controls.buyDisabledReason) + '"' : "";
@@ -4123,6 +4201,7 @@ Object.assign(I18N.de, {
       '<article class="' + cardClasses.join(" ") + '" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '"' + strongholdTarget + slotAttr + ' style="' + gemStyle(card.color) + '">',
       "<h3><span>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + idHtml + '</span><span class="points">' + card.points + "</span></h3>",
       strongholdBadge,
+      strongholdLockBadge,
       moduleBadge,
       costRow,
       abilityBadge,
@@ -4240,6 +4319,7 @@ Object.assign(I18N.de, {
           slotId: slotId,
           afford: afford,
           strongholds: strongholdsAtSlot(state, slotId),
+          strongholdBlocked: !strongholdAccess.ok,
           conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
           buyDisabled: !canAct() || !afford.ok || !strongholdAccess.ok,
           buyDisabledReason: strongholdAccess.reason,
@@ -4278,6 +4358,7 @@ Object.assign(I18N.de, {
           slotId: slotId,
           afford: afford,
           strongholds: strongholdsAtSlot(state, slotId),
+          strongholdBlocked: !strongholdAccess.ok,
           conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
           statusText: abilityStatus.ok ? "" : abilityStatus.reason,
           buyDisabled: !canAct() || !afford.ok || !abilityStatus.ok || !strongholdAccess.ok,
@@ -4292,7 +4373,7 @@ Object.assign(I18N.de, {
         '<span class="label">' + t("orientModule") + " " + t("tier") + " " + tier + "</span>",
         "<strong>" + deckCount + "</strong>",
         '<span class="muted compact">' + t("deckCards") + "</span>",
-        '<span class="muted compact">' + escapeHtml(deckSlotIdFor(ORIENT_MARKET_ID, tier)) + "</span>",
+        '<button type="button" data-reserve-deck="' + ORIENT_MARKET_ID + ":" + tier + '" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + (!canAct() || active.reserved.length >= 3 || deckCount === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
         "</div>",
         '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
         "</section>"
@@ -4506,8 +4587,10 @@ Object.assign(I18N.de, {
     var tokenButtons = ALL_TOKENS.map(function (color) {
       var available = Number(player.tokens[color]) || 0;
       var chosen = Number(selected[color]) || 0;
+      var usefulMax = paymentTokenUsefulMax(context, payment, color);
+      var disabled = available <= 0 || (chosen <= 0 && usefulMax <= 0);
       return [
-        '<button type="button" class="payment-token-choice ' + (chosen ? "active" : "") + '" data-payment-token-color="' + color + '" data-color="' + color + '" style="' + gemStyle(color) + '" ' + (available <= 0 ? "disabled" : "") + ">",
+        '<button type="button" class="payment-token-choice ' + (chosen ? "active" : "") + '" data-payment-token-color="' + color + '" data-color="' + color + '" style="' + gemStyle(color) + '" ' + (disabled ? "disabled" : "") + ">",
         '<span class="token payment-token-dot" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + "</span>",
         '<span class="payment-token-count">' + chosen + "/" + available + "</span>",
         "</button>"
@@ -4682,9 +4765,18 @@ Object.assign(I18N.de, {
       return;
     }
     var action = state && state.awaitingStrongholdAction;
+    if (action) {
+      el.strongholdActionPanel.hidden = false;
+      if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdActionTitle");
+      if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = strongholdActionPrompt();
+      if (el.strongholdActionOptions) {
+        el.strongholdActionOptions.innerHTML = '<div class="stronghold-selection-hint">' + escapeHtml(strongholdActionPrompt()) + "</div>";
+      }
+      if (!messageText) showMessage(strongholdActionPrompt(), "ok");
+      return;
+    }
     el.strongholdActionPanel.hidden = true;
     if (el.strongholdActionOptions) el.strongholdActionOptions.innerHTML = "";
-    if (action && !messageText) showMessage(strongholdActionPrompt(), "ok");
   }
 
   function strongholdActionPrompt() {
@@ -4897,7 +4989,9 @@ Object.assign(I18N.de, {
   }
 
   function replayDeckElement(tier) {
-    var button = document.querySelector('[data-reserve-deck="' + tier + '"]');
+    var ref = parseDeckActionValue(tier);
+    var value = ref.marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID + ":" + ref.tier : String(ref.tier);
+    var button = document.querySelector('[data-reserve-deck="' + value.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]');
     return button && button.closest(".deck-box") || null;
   }
 
@@ -4952,7 +5046,7 @@ Object.assign(I18N.de, {
       targetSelector = ".bank-tokens";
     } else if (move.type === "reserveDeck") {
       color = "gold";
-      source = replayDeckElement(args.tier) || el.market;
+      source = replayDeckElement(args.market_id === ORIENT_MARKET_ID ? ORIENT_MARKET_ID + ":" + args.tier : args.tier) || el.market;
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".reserved-list");
     } else if (move.type === "reserveMarket") {
       color = args.card && args.card.color || "gold";
@@ -5436,20 +5530,29 @@ Object.assign(I18N.de, {
 
   function reserveDeck(tier, trigger) {
     if (!canAct()) return;
+    var ref = parseDeckActionValue(tier);
     var player = activePlayer();
     if (player.reserved.length >= 3) {
       showMessage(t("msgReserveLimit"));
       render();
       return;
     }
-    var card = state.decks[tier].pop();
+    var decks = ref.marketId === ORIENT_MARKET_ID ? state.orient_decks : state.decks;
+    var deck = decks && decks[ref.tier] || [];
+    var card = deck.pop();
     if (!card) {
       showMessage(t("msgDeckEmpty"));
       render();
       return;
     }
     queueFlightFromElement(trigger && trigger.closest(".deck-box"), "gold", t("blind"), playerPanelTarget(".reserved-list"));
-    reserveCard(player, card, "reserveDeck", { card_id: card.id, card: card, tier: tier, market_id: BASE_MARKET_ID, deck_slot_id: deckSlotIdFor(BASE_MARKET_ID, tier) });
+    reserveCard(player, card, "reserveDeck", {
+      card_id: card.id,
+      card: card,
+      tier: ref.tier,
+      market_id: ref.marketId,
+      deck_slot_id: deckSlotIdFor(ref.marketId, ref.tier)
+    });
   }
 
   function reserveCard(player, card, type, args) {
@@ -5681,9 +5784,10 @@ Object.assign(I18N.de, {
     }
     var payment = pendingPayment.payment;
     if (!payment.selected_tokens) payment.selected_tokens = emptyCounts(true);
-    var max = Number(context.player.tokens[color]) || 0;
+    var max = paymentTokenUsefulMax(context, payment, color);
     var current = Number(payment.selected_tokens[color]) || 0;
-    payment.selected_tokens[color] = max > 0 ? (current + 1) % (max + 1) : 0;
+    if (max <= 0 && current <= 0) return;
+    payment.selected_tokens[color] = current >= max ? 0 : current + 1;
     pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
     showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
     render();
@@ -6233,6 +6337,15 @@ Object.assign(I18N.de, {
     return !!(state && state.turnTransition && !state.turnTransition.replay && Date.now() >= (state.turnTransition.ready_at || state.turnTransition.until || 0));
   }
 
+  function transitionProgress() {
+    if (!state || !state.turnTransition) return 1;
+    var started = Date.parse(state.turnTransition.started_at || "");
+    var until = Number(state.turnTransition.until) || Date.now();
+    if (!Number.isFinite(started)) started = until - TURN_SWITCH_READY_MS;
+    var total = Math.max(1, until - started);
+    return Math.max(0, Math.min(1, 1 - ((until - Date.now()) / total)));
+  }
+
   function replayStepSecondsRemaining() {
     if (!state || !state.turnTransition || !state.turnTransition.replay) return 0;
     return transitionSecondsRemaining();
@@ -6248,6 +6361,10 @@ Object.assign(I18N.de, {
       window.clearTimeout(overlayRefreshTimer);
       overlayRefreshTimer = null;
     }
+    if (overlayProgressFrame) {
+      window.cancelAnimationFrame(overlayProgressFrame);
+      overlayProgressFrame = null;
+    }
   }
 
   function scheduleOverlayRefresh() {
@@ -6257,6 +6374,26 @@ Object.assign(I18N.de, {
       overlayRefreshTimer = null;
       render();
     }, 240);
+  }
+
+  function scheduleHandoffProgressFrame() {
+    if (overlayProgressFrame) return;
+    var tick = function () {
+      overlayProgressFrame = null;
+      if (!state || !state.turnTransition || state.turnTransition.replay || !el.handoffContinue || el.handoffContinue.hidden) return;
+      var seconds = transitionSecondsRemaining();
+      var ring = el.handoffContinue.querySelector(".handoff-continue-ring");
+      if (ring) {
+        ring.style.setProperty("--handoff-progress", transitionProgress().toFixed(4));
+        var label = ring.querySelector("span");
+        if (label) label.textContent = String(seconds);
+      }
+      if (el.handoffBody) el.handoffBody.textContent = t("msgSwitchingPlayer", { seconds: seconds });
+      if (state && state.turnTransition && Date.now() < (state.turnTransition.until || Date.now())) {
+        overlayProgressFrame = window.requestAnimationFrame(tick);
+      }
+    };
+    overlayProgressFrame = window.requestAnimationFrame(tick);
   }
 
   function renderHandoffOverlay() {
@@ -6271,28 +6408,41 @@ Object.assign(I18N.de, {
       return;
     }
     var seconds = mode === "ai" ? aiThinkingSecondsRemaining() : transitionSecondsRemaining();
-    var ready = mode === "turn" && turnTransitionReady();
     var player = mode === "ai" && state.players[state.current] ? state.players[state.current].name : "";
     el.handoffTitle.textContent = mode === "ai" ? t("gameAiThinking") : mode === "replay" ? t("gameReplayStep") : t("gameTurnTransition");
     el.handoffBody.textContent = mode === "ai"
       ? t("msgAiThinking", { player: player })
       : mode === "replay"
         ? t("msgReplayStepAnimating", { move: state.turnTransition.move_id || "", seconds: seconds })
-        : ready ? t("msgSwitchingReady") : t("msgSwitchingPlayer", { seconds: seconds });
+        : t("msgSwitchingPlayer", { seconds: seconds });
     if (el.handoffAction) {
       el.handoffAction.innerHTML = mode === "turn" || mode === "replay" ? renderTransitionAction(state.turnTransition) : "";
     }
     if (el.handoffCountdown) {
       el.handoffCountdown.textContent = String(seconds);
-      el.handoffCountdown.hidden = ready;
+      el.handoffCountdown.hidden = mode === "turn";
     }
     if (el.handoffContinue) {
-      el.handoffContinue.hidden = !ready;
+      if (mode === "turn") {
+        el.handoffContinue.innerHTML = [
+          '<span class="handoff-continue-ring" style="--handoff-progress:' + transitionProgress().toFixed(3) + '"><span>' + seconds + "</span></span>",
+          '<span>' + escapeHtml(t("handoffContinue")) + "</span>"
+        ].join("");
+      }
+      el.handoffContinue.hidden = mode !== "turn";
       el.handoffContinue.disabled = turnSwitchInProgress;
     }
     el.handoffOverlay.hidden = false;
     el.handoffOverlay.classList.toggle("ai-thinking", mode === "ai");
-    scheduleOverlayRefresh();
+    if (mode === "turn") {
+      if (overlayRefreshTimer) {
+        window.clearTimeout(overlayRefreshTimer);
+        overlayRefreshTimer = null;
+      }
+      scheduleHandoffProgressFrame();
+    } else {
+      scheduleOverlayRefresh();
+    }
   }
 
   function scheduleTurnTransitionTimer() {
@@ -6301,11 +6451,10 @@ Object.assign(I18N.de, {
       return;
     }
     if (turnAdvanceTimer) return;
-    var remaining = Math.max(0, (state.turnTransition.ready_at || state.turnTransition.until || Date.now()) - Date.now());
-    if (!remaining) return;
+    var remaining = Math.max(0, (state.turnTransition.until || Date.now()) - Date.now());
     turnAdvanceTimer = window.setTimeout(function () {
       turnAdvanceTimer = null;
-      render();
+      completeTurnTransition();
     }, remaining);
   }
 
@@ -6329,11 +6478,6 @@ Object.assign(I18N.de, {
   function completeTurnTransition() {
     clearTurnAdvanceTimer();
     if (!state || !state.turnTransition || state.mode === "replay" || turnSwitchInProgress) return;
-    if (!turnTransitionReady()) {
-      scheduleTurnTransitionTimer();
-      render();
-      return;
-    }
     var transition = clone(state.turnTransition);
     turnSwitchInProgress = true;
     document.body.classList.remove("hand-dock-entering");
@@ -7343,6 +7487,7 @@ Object.assign(I18N.de, {
         });
       }
     });
+    if (orientEnabledForRuleset(game.ruleset)) setOrientDecksInitialized(game);
     game.bga_deck_unknown = true;
     game.nobles = bgaObjectValues(market.nobles).map(function (entry) {
       return bgaNobleFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, {});
@@ -8530,7 +8675,7 @@ Object.assign(I18N.de, {
       if (reserveMarketButton) {
         reserveMarket(reserveMarketButton.dataset.reserveMarket, reserveMarketButton);
       } else if (reserveDeckButton) {
-        reserveDeck(Number(reserveDeckButton.dataset.reserveDeck), reserveDeckButton);
+        reserveDeck(reserveDeckButton.dataset.reserveDeck, reserveDeckButton);
       } else if (buyMarketButton) {
         buyMarket(buyMarketButton.dataset.buyMarket, buyMarketButton);
       }
