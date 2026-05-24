@@ -1859,8 +1859,10 @@ body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
 }
 
 .stronghold-lock-text {
-  display: inline-block;
-  margin-left: 4px;
+  display: inline-grid;
+  flex: 0 0 auto;
+  margin-left: 0;
+  place-items: center;
   color: #fff4b8;
   font-size: 0.68rem;
   font-weight: 900;
@@ -2163,6 +2165,33 @@ body.stronghold-conquest-selecting .dev-card[data-stronghold-target]:hover,
   align-items: flex-start;
   font-size: 0.72rem;
   line-height: 1.16;
+}
+
+.card-title-main {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.card-title-line {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.card-tier-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-title-marks {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
 }
 
 .wild-element-mark {
@@ -4178,6 +4207,18 @@ body.hand-dock-entering .active-hand-panel {
     font-size: 0.62rem;
   }
 
+  .card-title-line {
+    gap: 2px;
+  }
+
+  .card-title-marks {
+    gap: 1px;
+  }
+
+  .stronghold-lock-text {
+    font-size: 0.56rem;
+  }
+
   .points {
     min-width: 14px;
     font-size: 0.68rem;
@@ -4193,6 +4234,21 @@ body.hand-dock-entering .active-hand-panel {
     min-height: 16px;
     padding: 0 4px;
     font-size: 0.5rem;
+  }
+
+  .market .dev-card[data-card-module="orient"] .orient-ability-row {
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .market .dev-card[data-card-module="orient"] .orient-ability-chip {
+    flex: 0 0 auto;
+    min-height: 15px;
+    padding: 0 2px;
+    font-size: 0.43rem;
+    letter-spacing: 0;
+    white-space: nowrap;
   }
 
   .cost-row {
