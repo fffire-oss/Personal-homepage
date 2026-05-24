@@ -8,7 +8,7 @@
       content="Unofficial local hot-seat gem table implementing base Splendor-style rules with generic cards and BGA-style JSON import/export."
     />
     <title>Gem Table | ZephyrLabs</title>
-    <link rel="stylesheet" href="splendor-table.css?v=20260524-orient-stronghold-draft1" />
+    <link rel="stylesheet" href="splendor-table.css?v=20260524-orient-stronghold-draft2" />
   </head>
   <body>
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -72,14 +72,16 @@
                 <h3 id="ruleset-title" data-i18n="rulesetModules">Modules</h3>
                 <p class="muted compact" data-i18n="rulesetModulesHint">Base game starts with every module off.</p>
               </div>
-              <label class="module-toggle">
-                <input id="ruleset-orient" type="checkbox" />
-                <span data-i18n="orientModule">Orient</span>
-              </label>
-              <label class="module-toggle">
-                <input id="ruleset-strongholds" type="checkbox" />
-                <span data-i18n="strongholdsModule">Strongholds</span>
-              </label>
+              <div class="module-toggle-list">
+                <label class="module-toggle">
+                  <input id="ruleset-orient" type="checkbox" />
+                  <span data-i18n="orientModule">Orient</span>
+                </label>
+                <label class="module-toggle">
+                  <input id="ruleset-strongholds" type="checkbox" />
+                  <span data-i18n="strongholdsModule">Strongholds</span>
+                </label>
+              </div>
             </section>
 
             <div class="form-actions">
@@ -402,6 +404,6 @@
       </section>
     </main>
 
-    <script src="splendor-table.js?v=20260524-orient-stronghold-draft1"></script>
+    <script src="splendor-table.js?v=20260524-orient-stronghold-draft2"></script>
   </body>
 </html>

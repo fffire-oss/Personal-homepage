@@ -132,14 +132,26 @@
       orientChooseFree: "Choose a free tier {tier} card",
       orientUseVirtual: "Use Orient gold",
       orientPaymentDiscard: "Discard cards",
+      orientVirtualSelected: "Orient gold card x{count}",
+      paymentNeeds: "Cost",
+      paymentPlayerTokens: "Your tokens",
+      paymentVirtualHint: "One Orient gold card may be discarded for up to 2 wild gold in this purchase.",
+      paymentVirtualOverpayHint: "The Orient gold card has unused value. If a real token is not needed, tap it again to keep it.",
       orientNoChoices: "No legal Orient choice is available.",
       strongholdActionTitle: "Stronghold move",
       strongholdActionBody: "After buying a card, place, move, or remove one stronghold.",
       strongholdPlace: "Place",
       strongholdMove: "Move",
       strongholdRemove: "Remove",
-      strongholdSkip: "Skip",
       strongholdBlocked: "Stronghold",
+      strongholdStock: "Strongholds",
+      strongholdSelectTarget: "Select a market card for your stronghold.",
+      strongholdSelectSource: "Select one of your strongholds, or an opponent card with exactly one stronghold.",
+      strongholdConquestTitle: "Conquest available",
+      strongholdConquestBody: "Click a card with 3 of your strongholds to buy it now, or continue without conquest.",
+      strongholdConquest: "Conquest",
+      strongholdConquestSkip: "Continue",
+      strongholdNoLegalTarget: "That card is not a legal stronghold target.",
       orientSlotLabel: "Slot {slot}",
       actionLog: "Action log",
       logSafeMode: "Masked",
@@ -2731,6 +2743,7 @@ Object.assign(I18N.de, {
       awaitingDiscard: false,
       awaitingOrientAction: null,
       awaitingStrongholdAction: null,
+      awaitingStrongholdConquest: null,
       awaitingNobleChoice: null,
       endTriggered: false,
       finalTurnsLeft: null,
@@ -2852,6 +2865,32 @@ Object.assign(I18N.de, {
 
   function strongholdPlayerColor(playerIndex) {
     return COLORS[playerIndex % COLORS.length];
+  }
+
+  function playerStrongholdSymbol(playerIndex) {
+    return ["◆", "▲", "●", "■"][playerIndex % 4];
+  }
+
+  function strongholdSlotHasOpponent(game, slotId, playerIndex) {
+    return strongholdsAtSlot(game, slotId).some(function (holder) {
+      return holder !== playerIndex;
+    });
+  }
+
+  function canPlaceOrMoveStrongholdToSlot(game, slotId, playerIndex) {
+    var holders = strongholdsAtSlot(game, slotId);
+    if (holders.some(function (holder) { return holder !== playerIndex; })) return false;
+    return holders.filter(function (holder) { return holder === playerIndex; }).length < 3;
+  }
+
+  function canRemoveOpponentStrongholdAtSlot(game, slotId, playerIndex) {
+    var holders = strongholdsAtSlot(game, slotId);
+    return holders.length === 1 && holders[0] !== playerIndex;
+  }
+
+  function strongholdConquestSlotEligible(game, slotId, playerIndex) {
+    var holders = strongholdsAtSlot(game, slotId);
+    return holders.length === 3 && holders.every(function (holder) { return holder === playerIndex; });
   }
 
   function strongholdAccessStatus(slotId, playerIndex) {
@@ -3113,25 +3152,31 @@ Object.assign(I18N.de, {
     return availableOrientVirtualGoldCards(player).length;
   }
 
-  function orientVirtualGoldPaymentCardsNeeded(payment) {
-    var total = paymentVirtualTotal(payment);
-    return total > 0 && total % 2 === 0 ? total / 2 : 0;
+  function orientVirtualGoldPaymentCapacity(player) {
+    return orientVirtualGoldCardCount(player) > 0 ? 2 : 0;
+  }
+
+  function selectedVirtualGoldCardIds(player, payment) {
+    var availableIds = availableOrientVirtualGoldCards(player).map(function (card) { return card.id; });
+    var selected = Array.isArray(payment && payment.selected_virtual_card_ids) ? payment.selected_virtual_card_ids : [];
+    return selected.filter(function (cardId, index) {
+      return selected.indexOf(cardId) === index && availableIds.indexOf(cardId) >= 0;
+    }).slice(0, 1);
+  }
+
+  function selectedVirtualGoldValue(player, payment) {
+    return selectedVirtualGoldCardIds(player, payment).reduce(function (sum, cardId) {
+      var card = availableOrientVirtualGoldCards(player).find(function (candidate) { return candidate.id === cardId; });
+      var meta = orientVirtualGoldMetadata(card);
+      return sum + (Number(meta && meta.value) || 0);
+    }, 0);
   }
 
   function paymentVirtualCards(player, payment) {
-    var total = paymentVirtualTotal(payment);
-    if (total <= 0 || total % 2 !== 0) return [];
-    var selected = [];
-    availableOrientVirtualGoldCards(player).some(function (card) {
-      if (total <= 0) return true;
-      var meta = orientVirtualGoldMetadata(card);
-      var value = Number(meta && meta.value) || 0;
-      if (value <= 0) return false;
-      selected.push(card.id);
-      total -= value;
-      return false;
-    });
-    return selected;
+    if (paymentVirtualTotal(payment) <= 0) return [];
+    var selected = selectedVirtualGoldCardIds(player, payment);
+    if (selected.length) return selected;
+    return availableOrientVirtualGoldCards(player).slice(0, 1).map(function (card) { return card.id; });
   }
 
   function removePurchasedCardsByIds(player, cardIds) {
@@ -3156,7 +3201,7 @@ Object.assign(I18N.de, {
 
   function canAct(options) {
     var allowAi = !!(options && options.allowAi) || aiTurnInProgress;
-    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment && !state.awaitingOrientAction && !state.awaitingStrongholdAction;
+    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment && !state.awaitingOrientAction && !state.awaitingStrongholdAction && !state.awaitingStrongholdConquest;
   }
 
   function aiSelectionOrder(player, index) {
@@ -3758,6 +3803,12 @@ Object.assign(I18N.de, {
     return parts.length ? parts.join("") : '<span class="muted">Free</span>';
   }
 
+  function hasCost(cost) {
+    return COLORS.some(function (color) {
+      return (cost && cost[color] || 0) > 0;
+    });
+  }
+
   function requirementHtml(cost) {
     var parts = COLORS.filter(function (color) {
       return (cost[color] || 0) > 0;
@@ -3814,6 +3865,8 @@ Object.assign(I18N.de, {
 
   function emptyPaymentPlan() {
     return {
+      selected_tokens: emptyCounts(true),
+      selected_virtual_card_ids: [],
       colored: emptyCounts(false),
       gold: emptyCounts(false),
       virtual: emptyCounts(false),
@@ -3844,48 +3897,66 @@ Object.assign(I18N.de, {
 
   function paymentSelectedText(payment) {
     var parts = [];
-    COLORS.forEach(function (color) {
-      var colored = Number(payment && payment.colored && payment.colored[color]) || 0;
-      var gold = Number(payment && payment.gold && payment.gold[color]) || 0;
-      var virtual = Number(payment && payment.virtual && payment.virtual[color]) || 0;
-      if (colored > 0) parts.push(TOKEN_LABEL[color] + " " + colored);
-      if (gold > 0) parts.push(TOKEN_LABEL.gold + " " + gold + " -> " + TOKEN_LABEL[color]);
-      if (virtual > 0) parts.push(t("orientUseVirtual") + " " + virtual + " -> " + TOKEN_LABEL[color]);
+    var selected = paymentSelectedTokenCounts(payment);
+    ALL_TOKENS.forEach(function (color) {
+      var count = Number(selected[color]) || 0;
+      if (count > 0) parts.push(TOKEN_LABEL[color] + " " + count);
     });
+    var selectedVirtual = Array.isArray(payment && payment.selected_virtual_card_ids) ? payment.selected_virtual_card_ids.length : 0;
+    if (selectedVirtual > 0) parts.push(t("orientVirtualSelected", { count: selectedVirtual }));
     (payment && payment.discard_cards || []).forEach(function (cardId) {
       parts.push(t("orientPaymentDiscard") + " " + cardId);
     });
     return parts.length ? parts.join(", ") : "-";
   }
 
+  function paymentSelectedTokenCounts(payment) {
+    var selected = emptyCounts(true);
+    if (payment && payment.selected_tokens) {
+      ALL_TOKENS.forEach(function (color) {
+        selected[color] = Math.max(0, Number(payment.selected_tokens[color]) || 0);
+      });
+      return selected;
+    }
+    COLORS.forEach(function (color) {
+      selected[color] = Math.max(0, Number(payment && payment.colored && payment.colored[color]) || 0);
+    });
+    selected.gold = paymentGoldTotal(payment);
+    return selected;
+  }
+
   function normalizePaymentPlan(player, card, payment) {
     var needs = paymentNeeds(player, card);
     var normalized = emptyPaymentPlan();
-    COLORS.forEach(function (color) {
-      var colored = Math.max(0, Number(payment && payment.colored && payment.colored[color]) || 0);
-      colored = Math.min(colored, player.tokens[color] || 0, needs[color]);
-      normalized.colored[color] = colored;
-      var gold = Math.max(0, Number(payment && payment.gold && payment.gold[color]) || 0);
-      normalized.gold[color] = Math.min(gold, Math.max(needs[color] - colored, 0));
-      var virtual = Math.max(0, Number(payment && payment.virtual && payment.virtual[color]) || 0);
-      normalized.virtual[color] = Math.min(virtual, Math.max(needs[color] - colored - normalized.gold[color], 0));
+    var selected = paymentSelectedTokenCounts(payment);
+    ALL_TOKENS.forEach(function (color) {
+      normalized.selected_tokens[color] = Math.min(selected[color], Math.max(0, Number(player.tokens[color]) || 0));
     });
-    var excessGold = paymentGoldTotal(normalized) - (player.tokens.gold || 0);
-    if (excessGold > 0) {
-      COLORS.slice().reverse().forEach(function (color) {
-        var remove = Math.min(normalized.gold[color], excessGold);
-        normalized.gold[color] -= remove;
-        excessGold -= remove;
-      });
+    var selectedVirtualIds = selectedVirtualGoldCardIds(player, payment);
+    if (!selectedVirtualIds.length && paymentVirtualTotal(payment) > 0) {
+      selectedVirtualIds = availableOrientVirtualGoldCards(player).slice(0, 1).map(function (card) { return card.id; });
     }
-    var excessVirtual = paymentVirtualTotal(normalized) - orientVirtualGoldCapacity(player);
-    if (excessVirtual > 0) {
-      COLORS.slice().reverse().forEach(function (color) {
-        var remove = Math.min(normalized.virtual[color], excessVirtual);
-        normalized.virtual[color] -= remove;
-        excessVirtual -= remove;
-      });
-    }
+    normalized.selected_virtual_card_ids = selectedVirtualIds;
+    var remaining = emptyCounts(false);
+    COLORS.forEach(function (color) {
+      var colored = Math.min(normalized.selected_tokens[color] || 0, needs[color]);
+      normalized.colored[color] = colored;
+      remaining[color] = Math.max(needs[color] - colored, 0);
+    });
+    var goldLeft = normalized.selected_tokens.gold || 0;
+    COLORS.forEach(function (color) {
+      var gold = Math.min(goldLeft, remaining[color]);
+      normalized.gold[color] = gold;
+      goldLeft -= gold;
+      remaining[color] -= gold;
+    });
+    var virtualLeft = selectedVirtualGoldValue(player, normalized);
+    COLORS.forEach(function (color) {
+      var virtual = Math.min(virtualLeft, remaining[color]);
+      normalized.virtual[color] = virtual;
+      virtualLeft -= virtual;
+      remaining[color] -= virtual;
+    });
     var discardRequirement = orientDiscardCost(card);
     if (discardRequirement) {
       var candidates = orientDiscardCostCandidates(player, card);
@@ -3901,23 +3972,26 @@ Object.assign(I18N.de, {
   function paymentIsLegal(player, card, payment) {
     if (!player || !card || !payment) return false;
     var needs = paymentNeeds(player, card);
-    var virtualTotal = paymentVirtualTotal(payment);
-    if (paymentGoldTotal(payment) > (player.tokens.gold || 0)) return false;
-    if (virtualTotal > orientVirtualGoldCapacity(player)) return false;
-    if (virtualTotal % 2 !== 0) return false;
-    if (orientVirtualGoldPaymentCardsNeeded(payment) > orientVirtualGoldCardCount(player)) return false;
+    var normalized = normalizePaymentPlan(player, card, payment);
+    var selected = paymentSelectedTokenCounts(normalized);
+    if (selected.gold > (player.tokens.gold || 0)) return false;
+    if (selectedVirtualGoldCardIds(player, normalized).length > 1) return false;
     var rowsCovered = COLORS.every(function (color) {
-      var colored = Number(payment.colored && payment.colored[color]) || 0;
-      var gold = Number(payment.gold && payment.gold[color]) || 0;
-      var virtual = Number(payment.virtual && payment.virtual[color]) || 0;
-      return colored <= (player.tokens[color] || 0) && colored + gold + virtual === needs[color];
+      var colored = Number(normalized.colored && normalized.colored[color]) || 0;
+      var gold = Number(normalized.gold && normalized.gold[color]) || 0;
+      var virtual = Number(normalized.virtual && normalized.virtual[color]) || 0;
+      if (selected[color] > (player.tokens[color] || 0)) return false;
+      if (selected[color] !== colored) return false;
+      return colored + gold + virtual === needs[color];
     });
     if (!rowsCovered) return false;
+    if (selected.gold !== paymentGoldTotal(normalized)) return false;
+    if (normalized.selected_virtual_card_ids.length && paymentVirtualTotal(normalized) <= 0) return false;
     var discardRequirement = orientDiscardCost(card);
     if (!discardRequirement) return true;
-    var selected = Array.isArray(payment.discard_cards) ? payment.discard_cards : [];
-    if (selected.length !== discardRequirement.count) return false;
-    return orientDiscardSelectionHasPriority(player, card, selected);
+    var selectedDiscards = Array.isArray(normalized.discard_cards) ? normalized.discard_cards : [];
+    if (selectedDiscards.length !== discardRequirement.count) return false;
+    return orientDiscardSelectionHasPriority(player, card, selectedDiscards);
   }
 
   function paymentMoveArgs(payment, player) {
@@ -3935,19 +4009,20 @@ Object.assign(I18N.de, {
     var needs = paymentNeeds(player, card);
     var payment = emptyPaymentPlan();
     var goldLeft = player.tokens.gold || 0;
-    var virtualLeft = orientVirtualGoldCapacity(player);
+    var needsLeft = emptyCounts(false);
     COLORS.forEach(function (color) {
       var colored = Math.min(player.tokens[color] || 0, needs[color]);
-      payment.colored[color] = colored;
-      var remaining = Math.max(needs[color] - colored, 0);
-      var gold = Math.min(goldLeft, remaining);
-      payment.gold[color] = gold;
+      payment.selected_tokens[color] = colored;
+      needsLeft[color] = Math.max(needs[color] - colored, 0);
+      var gold = Math.min(goldLeft, needsLeft[color]);
+      payment.selected_tokens.gold += gold;
       goldLeft -= gold;
-      remaining -= gold;
-      var virtual = Math.min(virtualLeft, remaining);
-      payment.virtual[color] = virtual;
-      virtualLeft -= virtual;
+      needsLeft[color] -= gold;
     });
+    if (COLORS.some(function (color) { return needsLeft[color] > 0; })) {
+      var virtualCard = availableOrientVirtualGoldCards(player)[0];
+      if (virtualCard) payment.selected_virtual_card_ids = [virtualCard.id];
+    }
     var discardRequirement = orientDiscardCost(card);
     if (discardRequirement) {
       payment.discard_cards = orientDiscardCostCandidates(player, card).slice(0, discardRequirement.count).map(function (candidate) {
@@ -3968,7 +4043,7 @@ Object.assign(I18N.de, {
       goldNeeded += needed - coloredPay;
     });
     pay.gold = goldNeeded;
-    var paymentOk = goldNeeded <= (player.tokens.gold || 0) + orientVirtualGoldCapacity(player);
+    var paymentOk = goldNeeded <= (player.tokens.gold || 0) + orientVirtualGoldPaymentCapacity(player);
     var discardRequirement = orientDiscardCost(card);
     var discardOk = !discardRequirement || orientDiscardCostCandidates(player, card).length >= discardRequirement.count;
     return { ok: paymentOk && discardOk, pay: pay };
@@ -4022,13 +4097,20 @@ Object.assign(I18N.de, {
     var afford = controls.afford;
     var affordText = controls.statusText || (afford ? (afford.ok ? t("affordable") : t("needTokens")) : "");
     var cardModule = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
-    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(t("orientModule")) + "</span>" : "";
+    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge">' + escapeHtml(t("orientModule") + " " + card.id) + "</span>" : "";
     var abilityBadge = cardModule === ORIENT_MARKET_ID ? orientAbilityHtml(card) : "";
-    var slotBadge = controls.slotId ? '<span class="orient-slot-chip">' + escapeHtml(t("orientSlotLabel", { slot: controls.slotId })) + "</span>" : "";
     var strongholdBadge = (controls.strongholds || []).length ? '<div class="stronghold-stack">' + controls.strongholds.map(function (playerIndex) {
       var color = strongholdPlayerColor(playerIndex);
-      return '<span class="stronghold-token" data-player-index="' + playerIndex + '" style="' + gemStyle(color) + '">P' + (playerIndex + 1) + "</span>";
+      return '<span class="stronghold-token" data-player-index="' + playerIndex + '" style="' + gemStyle(color) + '">' + escapeHtml(playerStrongholdSymbol(playerIndex)) + "</span>";
     }).join("") + "</div>" : "";
+    var strongholdTarget = controls.value ? ' data-stronghold-target="' + escapeHtml(controls.value) + '"' : "";
+    var slotAttr = controls.slotId ? ' data-market-slot-id="' + escapeHtml(controls.slotId) + '"' : "";
+    var idHtml = cardModule === ORIENT_MARKET_ID ? "" : '<br><span class="card-id">' + card.id + "</span>";
+    var costRow = hasCost(card.cost) ? '<div class="cost-row">' + costHtml(card.cost) + "</div>" : "";
+    var strongholdSelectedSource = state && state.awaitingStrongholdAction && state.awaitingStrongholdAction.selected_source_slot_id && controls.slotId === state.awaitingStrongholdAction.selected_source_slot_id;
+    var cardClasses = ["dev-card"];
+    if (strongholdSelectedSource) cardClasses.push("stronghold-selected-source");
+    if (controls.conquestEligible) cardClasses.push("stronghold-conquest-target");
     var actions = [];
     if (controls.buy) {
       var buyTitle = controls.buyDisabledReason ? ' title="' + escapeHtml(controls.buyDisabledReason) + '"' : "";
@@ -4038,13 +4120,12 @@ Object.assign(I18N.de, {
       actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
     }
     return [
-      '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '" style="' + gemStyle(card.color) + '">',
-      "<h3><span>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + '<br><span class="card-id">' + card.id + '</span></span><span class="points">' + card.points + "</span></h3>",
+      '<article class="' + cardClasses.join(" ") + '" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '"' + strongholdTarget + slotAttr + ' style="' + gemStyle(card.color) + '">',
+      "<h3><span>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + idHtml + '</span><span class="points">' + card.points + "</span></h3>",
       strongholdBadge,
       moduleBadge,
-      '<div class="cost-row">' + costHtml(card.cost) + "</div>",
+      costRow,
       abilityBadge,
-      slotBadge,
       affordText ? '<p class="card-affordability compact">' + affordText + "</p>" : "",
       actions.length ? '<div class="card-actions">' + actions.join("") + "</div>" : "",
       "</article>"
@@ -4069,22 +4150,27 @@ Object.assign(I18N.de, {
   function orientVirtualGoldZoneHtml(player) {
     var cards = availableOrientVirtualGoldCards(player);
     if (!cards.length) return "";
+    var title = cards.map(function (card) { return card.id; }).join(", ");
     return [
       '<div class="orient-virtual-gold-row">',
       '<span class="label">' + escapeHtml(t("orientVirtualGoldZone")) + "</span>",
-      '<div class="orient-virtual-cards">',
-      cards.map(function (card) {
-        return [
-          '<span class="orient-virtual-card" style="' + gemStyle("gold") + '" title="' + escapeHtml(card.id) + '">',
-          '<span class="orient-virtual-card-face">' + escapeHtml(TOKEN_LABEL.gold) + "</span>",
-          '<span class="orient-virtual-tokens">',
-          '<span class="token mini" data-color="gold" style="' + gemStyle("gold") + '">' + escapeHtml(TOKEN_LABEL.gold) + "</span>",
-          '<span class="token mini" data-color="gold" style="' + gemStyle("gold") + '">' + escapeHtml(TOKEN_LABEL.gold) + "</span>",
-          "</span>",
-          "</span>"
-        ].join("");
-      }).join(""),
-      "</div>",
+      '<span class="orient-virtual-card compact" style="' + gemStyle("gold") + '" title="' + escapeHtml(title) + '">',
+      '<span class="orient-virtual-card-face">*</span>',
+      '<span class="orient-virtual-token-pair"><span></span><span></span></span>',
+      '<span class="orient-virtual-count">x' + cards.length + "</span>",
+      "</span>",
+      "</div>"
+    ].join("");
+  }
+
+  function strongholdStockHtml(playerIndex) {
+    if (!state || !strongholdsEnabledForRuleset(state.ruleset)) return "";
+    var color = strongholdPlayerColor(playerIndex);
+    return [
+      '<div class="stronghold-stock" style="' + gemStyle(color) + '">',
+      '<span class="label">' + escapeHtml(t("strongholdStock")) + "</span>",
+      '<span class="stronghold-stock-token">' + escapeHtml(playerStrongholdSymbol(playerIndex)) + "</span>",
+      '<span class="stronghold-stock-count">x' + playerStrongholdSupply(state, playerIndex) + "</span>",
       "</div>"
     ].join("");
   }
@@ -4151,8 +4237,10 @@ Object.assign(I18N.de, {
           buy: "buy-market",
           reserve: "reserve-market",
           value: tier + ":" + index,
+          slotId: slotId,
           afford: afford,
           strongholds: strongholdsAtSlot(state, slotId),
+          conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
           buyDisabled: !canAct() || !afford.ok || !strongholdAccess.ok,
           buyDisabledReason: strongholdAccess.reason,
           reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok
@@ -4190,6 +4278,7 @@ Object.assign(I18N.de, {
           slotId: slotId,
           afford: afford,
           strongholds: strongholdsAtSlot(state, slotId),
+          conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
           statusText: abilityStatus.ok ? "" : abilityStatus.reason,
           buyDisabled: !canAct() || !afford.ok || !abilityStatus.ok || !strongholdAccess.ok,
           buyDisabledReason: strongholdAccess.reason || buyReason,
@@ -4346,6 +4435,7 @@ Object.assign(I18N.de, {
         '<span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false, null, true) + "</div>",
         '<span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses, player) + "</div>",
         orientVirtualGoldZoneHtml(player),
+        strongholdStockHtml(playerIndex),
         "</div>",
         '<div><span class="label">' + t("reserved") + " (" + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
         '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: nobleText })) + "</span></div>",
@@ -4389,6 +4479,10 @@ Object.assign(I18N.de, {
       var marketRef = parseMarketActionValue(pendingPayment.value);
       card = marketCardAt(state, marketRef);
       context = { type: "buyMarket", player: player, card: card, tier: marketRef.tier, index: marketRef.index, market_id: marketRef.marketId };
+    } else if (pendingPayment.source === "strongholdConquest") {
+      var conquestRef = parseMarketActionValue(pendingPayment.value);
+      card = marketCardAt(state, conquestRef);
+      context = { type: "strongholdConquest", player: player, card: card, tier: conquestRef.tier, index: conquestRef.index, market_id: conquestRef.marketId, parent: pendingPayment.parent || null };
     } else if (pendingPayment.source === "reserved") {
       var playerIndex = Number(parts[0]);
       var reservedIndex = Number(parts[1]);
@@ -4405,34 +4499,47 @@ Object.assign(I18N.de, {
     var player = context.player;
     var needs = paymentNeeds(player, context.card);
     var payment = pendingPayment.payment;
-    var rows = COLORS.filter(function (color) {
-      return needs[color] > 0;
-    }).map(function (color) {
-      var colored = payment.colored[color] || 0;
-      var gold = payment.gold[color] || 0;
-      var virtual = payment.virtual[color] || 0;
-      var remaining = Math.max(needs[color] - colored - gold - virtual, 0);
-      var canAddColor = remaining > 0 && colored < (player.tokens[color] || 0);
-      var canAddGold = remaining > 0 && paymentGoldTotal(payment) < (player.tokens.gold || 0);
-      var canAddVirtual = remaining > 0 && paymentVirtualTotal(payment) < orientVirtualGoldCapacity(player);
+    var rows = [];
+    var selected = paymentSelectedTokenCounts(payment);
+    var selectedVirtualIds = selectedVirtualGoldCardIds(player, payment);
+    var needsHtml = requirementHtml(needs) || '<span class="muted compact">' + escapeHtml(t("noPaymentNeeded")) + "</span>";
+    var tokenButtons = ALL_TOKENS.map(function (color) {
+      var available = Number(player.tokens[color]) || 0;
+      var chosen = Number(selected[color]) || 0;
       return [
-        '<div class="payment-row" style="' + gemStyle(color) + '">',
-        '<div class="payment-need">',
-        '<span class="requirement-tile" data-color="' + color + '" style="' + gemStyle(color) + '"><span>' + needs[color] + "</span></span>",
-        '<div><strong>' + TOKEN_LABEL[color] + '</strong><span>' + t("paymentRemaining", { count: remaining }) + "</span></div>",
-        "</div>",
-        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>' + TOKEN_LABEL.gold + " " + gold + '</span><span>' + t("orientUseVirtual") + " " + virtual + "</span></div>",
-        '<div class="payment-controls">',
-        '<button type="button" data-payment-add-color="' + color + '" style="' + gemStyle(color) + '" ' + (canAddColor ? "" : "disabled") + ">+ " + TOKEN_LABEL[color] + "</button>",
-        '<button type="button" data-payment-remove-color="' + color + '" ' + (colored > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL[color] + "</button>",
-        '<button type="button" data-payment-add-gold="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddGold ? "" : "disabled") + ">+ " + TOKEN_LABEL.gold + "</button>",
-        '<button type="button" data-payment-remove-gold="' + color + '" ' + (gold > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL.gold + "</button>",
-        '<button type="button" data-payment-add-virtual="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddVirtual ? "" : "disabled") + ">+ " + t("orientUseVirtual") + "</button>",
-        '<button type="button" data-payment-remove-virtual="' + color + '" ' + (virtual > 0 ? "" : "disabled") + ">- " + t("orientUseVirtual") + "</button>",
-        "</div>",
-        "</div>"
+        '<button type="button" class="payment-token-choice ' + (chosen ? "active" : "") + '" data-payment-token-color="' + color + '" data-color="' + color + '" style="' + gemStyle(color) + '" ' + (available <= 0 ? "disabled" : "") + ">",
+        '<span class="token payment-token-dot" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + "</span>",
+        '<span class="payment-token-count">' + chosen + "/" + available + "</span>",
+        "</button>"
       ].join("");
+    }).join("");
+    var virtualCards = availableOrientVirtualGoldCards(player);
+    var virtualHtml = virtualCards.length ? [
+      '<div class="payment-virtual-grid">',
+      virtualCards.map(function (card) {
+        var active = selectedVirtualIds.indexOf(card.id) >= 0;
+        return [
+          '<button type="button" class="payment-virtual-choice ' + (active ? "active" : "") + '" data-payment-toggle-virtual-card="' + escapeHtml(card.id) + '" style="' + gemStyle("gold") + '">',
+          '<span class="orient-virtual-card-face">*</span>',
+          '<span class="orient-virtual-token-pair"><span></span><span></span></span>',
+          '<span class="card-id">' + escapeHtml(card.id) + "</span>",
+          "</button>"
+        ].join("");
+      }).join(""),
+      "</div>",
+      '<p class="muted compact">' + escapeHtml(t("paymentVirtualHint")) + "</p>"
+    ].join("") : "";
+    var overpay = selectedVirtualGoldValue(player, payment) > paymentVirtualTotal(payment) && selectedVirtualIds.length > 0 && ALL_TOKENS.some(function (color) {
+      return (selected[color] || 0) > 0;
     });
+    rows.push([
+      '<div class="payment-choice-board">',
+      '<div class="payment-choice-section"><span class="label">' + escapeHtml(t("paymentNeeds")) + '</span><div class="payment-needs">' + needsHtml + "</div></div>",
+      '<div class="payment-choice-section"><span class="label">' + escapeHtml(t("paymentPlayerTokens")) + '</span><div class="payment-token-grid">' + tokenButtons + "</div></div>",
+      virtualHtml ? '<div class="payment-choice-section"><span class="label">' + escapeHtml(t("orientVirtualGoldZone")) + "</span>" + virtualHtml + "</div>" : "",
+      overpay ? '<p class="payment-hint">' + escapeHtml(t("paymentVirtualOverpayHint")) + "</p>" : "",
+      "</div>"
+    ].filter(Boolean).join(""));
     var discardRequirement = orientDiscardCost(context.card);
     if (discardRequirement) {
       var selected = payment.discard_cards || [];
@@ -4564,36 +4671,26 @@ Object.assign(I18N.de, {
 
   function renderStrongholdAction() {
     if (!el.strongholdActionPanel) return;
-    var action = state && state.awaitingStrongholdAction;
-    el.strongholdActionPanel.hidden = !action;
-    if (!action) {
-      if (el.strongholdActionOptions) el.strongholdActionOptions.innerHTML = "";
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (conquest) {
+      el.strongholdActionPanel.hidden = false;
+      if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdConquestTitle");
+      if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = t("strongholdConquestBody");
+      if (el.strongholdActionOptions) {
+        el.strongholdActionOptions.innerHTML = '<button type="button" class="stronghold-skip" data-stronghold-conquest-skip="true">' + escapeHtml(t("strongholdConquestSkip")) + "</button>";
+      }
       return;
     }
-    if (el.activeHandPanel) el.activeHandPanel.open = true;
-    var playerIndex = state.current;
-    var refs = marketRefsForStrongholds(state);
-    var supply = playerStrongholdSupply(state, playerIndex);
-    var placeButtons = supply > 0 ? refs.filter(function (ref) {
-      return strongholdsAtSlot(state, ref.slotId).filter(function (holder) { return holder === playerIndex; }).length < 3;
-    }).map(function (ref) {
-      return renderStrongholdTargetButton(ref, "place", t("strongholdPlace"));
-    }) : [];
-    var moveButtons = playerStrongholdsOnBoard(state, playerIndex) > 0 ? refs.filter(function (ref) {
-      return strongholdsAtSlot(state, ref.slotId).filter(function (holder) { return holder === playerIndex; }).length < 3;
-    }).map(function (ref) {
-      return renderStrongholdTargetButton(ref, "move", t("strongholdMove"));
-    }) : [];
-    var removeButtons = refs.filter(function (ref) {
-      return strongholdsAtSlot(state, ref.slotId).some(function (holder) { return holder !== playerIndex; });
-    }).map(function (ref) {
-      return renderStrongholdTargetButton(ref, "remove", t("strongholdRemove"));
-    });
-    var html = placeButtons.concat(moveButtons, removeButtons).join("") || '<p class="muted compact">' + t("orientNoChoices") + "</p>";
-    html += '<button type="button" class="stronghold-skip" data-stronghold-skip="true">' + escapeHtml(t("strongholdSkip")) + "</button>";
-    if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdActionTitle");
-    if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = t("strongholdActionBody");
-    el.strongholdActionOptions.innerHTML = html;
+    var action = state && state.awaitingStrongholdAction;
+    el.strongholdActionPanel.hidden = true;
+    if (el.strongholdActionOptions) el.strongholdActionOptions.innerHTML = "";
+    if (action && !messageText) showMessage(strongholdActionPrompt(), "ok");
+  }
+
+  function strongholdActionPrompt() {
+    if (!state || !state.awaitingStrongholdAction) return "";
+    if (playerStrongholdSupply(state, state.current) > 0) return t("strongholdSelectTarget");
+    return state.awaitingStrongholdAction.selected_source_slot_id ? t("strongholdSelectTarget") : t("strongholdSelectSource");
   }
 
   function findPlayerPurchasedCard(player, cardId) {
@@ -4631,6 +4728,7 @@ Object.assign(I18N.de, {
       reserveDeck: "logReserveTitle",
       buyMarket: "logBuyTitle",
       buyReserved: "logBuyTitle",
+      strongholdConquest: "strongholdConquest",
       discardToken: "logDiscardTitle",
       chooseNoble: "logNobleTitle"
     };
@@ -4670,6 +4768,19 @@ Object.assign(I18N.de, {
       virtualChips.push('<span class="log-source-chip">' + escapeHtml(t("orientPaymentDiscard")) + " " + escapeHtml(cardId) + "</span>");
     });
     return html + (virtualChips.length ? '<span class="log-token-set">' + virtualChips.join("") + "</span>" : "");
+  }
+
+  function logStrongholdEffects(effects) {
+    return (effects || []).map(function (effect) {
+      var playerIndex = Number(effect.player_index) || 0;
+      var color = strongholdPlayerColor(playerIndex);
+      var label = effect.type === "place" ? t("strongholdPlace") : effect.type === "move" ? t("strongholdMove") : t("strongholdRemove");
+      var text = playerStrongholdSymbol(playerIndex) + " " + label;
+      if (effect.type === "remove" && Number.isInteger(Number(effect.removed_player_index))) {
+        text += " " + playerStrongholdSymbol(Number(effect.removed_player_index));
+      }
+      return '<span class="log-source-chip stronghold-log-chip" style="' + gemStyle(color) + '">' + escapeHtml(text) + "</span>";
+    }).join("");
   }
 
   function logCardBadge(cardId, options) {
@@ -4719,7 +4830,7 @@ Object.assign(I18N.de, {
         args.took_gold ? '<span class="log-source-chip gold">' + escapeHtml(t("logGoldTaken")) + " " + logTokenChip("gold", 1, true) + "</span>" : ""
       ].filter(Boolean).join("");
     }
-    if (move.type === "buyMarket" || move.type === "buyReserved") {
+    if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") {
       var hiddenBuy = mode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
       var orientEffects = (args.orient_effects || []).map(function (effect) {
         if (effect.type === "copy_bonus") {
@@ -4735,6 +4846,8 @@ Object.assign(I18N.de, {
         args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
         args.payment ? logPaymentSet(args.payment) : "",
         orientEffects,
+        logStrongholdEffects(args.stronghold_effects),
+        args.conquest ? '<span class="log-source-chip stronghold-log-chip">' + escapeHtml(t("strongholdConquest")) + "</span>" : "",
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(t("logNobleTitle")) + "</span>" : "",
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id) + "</span>" : ""
       ].filter(Boolean).join("");
@@ -4816,7 +4929,7 @@ Object.assign(I18N.de, {
     }
     if (move.type === "reserveDeck") return t("blind");
     if (move.type === "reserveMarket") return t("reserve");
-    if (move.type === "buyMarket" || move.type === "buyReserved") return t("buy");
+    if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") return t("buy");
     if (move.type === "chooseNoble") return t("logNobleTitle");
     return moveTitle(move);
   }
@@ -4845,7 +4958,7 @@ Object.assign(I18N.de, {
       color = args.card && args.card.color || "gold";
       source = cardElementForFlight(args.card || { id: args.card_id }) || el.market;
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".reserved-list");
-    } else if (move.type === "buyMarket" || move.type === "buyReserved") {
+    } else if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") {
       color = args.card && args.card.color || "gold";
       source = cardElementForFlight(args.card || { id: args.card_id }) || (move.type === "buyReserved" ? el.activeHandPanel : el.market);
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".purchased-summary");
@@ -5050,6 +5163,8 @@ Object.assign(I18N.de, {
     document.documentElement.classList.toggle("game-active-root", !!state);
     document.body.classList.toggle("turn-locked", !!(state && (state.turnTransition || state.aiThinking)));
     document.body.classList.toggle("replay-mode", !!(state && state.mode === "replay"));
+    document.body.classList.toggle("stronghold-selecting", !!(state && state.awaitingStrongholdAction));
+    document.body.classList.toggle("stronghold-conquest-selecting", !!(state && state.awaitingStrongholdConquest));
 
     if (!state) {
       el.startPanel.hidden = false;
@@ -5126,6 +5241,8 @@ Object.assign(I18N.de, {
     if (pendingPayment) return t("gamePayment");
     if (state.awaitingDiscard) return t("gameDiscard");
     if (state.awaitingOrientAction) return t("orientAbilityPending");
+    if (state.awaitingStrongholdAction) return t("strongholdActionTitle");
+    if (state.awaitingStrongholdConquest) return t("strongholdConquestTitle");
     if (state.awaitingNobleChoice) return t("gameNoble");
     if (state.endTriggered) return t("gameFinal", { turns: state.finalTurnsLeft });
     return t("gameProgress");
@@ -5555,6 +5672,38 @@ Object.assign(I18N.de, {
     render();
   }
 
+  function cyclePaymentToken(color) {
+    if (!pendingPayment || ALL_TOKENS.indexOf(color) < 0) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var payment = pendingPayment.payment;
+    if (!payment.selected_tokens) payment.selected_tokens = emptyCounts(true);
+    var max = Number(context.player.tokens[color]) || 0;
+    var current = Number(payment.selected_tokens[color]) || 0;
+    payment.selected_tokens[color] = max > 0 ? (current + 1) % (max + 1) : 0;
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
+  function togglePaymentVirtualCard(cardId) {
+    if (!pendingPayment) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var payment = pendingPayment.payment;
+    var current = selectedVirtualGoldCardIds(context.player, payment);
+    payment.selected_virtual_card_ids = current.indexOf(cardId) >= 0 ? [] : [cardId];
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
   function togglePaymentDiscardCard(cardId) {
     if (!pendingPayment) return;
     var context = pendingPaymentContext();
@@ -5587,6 +5736,9 @@ Object.assign(I18N.de, {
 
   function cancelPayment() {
     if (!pendingPayment) return;
+    if (pendingPayment.source === "strongholdConquest" && pendingPayment.parent) {
+      state.awaitingStrongholdConquest = clone(pendingPayment.parent);
+    }
     pendingPayment = null;
     showMessage(t("msgPaymentCancelled"), "ok");
     render();
@@ -5606,6 +5758,10 @@ Object.assign(I18N.de, {
       payment: paymentArgs
     };
     if (options && options.ai) args.ai = true;
+    if (context.type === "strongholdConquest" && context.parent) {
+      args.conquest_parent = clone(context.parent);
+      args.conquest = true;
+    }
     spendForCard(player, paymentSpend(payment));
     var removedVirtual = removePurchasedCardsByIds(player, usedVirtualCards);
     var removedDiscard = removePurchasedCardsByIds(player, discardedCostCards);
@@ -5619,7 +5775,7 @@ Object.assign(I18N.de, {
     applyCardBonuses(player, purchasedCard);
     logEntry(t("logBought", { player: player.name, card: card.id, points: card.points }));
     var deferredRefills = [];
-    if (context.type === "buyMarket") {
+    if (context.type === "buyMarket" || context.type === "strongholdConquest") {
       args.tier = context.tier;
       args.market_index = context.index;
       args.market_id = context.market_id || BASE_MARKET_ID;
@@ -5657,6 +5813,7 @@ Object.assign(I18N.de, {
       return;
     }
     var payment = clone(pendingPayment.payment);
+    payment = normalizePaymentPlan(context.player, context.card, payment);
     if (!paymentIsLegal(context.player, context.card, payment)) {
       showMessage(t("msgPaymentInvalid"));
       render();
@@ -5717,6 +5874,11 @@ Object.assign(I18N.de, {
     var player = activePlayer();
     var actor = { id: player.id, name: player.name };
     if (aiTurnInProgress) args = aiMoveArgs(args);
+    resolveStrongholdsOrTurn(type, args, actor);
+  }
+
+  function resolveTokenCapOrNoblesOrTurn(type, args, actor) {
+    var player = activePlayer();
     if (totalTokens(player) > 10) {
       state.awaitingDiscard = true;
       showMessage(t("msgMustDiscard", { player: player.name, count: totalTokens(player) }));
@@ -5725,11 +5887,16 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    resolveStrongholdsOrTurn(type, args, actor);
+    resolveNoblesOrTurn(type, args, actor);
+  }
+
+  function resolveConquestOrTokenCapOrTurn(type, args, actor) {
+    if (type !== "strongholdConquest" && strongholdsEnabledForRuleset(state.ruleset) && beginStrongholdConquestIfAvailable({ move_type: type, args: args || {}, actor: actor || {} })) return;
+    resolveTokenCapOrNoblesOrTurn(type, args, actor);
   }
 
   function actionAcquiredDevelopmentCard(type, args) {
-    return !!(args && args.card_id && (type === "buyMarket" || type === "buyReserved"));
+    return !!(args && args.card_id && (type === "buyMarket" || type === "buyReserved" || type === "strongholdConquest"));
   }
 
   function resolveStrongholdsOrTurn(type, args, actor) {
@@ -5746,7 +5913,72 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    resolveNoblesOrTurn(type, args, actor);
+    resolveConquestOrTokenCapOrTurn(type, args, actor);
+  }
+
+  function strongholdConquestChoices(game, playerIndex) {
+    if (!strongholdsEnabledForRuleset(game.ruleset)) return [];
+    return marketRefsForStrongholds(game).filter(function (ref) {
+      var card = marketCardAt(game, ref);
+      if (!card || !strongholdConquestSlotEligible(game, ref.slotId, playerIndex)) return false;
+      var player = game.players[playerIndex];
+      return affordability(player, card).ok && orientAbilityBuyStatus(card, player).ok;
+    });
+  }
+
+  function beginStrongholdConquestIfAvailable(parentAction) {
+    var playerIndex = state.current;
+    var choices = strongholdConquestChoices(state, playerIndex);
+    if (!choices.length) return false;
+    state.awaitingStrongholdConquest = {
+      move_type: parentAction.move_type,
+      args: clone(parentAction.args || {}),
+      actor: clone(parentAction.actor || { id: activePlayer().id, name: activePlayer().name })
+    };
+    showMessage(t("strongholdConquestBody"), "ok");
+    saveState();
+    render();
+    return true;
+  }
+
+  function skipStrongholdConquest() {
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (!conquest) return;
+    state.awaitingStrongholdConquest = null;
+    showMessage("");
+    resolveTokenCapOrNoblesOrTurn(conquest.move_type, conquest.args || {}, conquest.actor || { id: activePlayer().id, name: activePlayer().name });
+  }
+
+  function beginStrongholdConquestPayment(value, trigger) {
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (!conquest) return false;
+    var ref = parseMarketActionValue(value);
+    var card = marketCardAt(state, ref);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    if (!card || !strongholdConquestSlotEligible(state, slotId, state.current)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return true;
+    }
+    var player = activePlayer();
+    if (!affordability(player, card).ok || !orientAbilityBuyStatus(card, player).ok) {
+      showMessage(t("msgNotEnoughForCard"));
+      render();
+      return true;
+    }
+    pendingTake = [];
+    pendingPayment = {
+      source: "strongholdConquest",
+      value: String(value),
+      card_id: card.id,
+      parent: clone(conquest),
+      payment: emptyPaymentPlan()
+    };
+    state.awaitingStrongholdConquest = null;
+    showMessage(t("msgChoosePayment", { card: card.id }), "ok");
+    render();
+    scrollToPaymentPanel();
+    return true;
   }
 
   function finishStrongholdAction(effect) {
@@ -5762,7 +5994,7 @@ Object.assign(I18N.de, {
     var actor = action.actor || { id: activePlayer().id, name: activePlayer().name };
     state.awaitingStrongholdAction = null;
     showMessage("");
-    resolveNoblesOrTurn(moveType, args, actor);
+    resolveConquestOrTokenCapOrTurn(moveType, args, actor);
   }
 
   function resolveStrongholdPlace(value, trigger) {
@@ -5772,22 +6004,32 @@ Object.assign(I18N.de, {
     var holders = strongholdsAtSlot(state, slotId);
     var playerIndex = state.current;
     if (!marketCardAt(state, ref) || playerStrongholdSupply(state, playerIndex) <= 0) return;
-    if (holders.filter(function (holder) { return holder === playerIndex; }).length >= 3) return;
+    if (!canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return;
+    }
     holders.push(playerIndex);
     queueFlightFromElement(document.querySelector('.player-card[data-player-index="' + playerIndex + '"]'), strongholdPlayerColor(playerIndex), t("strongholdPlace"), trigger && trigger.closest(".stronghold-choice") || cardElementForFlight(marketCardAt(state, ref)));
     finishStrongholdAction({ type: "place", slot_id: slotId, player_index: playerIndex });
   }
 
-  function resolveStrongholdMove(value, trigger) {
+  function resolveStrongholdMove(value, trigger, sourceSlotOverride) {
     if (!state || !state.awaitingStrongholdAction) return;
     var ref = parseMarketActionValue(value);
     var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
     var playerIndex = state.current;
-    var sourceSlot = Object.keys(ensureStrongholds(state).placements).find(function (candidate) {
+    if (!canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return;
+    }
+    var sourceSlot = sourceSlotOverride || state.awaitingStrongholdAction.selected_source_slot_id || Object.keys(ensureStrongholds(state).placements).find(function (candidate) {
       return candidate !== slotId && strongholdsAtSlot(state, candidate).indexOf(playerIndex) >= 0;
     });
-    if (!sourceSlot) return;
+    if (!sourceSlot || sourceSlot === slotId) return;
     var sourceHolders = strongholdsAtSlot(state, sourceSlot);
+    if (sourceHolders.indexOf(playerIndex) < 0) return;
     sourceHolders.splice(sourceHolders.indexOf(playerIndex), 1);
     if (!sourceHolders.length) delete state.strongholds.placements[sourceSlot];
     strongholdsAtSlot(state, slotId).push(playerIndex);
@@ -5801,12 +6043,85 @@ Object.assign(I18N.de, {
     var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
     var playerIndex = state.current;
     var holders = strongholdsAtSlot(state, slotId);
+    if (!canRemoveOpponentStrongholdAtSlot(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return;
+    }
     var removeIndex = holders.findIndex(function (holder) { return holder !== playerIndex; });
     if (removeIndex < 0) return;
     var removedPlayer = holders.splice(removeIndex, 1)[0];
     if (!holders.length) delete state.strongholds.placements[slotId];
     queueFlightFromElement(trigger && trigger.closest(".stronghold-choice"), strongholdPlayerColor(removedPlayer), t("strongholdRemove"), '.player-card[data-player-index="' + removedPlayer + '"]');
     finishStrongholdAction({ type: "remove", slot_id: slotId, player_index: playerIndex, removed_player_index: removedPlayer });
+  }
+
+  function resolveStrongholdCardClick(value, trigger) {
+    if (!state || !state.awaitingStrongholdAction) return false;
+    var ref = parseMarketActionValue(value);
+    var card = marketCardAt(state, ref);
+    if (!card) return true;
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var holders = strongholdsAtSlot(state, slotId);
+    var playerIndex = state.current;
+    if (playerStrongholdSupply(state, playerIndex) > 0 && canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      resolveStrongholdPlace(value, trigger);
+      return true;
+    }
+    if (canRemoveOpponentStrongholdAtSlot(state, slotId, playerIndex)) {
+      resolveStrongholdRemove(value, trigger);
+      return true;
+    }
+    if (state.awaitingStrongholdAction.selected_source_slot_id) {
+      resolveStrongholdMove(value, trigger, state.awaitingStrongholdAction.selected_source_slot_id);
+      return true;
+    }
+    if (holders.indexOf(playerIndex) >= 0) {
+      state.awaitingStrongholdAction.selected_source_slot_id = slotId;
+      showMessage(t("strongholdSelectTarget"), "ok");
+      saveState();
+      render();
+      return true;
+    }
+    showMessage(t("strongholdSelectSource"));
+    render();
+    return true;
+  }
+
+  function runRandomStrongholdAction() {
+    if (!state || !state.awaitingStrongholdAction) return;
+    var playerIndex = state.current;
+    var refs = marketRefsForStrongholds(state);
+    if (!refs.length) return;
+    if (playerStrongholdSupply(state, playerIndex) > 0) {
+      var placeRefs = refs.filter(function (ref) {
+        return canPlaceOrMoveStrongholdToSlot(state, ref.slotId, playerIndex);
+      });
+      if (placeRefs.length) {
+        var place = randomChoice(placeRefs);
+        resolveStrongholdPlace([place.marketId, place.tier, place.index].join(":"));
+        return;
+      }
+    }
+    var removeRefs = refs.filter(function (ref) {
+      var holders = strongholdsAtSlot(state, ref.slotId);
+      return holders.length === 1 && holders[0] !== playerIndex;
+    });
+    if (removeRefs.length) {
+      var remove = randomChoice(removeRefs);
+      resolveStrongholdRemove([remove.marketId, remove.tier, remove.index].join(":"));
+      return;
+    }
+    var sourceSlot = Object.keys(ensureStrongholds(state).placements).find(function (slotId) {
+      return strongholdsAtSlot(state, slotId).indexOf(playerIndex) >= 0;
+    });
+    var targetRefs = refs.filter(function (ref) {
+      return ref.slotId !== sourceSlot && canPlaceOrMoveStrongholdToSlot(state, ref.slotId, playerIndex);
+    });
+    if (sourceSlot && targetRefs.length) {
+      var target = randomChoice(targetRefs);
+      resolveStrongholdMove([target.marketId, target.tier, target.index].join(":"), null, sourceSlot);
+    }
   }
 
   function discardToken(color) {
@@ -6140,7 +6455,7 @@ Object.assign(I18N.de, {
 
   function buildMoveEvents(moveId, type, args, player) {
     var refs = moveEventRefs(args || {}, player);
-    var orientCardAction = args && (args.market_id === ORIENT_MARKET_ID || cardIsOrient(args.card)) && (type === "buyMarket" || type === "buyReserved" || type === "reserveMarket");
+    var orientCardAction = args && (args.market_id === ORIENT_MARKET_ID || cardIsOrient(args.card)) && (type === "buyMarket" || type === "buyReserved" || type === "reserveMarket" || type === "strongholdConquest");
     var events = [{
       schema: MOVE_EVENT_SCHEMA,
       event_id: "m" + moveId + ":core",
@@ -6228,7 +6543,7 @@ Object.assign(I18N.de, {
       ruleset: clone(ruleset),
       module_state: clone(game.module_state || createModuleState(ruleset)),
       gamestate: {
-        name: game.gameOver ? "gameEnd" : game.awaitingDiscard ? "discard" : game.awaitingNobleChoice ? "chooseNoble" : "playerTurn",
+        name: game.gameOver ? "gameEnd" : game.awaitingDiscard ? "discard" : game.awaitingStrongholdConquest ? "strongholdConquest" : game.awaitingNobleChoice ? "chooseNoble" : "playerTurn",
         description: gameStateTextFor(game),
         active_player: game.players[game.current] ? game.players[game.current].id : null
       },
@@ -6254,6 +6569,7 @@ Object.assign(I18N.de, {
         discard: !!game.awaitingDiscard,
         orient_action: game.awaitingOrientAction ? clone(game.awaitingOrientAction) : null,
         stronghold_action: game.awaitingStrongholdAction ? clone(game.awaitingStrongholdAction) : null,
+        stronghold_conquest: game.awaitingStrongholdConquest ? clone(game.awaitingStrongholdConquest) : null,
         noble_choice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null
       },
       end: {
@@ -6275,6 +6591,7 @@ Object.assign(I18N.de, {
     if (game.awaitingDiscard) return "Active player must discard to token cap";
     if (game.awaitingOrientAction) return "Active player must resolve an Orient ability";
     if (game.awaitingStrongholdAction) return "Active player must resolve a Stronghold move";
+    if (game.awaitingStrongholdConquest) return "Active player may resolve a Stronghold conquest";
     if (game.awaitingNobleChoice) return "Active player must choose one noble";
     if (game.endTriggered) return "Final round";
     return "Player turn";
@@ -6313,6 +6630,7 @@ Object.assign(I18N.de, {
       awaitingDiscard: !!game.awaitingDiscard,
       awaitingOrientAction: game.awaitingOrientAction ? clone(game.awaitingOrientAction) : null,
       awaitingStrongholdAction: game.awaitingStrongholdAction ? clone(game.awaitingStrongholdAction) : null,
+      awaitingStrongholdConquest: game.awaitingStrongholdConquest ? clone(game.awaitingStrongholdConquest) : null,
       awaitingNobleChoice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null,
       endTriggered: !!game.endTriggered,
       finalTurnsLeft: game.finalTurnsLeft,
@@ -7703,6 +8021,8 @@ Object.assign(I18N.de, {
     var actions = [];
     [1, 2, 3].forEach(function (tier) {
       state.market[tier].forEach(function (card, index) {
+        var slotId = marketSlotId(state, BASE_MARKET_ID, tier, index);
+        if (!strongholdAccessStatus(slotId, state.current).ok) return;
         var payment = autoPaymentPlan(player, card);
         if (orientAbilityBuyStatus(card).ok && paymentIsLegal(player, card, payment)) {
           actions.push({
@@ -7715,6 +8035,8 @@ Object.assign(I18N.de, {
       if (orientEnabledForRuleset(state.ruleset)) {
         (state.orient_market[tier] || []).forEach(function (card, index) {
           if (!card || orientCardNeedsManualChoice(card)) return;
+          var slotId = marketSlotId(state, ORIENT_MARKET_ID, tier, index);
+          if (!strongholdAccessStatus(slotId, state.current).ok) return;
           var payment = autoPaymentPlan(player, card);
           if (orientAbilityBuyStatus(card, player).ok && paymentIsLegal(player, card, payment)) {
             actions.push({
@@ -7875,6 +8197,10 @@ Object.assign(I18N.de, {
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (dinoboardAi && dinoboardAi.disabled) return;
+    if (state.awaitingStrongholdAction || state.awaitingStrongholdConquest) {
+      scheduleRandomAiTurn();
+      return;
+    }
     if (activeAiProviderName() !== "dinoboard") {
       scheduleRandomAiTurn();
       return;
@@ -7919,7 +8245,11 @@ Object.assign(I18N.de, {
         return;
       }
       if (state.awaitingStrongholdAction) {
-        finishStrongholdAction({ type: "skip", player_index: state.current, ai: true });
+        runRandomStrongholdAction();
+        return;
+      }
+      if (state.awaitingStrongholdConquest) {
+        skipStrongholdConquest();
         return;
       }
       if (!canAct()) return;
@@ -8133,6 +8463,8 @@ Object.assign(I18N.de, {
     el.clearPayment.addEventListener("click", clearPaymentSelection);
     el.cancelPayment.addEventListener("click", cancelPayment);
     el.paymentOptions.addEventListener("click", function (event) {
+      var tokenChoice = event.target.closest("[data-payment-token-color]");
+      var virtualCard = event.target.closest("[data-payment-toggle-virtual-card]");
       var addColor = event.target.closest("[data-payment-add-color]");
       var removeColor = event.target.closest("[data-payment-remove-color]");
       var addGold = event.target.closest("[data-payment-add-gold]");
@@ -8140,7 +8472,9 @@ Object.assign(I18N.de, {
       var addVirtual = event.target.closest("[data-payment-add-virtual]");
       var removeVirtual = event.target.closest("[data-payment-remove-virtual]");
       var discardCard = event.target.closest("[data-payment-toggle-discard-card]");
-      if (addColor) adjustPayment("colored", addColor.dataset.paymentAddColor, 1);
+      if (tokenChoice) cyclePaymentToken(tokenChoice.dataset.paymentTokenColor);
+      else if (virtualCard) togglePaymentVirtualCard(virtualCard.dataset.paymentToggleVirtualCard);
+      else if (addColor) adjustPayment("colored", addColor.dataset.paymentAddColor, 1);
       else if (removeColor) adjustPayment("colored", removeColor.dataset.paymentRemoveColor, -1);
       else if (addGold) adjustPayment("gold", addGold.dataset.paymentAddGold, 1);
       else if (removeGold) adjustPayment("gold", removeGold.dataset.paymentRemoveGold, -1);
@@ -8162,10 +8496,11 @@ Object.assign(I18N.de, {
         var move = event.target.closest("[data-stronghold-move]");
         var remove = event.target.closest("[data-stronghold-remove]");
         var skip = event.target.closest("[data-stronghold-skip]");
+        var conquestSkip = event.target.closest("[data-stronghold-conquest-skip]");
         if (place) resolveStrongholdPlace(place.dataset.strongholdPlace, place);
         else if (move) resolveStrongholdMove(move.dataset.strongholdMove, move);
         else if (remove) resolveStrongholdRemove(remove.dataset.strongholdRemove, remove);
-        else if (skip) finishStrongholdAction({ type: "skip", player_index: state.current });
+        else if (conquestSkip) skipStrongholdConquest();
       });
     }
     el.bankTokens.addEventListener("click", function (event) {
@@ -8173,6 +8508,22 @@ Object.assign(I18N.de, {
       if (button) selectTake(button.dataset.bankColor);
     });
     el.market.addEventListener("click", function (event) {
+      if (state && state.awaitingStrongholdConquest) {
+        var conquestTarget = event.target.closest("[data-stronghold-target]");
+        if (conquestTarget) {
+          event.preventDefault();
+          beginStrongholdConquestPayment(conquestTarget.dataset.strongholdTarget, conquestTarget);
+          return;
+        }
+      }
+      if (state && state.awaitingStrongholdAction) {
+        var strongholdTarget = event.target.closest("[data-stronghold-target]");
+        if (strongholdTarget) {
+          event.preventDefault();
+          resolveStrongholdCardClick(strongholdTarget.dataset.strongholdTarget, strongholdTarget);
+          return;
+        }
+      }
       var reserveMarketButton = event.target.closest("[data-reserve-market]");
       var reserveDeckButton = event.target.closest("[data-reserve-deck]");
       var buyMarketButton = event.target.closest("[data-buy-market]");
