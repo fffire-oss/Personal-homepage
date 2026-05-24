@@ -2643,6 +2643,12 @@ body.orient-copy-selecting .bonus-pill.orient-copy-color {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
+.bonus-pill[data-color="red"] .bonus-preview,
+.bonus-pill[data-color="black"] .bonus-preview {
+  right: 0;
+  left: auto;
+}
+
 .bonus-preview-title {
   color: #eef8f8;
   font-size: 0.72rem;
