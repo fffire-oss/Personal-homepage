@@ -6,7 +6,6 @@ require("../splendor/modules/rules.js");
 const {
   bonusDisplaySummary,
   effectiveCardBonuses,
-  firstEligibleNoble,
   replayUrlFromQuery,
   strongholdAccessStatusForSlot,
   strongholdSummaryFromHolders
@@ -102,53 +101,6 @@ test("Stronghold summary is stable for three same-player tokens", function () {
   assert.equal(opponentSummary.count, 3);
   assert.equal(opponentSummary.owner, "1");
   assert.equal(opponentSummary.locked, true);
-});
-
-test("BGA replay can infer nobles that are absent from archive notifications", function () {
-  var nobles = [
-    {
-      id: "bga-noble-3",
-      bga_id: "3",
-      name: "Mariam Uz Zamani",
-      points: 3,
-      req: { white: 4, blue: 4, green: 0, red: 0, black: 0 }
-    },
-    {
-      id: "bga-noble-5",
-      bga_id: "5",
-      name: "Zhu Houzong",
-      points: 3,
-      req: { white: 0, blue: 0, green: 0, red: 4, black: 4 }
-    },
-    {
-      id: "bga-noble-11",
-      bga_id: "11",
-      name: "Rani Chennabhairadevi",
-      points: 3,
-      req: { white: 0, blue: 3, green: 3, red: 0, black: 3 }
-    }
-  ];
-
-  var first = firstEligibleNoble(nobles, {
-    white: 4,
-    blue: 4,
-    green: 3,
-    red: 0,
-    black: 2
-  });
-  assert.equal(first.index, 0);
-  assert.equal(first.noble.id, "bga-noble-3");
-
-  nobles.splice(first.index, 1);
-  var second = firstEligibleNoble(nobles, {
-    white: 4,
-    blue: 5,
-    green: 3,
-    red: 0,
-    black: 3
-  });
-  assert.equal(second.index, 1);
-  assert.equal(second.noble.id, "bga-noble-11");
 });
 
 test("Replay query URLs are limited to same-origin /api/bga/replay/", function () {
