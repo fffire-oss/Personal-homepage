@@ -152,7 +152,7 @@ h2 {
 
 .project-list {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
   align-items: stretch;
 }
@@ -229,6 +229,12 @@ h2 {
   --card-a: #a98cff;
   --card-b: var(--cyan);
   --card-c: var(--red);
+}
+
+.advisor-card {
+  --card-a: var(--green);
+  --card-b: var(--cyan);
+  --card-c: var(--gold);
 }
 
 .video-card {

@@ -4,7 +4,7 @@ Static personal homepage for ZephyrLabs projects.
 
 ## What It Contains
 
-- `index.html`: minimal ZephyrLabs landing page with Gem Table, BoardReplayLab, the configurable video hub, and a short todo list.
+- `index.html`: minimal ZephyrLabs landing page with Gem Table, BoardReplayLab, GemHUD, the configurable video hub, and a short todo list.
 - `video.html`: configurable video hub. Public defaults are kept generic; production links are supplied by local config.
 - `splendor-table.html`: Gem Table, an unofficial Splendor-style local table.
 - `splendor-table.js`: local game logic, replay import/export, BGA-style action logs, hot-seat play, and random AI fallback.
@@ -14,6 +14,7 @@ Static personal homepage for ZephyrLabs projects.
 
 - Gem Table local multiplayer, replay workflows, and expansion compatibility.
 - BoardReplayLab replay capture/conversion tooling for Gem Table and training data.
+- GemHUD local board-state reading, card scoring, and action-advice overlays.
 - Stronger AlphaZero-style training with real-player replay data.
 - Tampermonkey scripts for BGA play/replay ergonomics.
 - Quantitative stock-model experiments and structured explanation videos.
@@ -21,6 +22,7 @@ Static personal homepage for ZephyrLabs projects.
 ## Related Work
 
 - [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): replay capture/conversion lab. The current Splendor module exports supported BGA replay data for Gem Table and AI workflows.
+- [GemHUD](https://github.com/Haro-stack/GemHUD): local helper overlay for visible Splendor board-state reading, card value badges, and ranked action suggestions without automatic moves.
 - [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard): upstream board-game AI framework reference used by the Gem Table Smart AI deployment.
 - `video.html`: video index for match analysis and project notes, configured through `site-config.local.json` on the server.
 
