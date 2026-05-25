@@ -7769,6 +7769,81 @@ Object.assign(I18N.de, {
     return compactPayload;
   }
 
+  function replaySourceState(gamedatas) {
+    return gamedatas && gamedatas.source_state || null;
+  }
+
+  function replaySourcePlayer(source, playerId) {
+    return (source && Array.isArray(source.players) ? source.players : []).find(function (player) {
+      return player && String(player.id || "") === String(playerId || "");
+    }) || null;
+  }
+
+  function sameNobleIdentity(left, right) {
+    return !!(left && right && ((left.bga_id && right.bga_id && String(left.bga_id) === String(right.bga_id)) || left.id === right.id));
+  }
+
+  function removeReplayNoble(nobles, noble) {
+    if (!Array.isArray(nobles) || !noble) return;
+    var index = nobles.findIndex(function (entry) {
+      return sameNobleIdentity(entry, noble);
+    });
+    if (index >= 0) nobles.splice(index, 1);
+  }
+
+  function syncReplayGamedatasPlayer(gamedatas, player) {
+    if (!gamedatas || !player || !gamedatas.players || !gamedatas.players[player.id]) return;
+    gamedatas.players[player.id].nobles = clone(player.nobles || []);
+    gamedatas.players[player.id].score = playerScore(player);
+  }
+
+  function applyReplayNobleRepair(gamedatas, repair) {
+    var source = replaySourceState(gamedatas);
+    if (!source || !repair || !repair.noble) return;
+    removeReplayNoble(source.nobles, repair.noble);
+    removeReplayNoble(gamedatas.nobles, repair.noble);
+    var player = replaySourcePlayer(source, repair.player_id);
+    if (!player) return;
+    player.nobles = Array.isArray(player.nobles) ? player.nobles : [];
+    if (!player.nobles.some(function (entry) { return sameNobleIdentity(entry, repair.noble); })) {
+      player.nobles.push(clone(repair.noble));
+    }
+    syncReplayGamedatasPlayer(gamedatas, player);
+  }
+
+  function normalizeBgaReplayMissingNobles(compactPayload, sourcePayload) {
+    if (!compactPayload || !Array.isArray(compactPayload.moves) || !replayPayloadLooksBgaDerived(sourcePayload)) return compactPayload;
+    var repairs = [];
+    compactPayload.moves.forEach(function (move) {
+      var gamedatas = move && move.state_after;
+      var source = replaySourceState(gamedatas);
+      if (!source) return;
+      repairs.forEach(function (repair) {
+        applyReplayNobleRepair(gamedatas, repair);
+      });
+      if (!move || (move.type !== "buyMarket" && move.type !== "buyReserved")) return;
+      var args = move.args || {};
+      if (args.noble_id || args.noble) return;
+      var player = replaySourcePlayer(source, move.player_id);
+      var eligible = player && GemTableRules.firstEligibleNoble(source.nobles, player.bonuses);
+      if (!eligible) return;
+      var repair = { player_id: player.id, noble: clone(eligible.noble) };
+      applyReplayNobleRepair(gamedatas, repair);
+      args.noble_id = repair.noble.id;
+      args.noble = clone(repair.noble);
+      args.noble_inferred = true;
+      move.args = args;
+      move.notification = move.notification || {};
+      move.notification.args = Object.assign({}, move.notification.args || {}, {
+        noble_id: repair.noble.id,
+        noble: clone(repair.noble),
+        noble_inferred: true
+      });
+      repairs.push(repair);
+    });
+    return compactPayload;
+  }
+
   function compactStateForPersistence(game) {
     var compact = compactSourceState(game);
     if (!compact) return null;
@@ -8677,6 +8752,18 @@ Object.assign(I18N.de, {
     return noble;
   }
 
+  function applyBgaInferredNoble(game, player) {
+    if (!game || !player || !Array.isArray(game.nobles)) return null;
+    var eligible = GemTableRules.firstEligibleNoble(game.nobles, player.bonuses);
+    if (!eligible) return null;
+    var noble = game.nobles.splice(eligible.index, 1)[0];
+    var alreadyClaimed = player.nobles.some(function (entry) {
+      return entry && noble && ((entry.bga_id && entry.bga_id === noble.bga_id) || entry.id === noble.id);
+    });
+    if (!alreadyClaimed) player.nobles.push(noble);
+    return noble;
+  }
+
   function applyBgaInitialGamedatas(game, gamedatas) {
     if (!gamedatas || !gamedatas.market || !gamedatas.carddb) return false;
     var market = gamedatas.market || {};
@@ -8932,6 +9019,11 @@ Object.assign(I18N.de, {
       });
       applyBgaRevealCards(game, items, gamedatas, usedRevealItems);
       var claimedAfterBuy = applyBgaClaimNoble(game, player, claim, gamedatas);
+      var nobleInferred = false;
+      if (!claimedAfterBuy && !claim) {
+        claimedAfterBuy = applyBgaInferredNoble(game, player);
+        nobleInferred = !!claimedAfterBuy;
+      }
       var args = {
         card_id: buyCard.id,
         card: buyCard,
@@ -8949,6 +9041,7 @@ Object.assign(I18N.de, {
       if (primaryPurchase.strongholdsReturned.length) args.strongholds_returned = primaryPurchase.strongholdsReturned;
       if (strongholdEffects.length) args.stronghold_effects = strongholdEffects;
       if (orientEffects.length) args.orient_effects = orientEffects;
+      if (nobleInferred) args.noble_inferred = true;
       return {
         type: primaryPurchase.fromHand ? "buyReserved" : "buyMarket",
         player: player,
@@ -9260,7 +9353,7 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var compactPayload = normalizeBgaReplayTurnProgress(compactReplayPayload(payload), payload);
+    var compactPayload = normalizeBgaReplayMissingNobles(normalizeBgaReplayTurnProgress(compactReplayPayload(payload), payload), payload);
     if (!compactPayload || !compactPayload.gamedatas || !Array.isArray(compactPayload.moves)) {
       if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
       else showMessage(t("msgLoadReplayExpected"));

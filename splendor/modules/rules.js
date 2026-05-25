@@ -128,6 +128,26 @@
     return Object.assign({ summary: summary }, status);
   }
 
+  function nobleRequirementMet(noble, bonuses) {
+    var req = noble && (noble.req || noble.requirements) || {};
+    return Object.keys(req).every(function (color) {
+      return (Number(bonuses && bonuses[color]) || 0) >= (Number(req[color]) || 0);
+    });
+  }
+
+  function firstEligibleNobleIndex(nobles, bonuses) {
+    if (!Array.isArray(nobles)) return -1;
+    for (var index = 0; index < nobles.length; index += 1) {
+      if (nobleRequirementMet(nobles[index], bonuses)) return index;
+    }
+    return -1;
+  }
+
+  function firstEligibleNoble(nobles, bonuses) {
+    var index = firstEligibleNobleIndex(nobles, bonuses);
+    return index >= 0 ? { index: index, noble: nobles[index] } : null;
+  }
+
   function replayUrlFromQuery(search, origin) {
     if (!origin) return "";
     var params = search instanceof URLSearchParams ? search : new URLSearchParams(search || "");
@@ -150,6 +170,9 @@
     bonusDisplaySummary: bonusDisplaySummary,
     cardIsOrient: cardIsOrient,
     effectiveCardBonuses: effectiveCardBonuses,
+    firstEligibleNoble: firstEligibleNoble,
+    firstEligibleNobleIndex: firstEligibleNobleIndex,
+    nobleRequirementMet: nobleRequirementMet,
     replayUrlFromQuery: replayUrlFromQuery,
     strongholdAccessStatusForSlot: strongholdAccessStatusForSlot,
     strongholdAccessStatusFromSummary: strongholdAccessStatusFromSummary,
