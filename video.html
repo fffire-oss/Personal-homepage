@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <canvas id="orbit-field" class="orbit-field" aria-hidden="true"></canvas>
     <main class="home-shell video-shell" aria-labelledby="video-hub-title">
       <header class="hero compact-hero">
         <a class="brand-mark" href="index.html" aria-label="ZephyrLabs home">ZL</a>
@@ -19,12 +20,20 @@
           <h1 id="video-hub-title">Video Hub</h1>
           <a
             id="video-profile-link"
-            class="video-profile-link"
+            class="video-emblem-link"
             href="#"
             target="_blank"
             rel="noreferrer"
-            hidden
-          >Creator profile</a>
+            aria-label="Creator profile"
+          >
+            <span class="video-emblem" aria-hidden="true">
+              <span class="video-face">
+                <span class="video-eye left"></span>
+                <span class="video-eye right"></span>
+                <span class="video-mouth"></span>
+              </span>
+            </span>
+          </a>
         </div>
         <p id="video-summary" class="summary">
           Match commentary, replay notes, and project updates for Gem Table and AI training.
@@ -53,6 +62,7 @@
         </div>
       </section>
     </main>
+    <script src="homepage-effects.js"></script>
     <script src="video-config.js"></script>
   </body>
 </html>

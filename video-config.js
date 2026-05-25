@@ -62,6 +62,25 @@
     link.hidden = false;
   }
 
+  function configureVisualLink(id, url, label) {
+    const link = document.getElementById(id);
+
+    if (!link) {
+      return;
+    }
+
+    const safeUrl = getSafeUrl(url);
+    link.setAttribute("aria-label", label || DEFAULT_CONFIG.videoHub.profileLabel);
+    link.hidden = false;
+
+    if (safeUrl) {
+      link.href = safeUrl;
+      return;
+    }
+
+    link.removeAttribute("href");
+  }
+
   function configureEmbed(url, title) {
     const frame = document.getElementById("featured-video-frame");
     const safeUrl = getSafeUrl(url);
@@ -107,7 +126,7 @@
     setText("featured-video-title", hub.featuredTitle);
     setText("featured-video-description", hub.featuredDescription);
 
-    configureLink("video-profile-link", hub.profileUrl, hub.profileLabel);
+    configureVisualLink("video-profile-link", hub.profileUrl, hub.profileLabel);
     configureLink("featured-video-link", hub.featuredUrl, hub.featuredLinkLabel);
     configureEmbed(hub.embedUrl, hub.embedTitle);
   }

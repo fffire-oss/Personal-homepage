@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <canvas id="orbit-field" class="orbit-field" aria-hidden="true"></canvas>
     <main class="home-shell" aria-labelledby="site-title">
       <header class="hero">
         <a class="brand-mark" href="/" aria-label="ZephyrLabs home">ZL</a>
@@ -22,12 +23,16 @@
       </header>
 
       <section class="projects" aria-labelledby="projects-title">
-        <h2 id="projects-title">Projects</h2>
-        <div class="project-list">
+        <div class="section-kicker">
+          <h2 id="projects-title">Projects</h2>
+          <span>01 / 04</span>
+        </div>
+        <div class="project-mosaic">
           <a class="project-card gem-card" href="splendor-table.html">
+            <span class="project-index">01</span>
             <span class="project-kind">Playable table</span>
             <strong>Gem Table</strong>
-            <span>Unofficial Splendor-style table with local multiplayer, replay import/export, AI hooks, and expansion work in progress.</span>
+            <span class="project-copy">Splendor-style table with local play, replay import/export, AI hooks, and expansion work.</span>
           </a>
 
           <a
@@ -36,9 +41,10 @@
             target="_blank"
             rel="noreferrer"
           >
+            <span class="project-index">02</span>
             <span class="project-kind">Replay tool</span>
             <strong>BoardReplayLab</strong>
-            <span>A lab repo for replay capture and conversion tools. Current module: Splendor replay data for Gem Table and AI training.</span>
+            <span class="project-copy">Replay capture and conversion tools for Gem Table, data review, and training workflows.</span>
           </a>
 
           <a
@@ -47,18 +53,20 @@
             target="_blank"
             rel="noreferrer"
           >
+            <span class="project-index">03</span>
             <span class="project-kind">Play advisor</span>
             <strong>GemHUD</strong>
-            <span>Local Splendor helper overlay for visible board-state reading, card value badges, and ranked action suggestions without automatic moves.</span>
+            <span class="project-copy">Local overlay for visible board-state reading, card value badges, and ranked advice.</span>
           </a>
 
           <a
             class="project-card video-card"
             href="video.html"
           >
+            <span class="project-index">04</span>
             <span class="project-kind">Creator channel</span>
             <strong>Video Hub</strong>
-            <span>Configured video links for commentary, replay notes, and project updates.</span>
+            <span class="project-copy">Configured video links for commentary, replay notes, and project updates.</span>
           </a>
         </div>
       </section>
@@ -74,5 +82,6 @@
         </ul>
       </section>
     </main>
+    <script src="homepage-effects.js"></script>
   </body>
 </html>
