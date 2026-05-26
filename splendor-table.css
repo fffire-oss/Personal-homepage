@@ -5138,6 +5138,7 @@ body.hand-dock-entering .active-hand-panel {
     grid-template-rows: none;
   }
 
+  .market > .tier,
   .market-page .tier,
   .market-page-orient-panel .tier {
     grid-template-columns: minmax(0, 1fr);
@@ -5145,12 +5146,15 @@ body.hand-dock-entering .active-hand-panel {
     height: auto;
   }
 
+  .market > .tier .deck-box,
   .market-page .deck-box {
     order: 1;
-    min-height: auto;
+    min-height: 42px;
     height: auto;
+    max-height: 48px;
   }
 
+  .market > .tier .card-grid,
   .market-page .card-grid {
     order: 2;
     min-height: 0;
