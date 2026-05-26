@@ -4405,6 +4405,10 @@ body.hand-dock-entering .active-hand-panel {
     padding: 8px;
   }
 
+  .market {
+    padding-bottom: calc(126px + env(safe-area-inset-bottom, 0px));
+  }
+
   .market-subpanel {
     min-width: 0;
     max-width: 100%;
@@ -4533,13 +4537,18 @@ body.hand-dock-entering .active-hand-panel {
     grid-template-columns: auto auto minmax(0, 1fr) auto;
     gap: 6px;
     align-items: center;
-    min-height: auto;
+    min-height: 42px;
+    height: auto;
+    max-height: 48px;
     padding: 6px;
   }
 
   .deck-box .label,
   .deck-box .muted {
     margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .deck-box strong {
