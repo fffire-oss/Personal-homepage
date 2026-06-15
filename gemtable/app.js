@@ -1,23 +1,44 @@
 (function () {
   "use strict";
 
+  var GemTableRules = window.GemTableRules;
+  if (!GemTableRules) throw new Error("GemTableRules must be loaded before gemtable/app.js.");
+
   var STORAGE_KEY = "zephyrlabs-gem-table-save-v3";
   var LEGACY_STORAGE_KEYS = ["zephyrlabs-gem-table-save-v2", "zephyrlabs-gem-table-save-v1"];
   var SCHEMA = "zephyrlabs-gemtable-bga-v1";
+  var RULESET_SCHEMA = "zephyrlabs-gemtable-ruleset-v1";
+  var BASE_RULESET_ID = "splendor-base";
+  var ORIENT_RULESET_ID = "splendor-base-orient";
+  var STRONGHOLDS_RULESET_ID = "splendor-base-strongholds";
+  var ORIENT_STRONGHOLDS_RULESET_ID = "splendor-base-orient-strongholds";
+  var EXPANSION_MODULES = ["cities", "trading_posts", "orient", "strongholds"];
+  var ENGINE_SUPPORTED_MODULES = ["orient", "strongholds"];
+  var BASE_MARKET_ID = "base";
+  var ORIENT_MARKET_ID = "orient";
+  var BASE_MARKET_SLOT_COUNT = 4;
+  var ORIENT_MARKET_SLOT_COUNT = 2;
+  var ORIENT_CATALOG_SCHEMA = "zephyrlabs-gemtable-orient-bga-carddb-v1";
+  var MOVE_EVENT_SCHEMA = "zephyrlabs-gemtable-move-events-v1";
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
-  var TURN_SWITCH_DELAY_MS = 3000;
+  var TURN_SWITCH_READY_MS = 3000;
+  var HAND_DOCK_RETRACT_MS = 260;
+  var HAND_DOCK_REENTER_MS = 360;
   var AI_MIN_THINK_MS = 2000;
   var REPLAY_STEP_DELAY_MS = 1800;
   var REPLAY_AUTO_DELAY_MS = 420;
+  var LEGACY_TABLE_SEED_FALLBACK = 20260524;
+  var marketOrientWrapSyncScheduled = false;
   var GEM_HEX = {
     white: "#f1eadb",
     blue: "#55a7ff",
     green: "#37e89b",
     red: "#ff6b5d",
     black: "#778494",
-    gold: "#ffbf45"
+    gold: "#ffbf45",
+    wild: "#b9f7ff"
   };
   var TOKEN_LABEL = {
     white: "W",
@@ -25,7 +46,15 @@
     green: "G",
     red: "R",
     black: "B",
-    gold: "Au"
+    gold: "Au",
+    wild: "\u25c7"
+  };
+  var BGA_COST_COLOR = {
+    C: "white",
+    S: "blue",
+    E: "green",
+    R: "red",
+    O: "black"
   };
   var TIER_SIZES = { 1: 40, 2: 30, 3: 20 };
   var LANGUAGE_KEY = "zephyrlabs-gem-table-language-v1";
@@ -59,6 +88,10 @@
       aiLevelExpert: "Expert",
       aiBadgeFormat: "DinoBoard AI: {level}",
       randomAiBadgeFormat: "Random AI: {level}",
+      rulesetModules: "Modules",
+      rulesetModulesHint: "Base game starts with every module off.",
+      orientModule: "Orient",
+      strongholdsModule: "Strongholds",
       startGame: "Start game",
       resumeSave: "Resume save",
       clearSave: "Clear save",
@@ -72,7 +105,7 @@
       move: "Move",
       aiPlayers: "AI players",
       aiUnavailableTitle: "DinoBoard AI",
-      aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
+      aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
       returnTokens: "Return tokens",
       returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
       chooseOneNoble: "Choose one noble",
@@ -88,6 +121,54 @@
       noblesHint: "Permanent bonuses only. No replenishment.",
       market: "Market",
       marketHint: "Buy, reserve, or reserve blind from a deck.",
+      baseMarketTab: "Base",
+      orientMarketTab: "Orient",
+      orientMarketHint: "Buy, reserve, and resolve The Orient cards.",
+      orientAbilityPlaceholder: "Orient ability",
+      orientActionsPending: "Actions pending",
+      orientAbilityPending: "Ability pending",
+      orientDoubleBonus: "Double bonus",
+      orientVirtualGold: "2 virtual gold",
+      orientCopyBonus: "Copy bonus",
+      orientFreeCard: "Free tier {tier}",
+      orientDiscardCost: "Discard {count}",
+      orientVirtualGoldZone: "Orient gold",
+      orientChoiceTitle: "Orient ability",
+      orientChoiceBody: "Resolve this card's required effect before the turn continues.",
+      orientChooseCopy: "Choose a bonus card to copy",
+      orientChooseFree: "Choose a free tier {tier} card",
+      orientUseVirtual: "Use Orient gold",
+      orientPaymentDiscard: "Discard cards",
+      orientDiscardPriorityHint: "Discard cards with the wild mark before regular cards.",
+      orientDiscardPriorityBadge: "First",
+      orientVirtualSelected: "Orient gold card x{count}",
+      paymentNeeds: "Cost",
+      paymentPlayerTokens: "Your tokens",
+      paymentVirtualHint: "One Orient gold card may be discarded for up to 2 wild gold in this purchase.",
+      paymentVirtualOverpayHint: "The Orient gold card has unused value. If a real token is not needed, tap it again to keep it.",
+      orientNoChoices: "No legal Orient choice is available.",
+      orientDirectClickHint: "Click a highlighted market card to resolve this ability.",
+      orientCopyDirectClickHint: "Open your bonus preview, then click a highlighted purchased card to copy it.",
+      strongholdActionTitle: "Stronghold move",
+      strongholdActionBody: "After buying a card, place, move, or remove one stronghold.",
+      strongholdPlace: "Place",
+      strongholdMove: "Move",
+      strongholdRemove: "Remove",
+      strongholdBlocked: "Stronghold",
+      strongholdStock: "Strongholds",
+      strongholdSelectTarget: "Select a market card for your stronghold.",
+      strongholdSelectSource: "Select one of your strongholds, or an opponent card with exactly one stronghold.",
+      strongholdConquestTitle: "Conquest available",
+      strongholdConquestBody: "Choose a conquest purchase below, or continue without conquest.",
+      strongholdConquest: "Conquest",
+      strongholdConquestBuy: "Buy conquest card",
+      strongholdConquestSkip: "Continue",
+      strongholdNoLegalTarget: "That card is not a legal stronghold target.",
+      strongholdPlaceTargets: "Place targets",
+      strongholdMoveSources: "Move from",
+      strongholdMoveTargets: "Move targets",
+      strongholdRemoveTargets: "Remove targets",
+      orientSlotLabel: "Slot {slot}",
       actionLog: "Action log",
       logSafeMode: "Masked",
       logFullMode: "Full",
@@ -99,6 +180,12 @@
       logDiscardTitle: "Return token",
       logNobleTitle: "Noble",
       logGameTitle: "Game",
+      logStrongholdPlaceTitle: "Place stronghold",
+      logStrongholdMoveTitle: "Move stronghold",
+      logStrongholdRemoveTitle: "Remove stronghold",
+      logStrongholdTarget: "Target",
+      logStrongholdFrom: "From",
+      logStrongholdTo: "To",
       logBlindCard: "Blind tier {tier}",
       logUnknownCard: "Unknown card",
       logGoldTaken: "Gold taken",
@@ -138,7 +225,7 @@
       bgaCaptureTitle: "BGA replay capture",
       bgaCaptureBody: "Use the tool provided in BoardReplayLab to crawl and convert replay JSON.",
       bgaTableImportTitle: "Import by BGA table ID",
-      bgaTableImportBody: "Enter a table ID to try direct import. If the server cannot access BGA, use the BoardReplayLab crawler project and import its JSON file.",
+      bgaTableImportBody: "Enter a table ID to try direct import. If the server cannot access BGA, use the tool provided in BoardReplayLab and import its generated JSON file.",
       bgaTableIdLabel: "BGA table ID",
       bgaTableIdPlaceholder: "123456789",
       importBgaTable: "Import table ID",
@@ -153,7 +240,7 @@
       buy: "Buy",
       buyShort: "Buy",
       reserve: "Reserve",
-      reserveShort: "Res",
+      reserveShort: "Res.",
       choose: "Choose",
       tier: "Tier",
       deckCards: "Cards left",
@@ -181,6 +268,7 @@
       gameAiThinking: "AI thinking",
       gameTurnTransition: "Turn handoff",
       gameReplayStep: "Replay step",
+      handoffContinue: "Continue",
       gameFinal: "Final round ({turns} turns left)",
       gameProgress: "In progress",
       msgSaveSerializeFailed: "Save failed: table state could not be serialized.",
@@ -200,6 +288,11 @@
       msgMarketGone: "That market card is no longer available.",
       msgDeckEmpty: "That deck is empty.",
       msgNotEnoughForCard: "Not enough tokens or gold for that card.",
+      msgOrientAbilityPending: "Resolve the pending Orient ability first.",
+      msgOrientCopyNeedsBonus: "Copy a bonus first.",
+      msgOrientDiscardNeedsCards: "Discard {count} {color} cards first.",
+      msgOrientChooseCopy: "Choose a card for {card} to copy.",
+      msgOrientChooseFree: "Choose a free tier {tier} card.",
       msgChoosePayment: "Choose the payment for {card}.",
       msgPaymentInvalid: "This payment does not exactly cover the card cost.",
       msgPaymentCleared: "Payment selection cleared.",
@@ -232,13 +325,14 @@
       msgBgaTableIdRequired: "Enter a numeric BGA table ID first.",
       msgBgaReviewOpened: "BGA review opened. Log in on BGA if prompted, then use BoardReplayLab if you need an external JSON capture.",
       msgBgaTableFetching: "Trying to import BGA table {table}.",
-      msgBgaDirectImportFailed: "Direct BGA table import failed. Use the BoardReplayLab crawler project, then import the generated JSON file.",
-      msgBgaServerUnavailable: "Replay server is not available. Use the BoardReplayLab crawler project and import the generated JSON file.",
+      msgBgaDirectImportFailed: "Direct BGA table import failed. Use the tool provided in BoardReplayLab, then import the generated JSON file.",
+      msgBgaServerUnavailable: "Replay server is not available. Use the tool provided in BoardReplayLab and import the generated JSON file.",
       msgBgaServerQueued: "Server is crawling BGA table {table}. Keep this page open.",
       msgBgaServerDone: "Server captured the replay JSON. Download is ready.",
       msgBgaServerFailed: "Server crawl failed: {message}",
       msgBgaCaptureUnsupported: "Replay JSON is ready to download, but this BGA capture could not be adapted into the current Gem Table replay schema.",
       msgBgaExpansionUnsupported: "Replay JSON is ready to download, but an active expansion flag was detected, so it cannot be imported into the base-game table.",
+      msgRulesetUnsupported: "This replay uses unsupported Splendor modules: {modules}. Current Gem Table supports base game plus The Orient and Strongholds.",
       msgInitialReplayPosition: "Initial replay position.",
       msgReplayAtMove: "Replay at move {move}: {type}.",
       msgReplayJumped: "Jumped to move {move}.",
@@ -250,6 +344,7 @@
       msgChoosePlayerCount: "Choose 2, 3, or 4 players.",
       msgGameStarted: "Game started.",
       msgSwitchingPlayer: "Turn ends. Next player in {seconds}s.",
+      msgSwitchingReady: "Handoff ready. Continue when the table is clear.",
       msgAiThinking: "{player} is thinking.",
       msgReplayStepAnimating: "Replaying move {move} ({seconds}s).",
       msgRandomAiEnabled: "DinoBoard smart AI supports 2-player tables; unsupported AI seats use random legal AI.",
@@ -302,7 +397,7 @@
     move: "步数",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须归还宝石，直到持有数量不超过 10 个，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -381,7 +476,7 @@
     clearSave: "清除存檔",
     currentPlayer: "當前玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u53ea\u652f\u63f4 2 \u4eba\u57fa\u790e\u7248\u7480\u74a8\u5bf6\u77f3\uff1b\u64f4\u5145\u5c40\u66ab\u6642\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
     noTakeSelected: "尚未選擇拿取。",
     selectedTokens: "已選擇：{tokens}。合法拿取為 3 個不同顏色，或從數量不少於 4 的同色堆拿 2 個。",
     confirmTake: "確認拿取",
@@ -429,7 +524,7 @@
     move: "手番",
     aiPlayers: "AI プレイヤー",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
+    aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは所持トークンが10個以下になるまで返してから、貴族または次の手番を解決します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -515,7 +610,7 @@
     move: "Coup",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs. Si plusieurs sieges utilisent l'IA, le premier siege choisi utilise DinoBoard et les autres utilisent l'IA aleatoire.",
+    aiUnavailableBody: "DinoBoard AI prend seulement en charge le jeu de base a 2 joueurs. Les extensions utilisent l'IA aleatoire pour l'instant.",
     returnTokens: "Rendre des jetons",
     chooseOneNoble: "Choisir un noble",
     bank: "Banque",
@@ -594,7 +689,7 @@
     move: "Zug",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische aktiv. Wenn mehrere Sitze KI verwenden, nutzt der zuerst ausgewaehlte Sitz DinoBoard und die anderen nutzen Zufalls-KI.",
+    aiUnavailableBody: "DinoBoard AI unterstuetzt derzeit nur das 2-Spieler-Basisspiel. Erweiterungen nutzen vorerst Zufalls-KI.",
     returnTokens: "Marker zurückgeben",
     chooseOneNoble: "Einen Adligen wählen",
     bank: "Bank",
@@ -666,7 +761,7 @@
     move: "Movimiento",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores. Si varios asientos usan IA, el primer asiento elegido usa DinoBoard y los demas usan IA aleatoria.",
+    aiUnavailableBody: "DinoBoard AI solo admite partidas base de 2 jugadores. Las expansiones usan IA aleatoria por ahora.",
     returnTokens: "Devolver fichas",
     chooseOneNoble: "Elegir un noble",
     bank: "Banco",
@@ -772,7 +867,7 @@
     move: "\u6b65\u6570",
     aiPlayers: "AI \u73a9\u5bb6",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
     bank: "\u94f6\u884c",
     confirmTake: "\u786e\u8ba4\u62ff\u53d6",
     clear: "\u6e05\u9664",
@@ -806,7 +901,7 @@
     currentPlayer: "\u7576\u524d\u73a9\u5bb6",
     restartGame: "\u91cd\u65b0\u958b\u59cb",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u53ea\u652f\u63f4 2 \u4eba\u57fa\u790e\u7248\u7480\u74a8\u5bf6\u77f3\uff1b\u64f4\u5145\u5c40\u66ab\u6642\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
     actionLog: "\u884c\u52d5\u65e5\u8a8c",
     privateHand: "\u79c1\u4eba\u624b\u724c",
     buy: "\u8cfc\u8cb7",
@@ -908,7 +1003,7 @@
     aiBadgeFormat: "DinoBoard AI\uff1a{level}",
     randomAiBadgeFormat: "\u968f\u673a AI\uff1a{level}",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u4ec5\u652f\u6301 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u4e2a\u5ea7\u4f4d\u90fd\u542f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9009\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u968f\u673a AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
     returnTokens: "归还宝石",
     returnTokensBody: "当前玩家必须把宝石归还到 10 枚或更少，之后才会结算贵族或进入下一回合。",
     chooseOneNoble: "选择一位贵族",
@@ -1049,7 +1144,7 @@
     move: "步數",
     aiPlayers: "AI 玩家",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u50c5\u652f\u63f4 2 \u4eba\u5c40\uff1b\u5982\u679c\u591a\u500b\u5ea7\u4f4d\u90fd\u555f\u7528 AI \u63a5\u7ba1\uff0c\u5148\u9078\u4e2d\u7684 AI \u5ea7\u4f4d\u4f7f\u7528 DinoBoard\uff0c\u5176\u4ed6\u5ea7\u4f4d\u4f7f\u7528\u96a8\u6a5f AI\u3002",
+    aiUnavailableBody: "DinoBoard \u667a\u6167 AI \u76ee\u524d\u53ea\u652f\u63f4 2 \u4eba\u57fa\u790e\u7248\u7480\u74a8\u5bf6\u77f3\uff1b\u64f4\u5145\u5c40\u66ab\u6642\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
     gameAiThinking: "AI \u601d\u8003\u4e2d",
     gameTurnTransition: "\u56de\u5408\u4ea4\u63a5",
     msgSwitchingPlayer: "\u672c\u56de\u5408\u7d50\u675f\uff0c{seconds} \u79d2\u5f8c\u5207\u63db\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
@@ -1139,7 +1234,7 @@
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "AIプレイヤー",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard smart AI currently supports 2-player tables. If multiple seats use AI takeover, the first selected AI seat uses DinoBoard and the others use random legal AI.",
+    aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
     returnTokens: "トークンを返す",
     returnTokensBody: "現在のプレイヤーは、貴族判定または次の手番に進む前にトークンを10個以下まで返します。",
     chooseOneNoble: "貴族を1人選ぶ",
@@ -1211,7 +1306,7 @@
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "Joueurs IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI est activee pour les tables a 2 joueurs. Si plusieurs sieges utilisent l'IA, le premier siege choisi utilise DinoBoard et les autres utilisent l'IA aleatoire.",
+    aiUnavailableBody: "DinoBoard AI prend seulement en charge le jeu de base a 2 joueurs. Les extensions utilisent l'IA aleatoire pour l'instant.",
     returnTokens: "Rendre des jetons",
     returnTokensBody: "Le joueur actif doit revenir a 10 jetons ou moins avant les nobles ou le prochain tour.",
     chooseOneNoble: "Choisir un noble",
@@ -1272,7 +1367,7 @@ Object.assign(I18N.de, {
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "KI-Spieler",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI ist fuer 2-Spieler-Tische aktiv. Wenn mehrere Sitze KI verwenden, nutzt der zuerst ausgewaehlte Sitz DinoBoard und die anderen nutzen Zufalls-KI.",
+    aiUnavailableBody: "DinoBoard AI unterstuetzt derzeit nur das 2-Spieler-Basisspiel. Erweiterungen nutzen vorerst Zufalls-KI.",
     returnTokens: "Marker zurueckgeben",
     returnTokensBody: "Der aktive Spieler muss auf 10 oder weniger Marker zurueckgeben, bevor Adlige oder der naechste Zug abgewickelt werden.",
     chooseOneNoble: "Einen Adligen waehlen",
@@ -1329,7 +1424,7 @@ Object.assign(I18N.de, {
     aiBadgeFormat: "DinoBoard AI: {level}",
     aiPlayers: "Jugadores IA",
     aiUnavailableTitle: "DinoBoard AI",
-    aiUnavailableBody: "DinoBoard AI esta activa en mesas de 2 jugadores. Si varios asientos usan IA, el primer asiento elegido usa DinoBoard y los demas usan IA aleatoria.",
+    aiUnavailableBody: "DinoBoard AI solo admite partidas base de 2 jugadores. Las expansiones usan IA aleatoria por ahora.",
     returnTokens: "Devolver fichas",
     returnTokensBody: "El jugador activo debe devolver fichas hasta tener 10 o menos antes de resolver nobles o el siguiente turno.",
     chooseOneNoble: "Elegir un noble",
@@ -1373,6 +1468,12 @@ Object.assign(I18N.de, {
     logDiscardTitle: "\u5f52\u8fd8\u5b9d\u77f3",
     logNobleTitle: "\u8d35\u65cf",
     logGameTitle: "\u724c\u5c40",
+    logStrongholdPlaceTitle: "\u653e\u7f6e\u8981\u585e",
+    logStrongholdMoveTitle: "\u79fb\u52a8\u8981\u585e",
+    logStrongholdRemoveTitle: "\u79fb\u9664\u8981\u585e",
+    logStrongholdTarget: "\u76ee\u6807",
+    logStrongholdFrom: "\u4ece",
+    logStrongholdTo: "\u5230",
     logBlindCard: "{tier} \u7ea7\u6697\u724c",
     logUnknownCard: "\u672a\u77e5\u5361\u724c",
     logGoldTaken: "\u83b7\u5f97\u9ec4\u91d1",
@@ -1394,6 +1495,12 @@ Object.assign(I18N.de, {
     logDiscardTitle: "\u6b78\u9084\u5bf6\u77f3",
     logNobleTitle: "\u8cb4\u65cf",
     logGameTitle: "\u724c\u5c40",
+    logStrongholdPlaceTitle: "\u653e\u7f6e\u8981\u585e",
+    logStrongholdMoveTitle: "\u79fb\u52d5\u8981\u585e",
+    logStrongholdRemoveTitle: "\u79fb\u9664\u8981\u585e",
+    logStrongholdTarget: "\u76ee\u6a19",
+    logStrongholdFrom: "\u5f9e",
+    logStrongholdTo: "\u5230",
     logBlindCard: "{tier} \u7d1a\u6697\u724c",
     logUnknownCard: "\u672a\u77e5\u5361\u724c",
     logGoldTaken: "\u7372\u5f97\u9ec3\u91d1",
@@ -1416,7 +1523,7 @@ Object.assign(I18N.de, {
     fileIoHint: "\u5bfc\u51fa\u4f1a\u76f4\u63a5\u4e0b\u8f7d .json \u6587\u4ef6\uff0c\u5bfc\u5165\u6309\u94ae\u4f1a\u76f4\u63a5\u8bfb\u53d6\u9009\u62e9\u7684 .json \u6587\u4ef6\u3002",
     importReplayFile: "\u5bfc\u5165 JSON \u6587\u4ef6",
     bgaTableImportTitle: "\u901a\u8fc7 BGA table ID \u5bfc\u5165",
-    bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u670d\u52a1\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\u540e\u518d\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
+    bgaTableImportBody: "\u8f93\u5165 table ID \u540e\u5c1d\u8bd5\u76f4\u63a5\u5bfc\u5165\u3002\u5982\u679c\u670d\u52a1\u5668\u65e0\u6cd5\u8bbf\u95ee BGA\uff0c\u8bf7\u4f7f\u7528 BoardReplayLab \u91cc\u63d0\u4f9b\u7684\u5de5\u5177\u751f\u6210 JSON \u540e\u518d\u5bfc\u5165\u3002",
     importBgaTable: "\u5bfc\u5165 table ID",
     openBgaCrawlerGithub: "\u811a\u672c\u4e0b\u8f7d",
     downloadCapturedJson: "\u4e0b\u8f7d\u91c7\u96c6 JSON",
@@ -1436,8 +1543,8 @@ Object.assign(I18N.de, {
     msgBgaTableIdRequired: "\u8bf7\u5148\u8f93\u5165\u6570\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
     msgBgaReviewOpened: "\u5df2\u6253\u5f00 BGA \u56de\u653e\u9875\u3002\u5982\u679c\u8981\u6c42\u767b\u5f55\uff0c\u8bf7\u5728 BGA \u9875\u9762\u5b8c\u6210\u767b\u5f55\uff0c\u7136\u540e\u4f7f\u7528\u91c7\u96c6\u811a\u672c\u5bfc\u51fa\u3002",
     msgBgaTableFetching: "\u6b63\u5728\u5c1d\u8bd5\u5bfc\u5165 BGA \u724c\u684c {table}\u3002",
-    msgBgaDirectImportFailed: "\u76f4\u63a5\u5bfc\u5165 BGA table \u5931\u8d25\u3002\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\uff0c\u518d\u5bfc\u5165\u751f\u6210\u7684 JSON \u6587\u4ef6\u3002",
-    msgBgaServerUnavailable: "\u56de\u653e\u670d\u52a1\u5668\u4e0d\u53ef\u7528\u3002\u8bf7\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9879\u76ee\u540e\u5bfc\u5165 JSON \u6587\u4ef6\u3002",
+    msgBgaDirectImportFailed: "\u76f4\u63a5\u5bfc\u5165 BGA table \u5931\u8d25\u3002\u8bf7\u4f7f\u7528 BoardReplayLab \u91cc\u63d0\u4f9b\u7684\u5de5\u5177\u751f\u6210 JSON \u540e\u518d\u5bfc\u5165\u3002",
+    msgBgaServerUnavailable: "\u56de\u653e\u670d\u52a1\u5668\u4e0d\u53ef\u7528\u3002\u8bf7\u4f7f\u7528 BoardReplayLab \u91cc\u63d0\u4f9b\u7684\u5de5\u5177\u751f\u6210 JSON \u540e\u518d\u5bfc\u5165\u3002",
     msgBgaServerQueued: "\u670d\u52a1\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8bf7\u4fdd\u6301\u9875\u9762\u6253\u5f00\u3002",
     msgBgaServerDone: "\u670d\u52a1\u5668\u5df2\u751f\u6210\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f7d\u3002",
     msgBgaServerFailed: "\u670d\u52a1\u5668\u722c\u53d6\u5931\u8d25\uff1a{message}",
@@ -1448,6 +1555,8 @@ Object.assign(I18N.de, {
 
   Object.assign(I18N["zh-Hans"], {
     handoffAction: "\u52a8\u4f5c",
+    handoffContinue: "\u7ee7\u7eed",
+    msgSwitchingReady: "\u56de\u5408\u4ea4\u63a5\u5df2\u5c31\u7eea\uff0c\u786e\u8ba4\u540e\u5207\u6362\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
     replayAutoplay: "\u81ea\u52a8\u64ad\u653e",
     replayPause: "\u6682\u505c",
     replayJumpLabel: "\u6b65\u6570",
@@ -1457,7 +1566,41 @@ Object.assign(I18N.de, {
     msgReplayAutoplayStarted: "\u5df2\u5f00\u59cb\u81ea\u52a8\u64ad\u653e\u3002",
     msgReplayAutoplayStopped: "\u5df2\u6682\u505c\u81ea\u52a8\u64ad\u653e\u3002",
     bonusCardsTitle: "{color} \u5361\u724c",
-    bonusCardsEmpty: "\u8fd8\u6ca1\u6709\u8fd9\u4e2a\u989c\u8272\u7684\u5df2\u8d2d\u5361\u3002"
+    bonusCardsEmpty: "\u8fd8\u6ca1\u6709\u8fd9\u4e2a\u989c\u8272\u7684\u5df2\u8d2d\u5361\u3002",
+    orientMarketHint: "\u8d2d\u4e70\u3001\u9884\u7ea6\u5e76\u7ed3\u7b97\u4e1c\u65b9\u724c\u6548\u679c\u3002",
+    orientVirtualGold: "2 \u865a\u62df\u9ec4\u91d1",
+    orientCopyBonus: "\u590d\u5236\u52a0\u6210",
+    orientFreeCard: "\u514d\u8d39 {tier} \u7ea7\u724c",
+    orientDiscardCost: "\u5f03 {count}",
+    orientVirtualGoldZone: "\u4e1c\u65b9\u91d1",
+    orientChoiceTitle: "\u4e1c\u65b9\u80fd\u529b",
+    orientChoiceBody: "\u5148\u7ed3\u7b97\u8fd9\u5f20\u724c\u7684\u5fc5\u8981\u80fd\u529b\u3002",
+    orientChooseCopy: "\u9009\u62e9\u8981\u590d\u5236\u7684\u52a0\u6210\u724c",
+    orientChooseFree: "\u9009\u62e9\u4e00\u5f20\u514d\u8d39 {tier} \u7ea7\u724c",
+    orientUseVirtual: "\u865a\u62df\u91d1",
+    orientPaymentDiscard: "\u5f03\u724c",
+    orientDiscardPriorityHint: "\u5148\u5f03\u5e26\u4e07\u80fd\u6807\u8bb0\u7684\u724c\uff0c\u518d\u5f03\u666e\u901a\u724c\u3002",
+    orientDiscardPriorityBadge: "\u5148",
+    orientNoChoices: "\u6ca1\u6709\u53ef\u9009\u7684\u4e1c\u65b9\u80fd\u529b\u76ee\u6807\u3002",
+    orientDirectClickHint: "\u76f4\u63a5\u70b9\u51fb\u5e02\u573a\u91cc\u9ad8\u4eae\u7684\u5361\u724c\u6765\u7ed3\u7b97\u8fd9\u4e2a\u80fd\u529b\u3002",
+    orientCopyDirectClickHint: "\u6253\u5f00\u5956\u52b1\u9884\u89c8\uff0c\u7136\u540e\u76f4\u63a5\u70b9\u51fb\u9ad8\u4eae\u7684\u5df2\u8d2d\u5361\u6765\u590d\u5236\u3002",
+    strongholdPlace: "\u653e\u7f6e",
+    strongholdMove: "\u79fb\u52a8",
+    strongholdRemove: "\u79fb\u9664",
+    strongholdConquestTitle: "\u53ef\u5f81\u670d",
+    strongholdConquestBody: "\u5728\u4e0b\u65b9\u9009\u62e9\u5f81\u670d\u8d2d\u4e70\uff0c\u6216\u8005\u8df3\u8fc7\u5f81\u670d\u3002",
+    strongholdConquest: "\u5f81\u670d",
+    strongholdConquestBuy: "\u8d2d\u4e70\u5f81\u670d\u5361",
+    strongholdConquestSkip: "\u8df3\u8fc7",
+    msgOrientAbilityPending: "\u8bf7\u5148\u7ed3\u7b97\u5f85\u5904\u7406\u7684\u4e1c\u65b9\u80fd\u529b\u3002",
+    msgOrientCopyNeedsBonus: "\u5148\u590d\u5236\u4e00\u5f20\u52a0\u6210\u724c\u3002",
+    msgOrientDiscardNeedsCards: "\u5148\u5f03 {count} \u5f20 {color} \u724c\u3002",
+    msgOrientChooseCopy: "\u4e3a {card} \u9009\u62e9\u8981\u590d\u5236\u7684\u724c\u3002",
+    msgOrientChooseFree: "\u9009\u62e9\u4e00\u5f20\u514d\u8d39 {tier} \u7ea7\u724c\u3002",
+    strongholdPlaceTargets: "\u53ef\u653e\u7f6e\u76ee\u6807",
+    strongholdMoveSources: "\u4ece\u8fd9\u4e9b\u5361\u79fb\u52a8",
+    strongholdMoveTargets: "\u53ef\u79fb\u52a8\u5230",
+    strongholdRemoveTargets: "\u53ef\u79fb\u9664\u76ee\u6807"
   });
 
   Object.assign(I18N["zh-Hant"], {
@@ -1472,7 +1615,7 @@ Object.assign(I18N.de, {
     fileIoHint: "\u532f\u51fa\u6703\u76f4\u63a5\u4e0b\u8f09 .json \u6a94\u6848\uff0c\u532f\u5165\u6309\u9215\u6703\u76f4\u63a5\u8b80\u53d6\u9078\u64c7\u7684 .json \u6a94\u6848\u3002",
     importReplayFile: "\u532f\u5165 JSON \u6a94\u6848",
     bgaTableImportTitle: "\u901a\u904e BGA table ID \u532f\u5165",
-    bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u4f3a\u670d\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\u5f8c\u518d\u532f\u5165 JSON \u6a94\u6848\u3002",
+    bgaTableImportBody: "\u8f38\u5165 table ID \u5f8c\u5617\u8a66\u76f4\u63a5\u532f\u5165\u3002\u5982\u679c\u4f3a\u670d\u5668\u7121\u6cd5\u8a2a\u554f BGA\uff0c\u8acb\u4f7f\u7528 BoardReplayLab \u88e1\u63d0\u4f9b\u7684\u5de5\u5177\u7522\u751f JSON \u5f8c\u518d\u532f\u5165\u3002",
     importBgaTable: "\u532f\u5165 table ID",
     openBgaCrawlerGithub: "\u8173\u672c\u4e0b\u8f09",
     downloadCapturedJson: "\u4e0b\u8f09\u63a1\u96c6 JSON",
@@ -1492,8 +1635,8 @@ Object.assign(I18N.de, {
     msgBgaTableIdRequired: "\u8acb\u5148\u8f38\u5165\u6578\u5b57\u683c\u5f0f\u7684 BGA \u724c\u684c ID\u3002",
     msgBgaReviewOpened: "\u5df2\u6253\u958b BGA \u56de\u653e\u9801\u3002\u5982\u679c\u8981\u6c42\u767b\u5165\uff0c\u8acb\u5728 BGA \u9801\u9762\u5b8c\u6210\u767b\u5165\uff0c\u7136\u5f8c\u4f7f\u7528\u63a1\u96c6\u8173\u672c\u532f\u51fa\u3002",
     msgBgaTableFetching: "\u6b63\u5728\u5617\u8a66\u532f\u5165 BGA \u724c\u684c {table}\u3002",
-    msgBgaDirectImportFailed: "\u76f4\u63a5\u532f\u5165 BGA table \u5931\u6557\u3002\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\uff0c\u518d\u532f\u5165\u7522\u751f\u7684 JSON \u6a94\u6848\u3002",
-    msgBgaServerUnavailable: "\u56de\u653e\u4f3a\u670d\u5668\u4e0d\u53ef\u7528\u3002\u8acb\u4f7f\u7528 BoardReplayLab \u722c\u53d6\u9805\u76ee\u5f8c\u532f\u5165 JSON \u6a94\u6848\u3002",
+    msgBgaDirectImportFailed: "\u76f4\u63a5\u532f\u5165 BGA table \u5931\u6557\u3002\u8acb\u4f7f\u7528 BoardReplayLab \u88e1\u63d0\u4f9b\u7684\u5de5\u5177\u7522\u751f JSON \u5f8c\u518d\u532f\u5165\u3002",
+    msgBgaServerUnavailable: "\u56de\u653e\u4f3a\u670d\u5668\u4e0d\u53ef\u7528\u3002\u8acb\u4f7f\u7528 BoardReplayLab \u88e1\u63d0\u4f9b\u7684\u5de5\u5177\u7522\u751f JSON \u5f8c\u518d\u532f\u5165\u3002",
     msgBgaServerQueued: "\u4f3a\u670d\u5668\u6b63\u5728\u722c\u53d6 BGA \u724c\u684c {table}\uff0c\u8acb\u4fdd\u6301\u9801\u9762\u958b\u555f\u3002",
     msgBgaServerDone: "\u4f3a\u670d\u5668\u5df2\u7522\u751f\u56de\u653e JSON\uff0c\u53ef\u4ee5\u4e0b\u8f09\u3002",
     msgBgaServerFailed: "\u4f3a\u670d\u5668\u722c\u53d6\u5931\u6557\uff1a{message}",
@@ -1504,6 +1647,8 @@ Object.assign(I18N.de, {
 
   Object.assign(I18N["zh-Hant"], {
     handoffAction: "\u52d5\u4f5c",
+    handoffContinue: "\u7e7c\u7e8c",
+    msgSwitchingReady: "\u56de\u5408\u4ea4\u63a5\u5df2\u5c31\u7dd2\uff0c\u78ba\u8a8d\u5f8c\u5207\u63db\u5230\u4e0b\u4e00\u4f4d\u73a9\u5bb6\u3002",
     replayAutoplay: "\u81ea\u52d5\u64ad\u653e",
     replayPause: "\u66ab\u505c",
     replayJumpLabel: "\u6b65\u6578",
@@ -1513,7 +1658,41 @@ Object.assign(I18N.de, {
     msgReplayAutoplayStarted: "\u5df2\u958b\u59cb\u81ea\u52d5\u64ad\u653e\u3002",
     msgReplayAutoplayStopped: "\u5df2\u66ab\u505c\u81ea\u52d5\u64ad\u653e\u3002",
     bonusCardsTitle: "{color} \u5361\u724c",
-    bonusCardsEmpty: "\u9084\u6c92\u6709\u9019\u500b\u984f\u8272\u7684\u5df2\u8cfc\u5361\u3002"
+    bonusCardsEmpty: "\u9084\u6c92\u6709\u9019\u500b\u984f\u8272\u7684\u5df2\u8cfc\u5361\u3002",
+    orientMarketHint: "\u8cfc\u8cb7\u3001\u9810\u7d04\u4e26\u7d50\u7b97\u6771\u65b9\u724c\u6548\u679c\u3002",
+    orientVirtualGold: "2 \u865b\u64ec\u9ec3\u91d1",
+    orientCopyBonus: "\u8907\u88fd\u52a0\u6210",
+    orientFreeCard: "\u514d\u8cbb {tier} \u7d1a\u724c",
+    orientDiscardCost: "\u68c4 {count}",
+    orientVirtualGoldZone: "\u6771\u65b9\u91d1",
+    orientChoiceTitle: "\u6771\u65b9\u80fd\u529b",
+    orientChoiceBody: "\u5148\u7d50\u7b97\u9019\u5f35\u724c\u7684\u5fc5\u8981\u80fd\u529b\u3002",
+    orientChooseCopy: "\u9078\u64c7\u8981\u8907\u88fd\u7684\u52a0\u6210\u724c",
+    orientChooseFree: "\u9078\u64c7\u4e00\u5f35\u514d\u8cbb {tier} \u7d1a\u724c",
+    orientUseVirtual: "\u865b\u64ec\u91d1",
+    orientPaymentDiscard: "\u68c4\u724c",
+    orientDiscardPriorityHint: "\u5148\u68c4\u5e36\u842c\u80fd\u6a19\u8a18\u7684\u724c\uff0c\u518d\u68c4\u666e\u901a\u724c\u3002",
+    orientDiscardPriorityBadge: "\u5148",
+    orientNoChoices: "\u6c92\u6709\u53ef\u9078\u7684\u6771\u65b9\u80fd\u529b\u76ee\u6a19\u3002",
+    orientDirectClickHint: "\u76f4\u63a5\u9ede\u64ca\u5e02\u5834\u88e1\u9ad8\u4eae\u7684\u5361\u724c\u4f86\u7d50\u7b97\u9019\u500b\u80fd\u529b\u3002",
+    orientCopyDirectClickHint: "\u6253\u958b\u734e\u52f5\u9810\u89bd\uff0c\u7136\u5f8c\u76f4\u63a5\u9ede\u64ca\u9ad8\u4eae\u7684\u5df2\u8cfc\u5361\u4f86\u8907\u88fd\u3002",
+    strongholdPlace: "\u653e\u7f6e",
+    strongholdMove: "\u79fb\u52d5",
+    strongholdRemove: "\u79fb\u9664",
+    strongholdConquestTitle: "\u53ef\u5f81\u670d",
+    strongholdConquestBody: "\u5728\u4e0b\u65b9\u9078\u64c7\u5f81\u670d\u8cfc\u8cb7\uff0c\u6216\u8005\u8df3\u904e\u5f81\u670d\u3002",
+    strongholdConquest: "\u5f81\u670d",
+    strongholdConquestBuy: "\u8cfc\u8cb7\u5f81\u670d\u5361",
+    strongholdConquestSkip: "\u8df3\u904e",
+    msgOrientAbilityPending: "\u8acb\u5148\u7d50\u7b97\u5f85\u8655\u7406\u7684\u6771\u65b9\u80fd\u529b\u3002",
+    msgOrientCopyNeedsBonus: "\u5148\u8907\u88fd\u4e00\u5f35\u52a0\u6210\u724c\u3002",
+    msgOrientDiscardNeedsCards: "\u5148\u68c4 {count} \u5f35 {color} \u724c\u3002",
+    msgOrientChooseCopy: "\u70ba {card} \u9078\u64c7\u8981\u8907\u88fd\u7684\u724c\u3002",
+    msgOrientChooseFree: "\u9078\u64c7\u4e00\u5f35\u514d\u8cbb {tier} \u7d1a\u724c\u3002",
+    strongholdPlaceTargets: "\u53ef\u653e\u7f6e\u76ee\u6a19",
+    strongholdMoveSources: "\u5f9e\u9019\u4e9b\u5361\u79fb\u52d5",
+    strongholdMoveTargets: "\u53ef\u79fb\u52d5\u5230",
+    strongholdRemoveTargets: "\u53ef\u79fb\u9664\u76ee\u6a19"
   });
 
   Object.assign(I18N.ja, {
@@ -1524,28 +1703,38 @@ Object.assign(I18N.de, {
     bgaTableIdLabel: "BGA table ID",
     openBgaReview: "BGA \u56de\u653e\u3092\u958b\u304f",
     downloadBgaCaptureScript: "\u53d6\u5f97\u30b9\u30af\u30ea\u30d7\u30c8",
-    bgaCaptureStatus: "\u30d1\u30b9\u30ef\u30fc\u30c9\u306f BGA \u516c\u5f0f\u30da\u30fc\u30b8\u3067\u306e\u307f\u5165\u529b\u3057\u307e\u3059\u3002\u672c\u30b5\u30a4\u30c8\u306f\u4fdd\u5b58\u3057\u307e\u305b\u3093\u3002"
+    bgaCaptureStatus: "\u30d1\u30b9\u30ef\u30fc\u30c9\u306f BGA \u516c\u5f0f\u30da\u30fc\u30b8\u3067\u306e\u307f\u5165\u529b\u3057\u307e\u3059\u3002\u672c\u30b5\u30a4\u30c8\u306f\u4fdd\u5b58\u3057\u307e\u305b\u3093\u3002",
+    orientCopyBonus: "\u30dc\u30fc\u30ca\u30b9\u8907\u88fd",
+    orientUseVirtual: "\u4eee\u91d1",
+    orientPaymentDiscard: "\u30ab\u30fc\u30c9\u7834\u68c4",
+    orientChoiceTitle: "\u6771\u65b9\u80fd\u529b"
   });
 
   Object.assign(I18N.fr, {
     buyShort: "Ach.",
     reserveShort: "Res.",
     downloadBgaCaptureScript: "Script capture",
-    openBgaReview: "Ouvrir BGA"
+    openBgaReview: "Ouvrir BGA",
+    orientUseVirtual: "Or virt.",
+    orientPaymentDiscard: "Defausse"
   });
 
   Object.assign(I18N.de, {
     buyShort: "Kauf",
     reserveShort: "Res.",
     downloadBgaCaptureScript: "Capture-Skript",
-    openBgaReview: "BGA offnen"
+    openBgaReview: "BGA offnen",
+    orientUseVirtual: "Virt. Gold",
+    orientPaymentDiscard: "Ablegen"
   });
 
   Object.assign(I18N.es, {
     buyShort: "Com.",
     reserveShort: "Res.",
     downloadBgaCaptureScript: "Script captura",
-    openBgaReview: "Abrir BGA"
+    openBgaReview: "Abrir BGA",
+    orientUseVirtual: "Oro virt.",
+    orientPaymentDiscard: "Descartar"
   });
 
   var NOBLE_POOL = [
@@ -1574,6 +1763,7 @@ Object.assign(I18N.de, {
   var replayIndex = -1;
   var pendingTake = [];
   var pendingPayment = null;
+  var pendingOrientAction = null;
   var logMode = "safe";
   var startMode = "new";
   var messageText = "";
@@ -1588,13 +1778,20 @@ Object.assign(I18N.de, {
   var aiDisplayCurrentOverride = null;
   var lastHumanPlayerIndex = 0;
   var turnAdvanceTimer = null;
+  var handDockSwitchTimer = null;
+  var handDockReenterTimer = null;
+  var turnSwitchInProgress = false;
   var replayStepTimer = null;
   var replayAutoTimer = null;
   var replayAutoplay = false;
   var replayJumpClickValue = null;
+  var activeMarketPage = BASE_MARKET_ID;
   var overlayRefreshTimer = null;
+  var overlayProgressFrame = null;
   var activeBgaReplayJobId = "";
   var activeBgaReplayPollTimer = null;
+  var tapPreviewIgnoreCloseUntil = 0;
+  var marketSwipeStart = null;
   var el = {};
 
   function byId(id) {
@@ -1643,6 +1840,101 @@ Object.assign(I18N.de, {
       normalized[color] = Math.max(0, Number(cost && cost[color]) || 0);
     });
     return normalized;
+  }
+
+  function createBaseRuleset() {
+    var modules = {};
+    EXPANSION_MODULES.forEach(function (module) {
+      modules[module] = false;
+    });
+    return {
+      schema: RULESET_SCHEMA,
+      id: BASE_RULESET_ID,
+      name: "Splendor base",
+      modules: modules,
+      supported_by_engine: true
+    };
+  }
+
+  function createRuleset(options) {
+    var ruleset = createBaseRuleset();
+    var modules = options && options.modules || {};
+    EXPANSION_MODULES.forEach(function (module) {
+      if (modules[module] === true) ruleset.modules[module] = true;
+    });
+    if (modules.orient === true && modules.strongholds === true) {
+      ruleset.id = ORIENT_STRONGHOLDS_RULESET_ID;
+      ruleset.name = "Splendor base + Orient + Strongholds";
+    } else if (modules.orient === true) {
+      ruleset.id = ORIENT_RULESET_ID;
+      ruleset.name = "Splendor base + Orient";
+    } else if (modules.strongholds === true) {
+      ruleset.id = STRONGHOLDS_RULESET_ID;
+      ruleset.name = "Splendor base + Strongholds";
+    }
+    ruleset.supported_by_engine = rulesetSupportedByEngine(ruleset);
+    return ruleset;
+  }
+
+  function normalizeRuleset(ruleset) {
+    var normalized = createBaseRuleset();
+    if (!ruleset || typeof ruleset !== "object") return normalized;
+    if (typeof ruleset.id === "string" && ruleset.id) normalized.id = ruleset.id;
+    if (typeof ruleset.name === "string" && ruleset.name) normalized.name = ruleset.name;
+    var modules = ruleset.modules && typeof ruleset.modules === "object" ? ruleset.modules : {};
+    EXPANSION_MODULES.forEach(function (module) {
+      normalized.modules[module] = modules[module] === true;
+    });
+    if (normalized.modules.orient && normalized.modules.strongholds) {
+      if (normalized.id === BASE_RULESET_ID || normalized.id === ORIENT_RULESET_ID || normalized.id === STRONGHOLDS_RULESET_ID) normalized.id = ORIENT_STRONGHOLDS_RULESET_ID;
+      if (normalized.name === "Splendor base" || normalized.name === "Splendor base + Orient" || normalized.name === "Splendor base + Strongholds") normalized.name = "Splendor base + Orient + Strongholds";
+    } else if (normalized.modules.orient) {
+      if (normalized.id === BASE_RULESET_ID) normalized.id = ORIENT_RULESET_ID;
+      if (normalized.name === "Splendor base") normalized.name = "Splendor base + Orient";
+    } else if (normalized.modules.strongholds) {
+      if (normalized.id === BASE_RULESET_ID) normalized.id = STRONGHOLDS_RULESET_ID;
+      if (normalized.name === "Splendor base") normalized.name = "Splendor base + Strongholds";
+    }
+    normalized.supported_by_engine = rulesetSupportedByEngine(normalized);
+    return normalized;
+  }
+
+  function activeRulesetModules(ruleset) {
+    var normalized = ruleset && ruleset.modules ? ruleset : normalizeRuleset(ruleset);
+    return EXPANSION_MODULES.filter(function (module) {
+      return normalized.modules && normalized.modules[module] === true;
+    });
+  }
+
+  function unsupportedRulesetModules(ruleset) {
+    return activeRulesetModules(ruleset).filter(function (module) {
+      return ENGINE_SUPPORTED_MODULES.indexOf(module) < 0;
+    });
+  }
+
+  function rulesetSupportedByEngine(ruleset) {
+    return unsupportedRulesetModules(ruleset).length === 0;
+  }
+
+  function orientEnabledForRuleset(ruleset) {
+    return normalizeRuleset(ruleset).modules.orient === true;
+  }
+
+  function strongholdsEnabledForRuleset(ruleset) {
+    return normalizeRuleset(ruleset).modules.strongholds === true;
+  }
+
+  function dinoBoardSupportsRuleset(ruleset) {
+    return activeRulesetModules(ruleset).length === 0;
+  }
+
+  function ensureStateRuleset(game) {
+    if (game && typeof game === "object") {
+      game.ruleset = normalizeRuleset(game.ruleset);
+      ensureModuleState(game);
+      ensureMarketStructure(game);
+    }
+    return game;
   }
 
   var SOURCE_CARD_ROWS = {
@@ -1784,6 +2076,173 @@ Object.assign(I18N.de, {
   }
 
   var DEVELOPMENT_CARDS = buildDevelopmentCards();
+
+  var ORIENT_CARDDB_ROWS = [
+    [201, 11, 5, 0, "CCCRR", 1, 0, 0, ""],
+    [202, 11, 5, 0, "RRRSS", 1, 0, 0, ""],
+    [203, 11, 5, 0, "SSSEE", 1, 0, 0, ""],
+    [204, 11, 5, 0, "EEEOO", 1, 0, 0, ""],
+    [205, 11, 5, 0, "OOOCC", 1, 0, 0, ""],
+    [206, 11, 6, 0, "RRR", 0, 0, 0, ""],
+    [207, 11, 6, 0, "EEE", 0, 0, 0, ""],
+    [208, 11, 6, 0, "SSS", 0, 0, 0, ""],
+    [209, 11, 6, 0, "CCC", 0, 0, 0, ""],
+    [210, 11, 6, 0, "OOO", 0, 0, 0, ""],
+    [211, 12, 0, 1, "RRRREEE", 0, 0, 2, ""],
+    [212, 12, 1, 1, "OOOORRR", 0, 0, 2, ""],
+    [213, 12, 2, 1, "CCCCOOO", 0, 0, 2, ""],
+    [214, 12, 3, 1, "SSSSCCC", 0, 0, 2, ""],
+    [215, 12, 4, 1, "EEEESSS", 0, 0, 2, ""],
+    [216, 12, 5, 1, "RRRREEEC", 1, 1, 0, ""],
+    [217, 12, 5, 1, "SSSSOOOR", 1, 1, 0, ""],
+    [218, 12, 5, 1, "OOOORRRE", 1, 1, 0, ""],
+    [219, 12, 5, 1, "EEEECCCS", 1, 1, 0, ""],
+    [220, 12, 5, 1, "CCCCSSSO", 1, 1, 0, ""],
+    [221, 13, 4, 3, "", 0, 0, 1, "SS"],
+    [222, 13, 2, 3, "", 0, 0, 1, "OO"],
+    [223, 13, 3, 3, "", 0, 0, 1, "CC"],
+    [224, 13, 0, 3, "", 0, 0, 1, "EE"],
+    [225, 13, 1, 3, "", 0, 0, 1, "RR"],
+    [226, 13, 0, 1, "SSSSSSEEER", 0, 2, 1, ""],
+    [227, 13, 1, 1, "EEEEEERRRO", 0, 2, 1, ""],
+    [228, 13, 2, 1, "RRRRRROOOC", 0, 2, 1, ""],
+    [229, 13, 3, 1, "OOOOOOCCCS", 0, 2, 1, ""],
+    [230, 13, 4, 1, "CCCCCCSSSE", 0, 2, 1, ""]
+  ];
+
+  function costFromBgaCodes(value) {
+    var cost = emptyCounts(false);
+    String(value || "").split("").forEach(function (code) {
+      var color = BGA_COST_COLOR[code];
+      if (color) cost[color] += 1;
+    });
+    return normalizeCost(cost);
+  }
+
+  function orientAbilitiesForRow(row, color, costCardColor) {
+    var abilities = [];
+    if (row.symbolCopy) {
+      abilities.push({
+        id: "orient-copy-bonus",
+        timing: "on_acquire",
+        effect: "copy_bonus",
+        status: "implemented",
+        requires_choice: true,
+        immediate_choice: true
+      });
+    }
+    if (row.type === 6) {
+      abilities.push({
+        id: "orient-virtual-gold",
+        timing: "future_payment",
+        effect: "virtual_gold_2",
+        status: "implemented",
+        virtual_gold: 2,
+        immediate_choice: false
+      });
+    }
+    if (row.nbBonus === 2) {
+      abilities.push({
+        id: "orient-double-bonus",
+        timing: "on_acquire",
+        effect: "double_bonus",
+        status: "implemented",
+        bonus_color: color,
+        bonus_count: 2,
+        immediate_choice: false
+      });
+    }
+    if (row.symbolTake) {
+      abilities.push({
+        id: "orient-free-tier-" + row.symbolTake,
+        timing: "on_acquire",
+        effect: "take_level_free",
+        status: "implemented",
+        free_tier: row.symbolTake,
+        requires_choice: true,
+        immediate_choice: true
+      });
+    }
+    if (costCardColor) {
+      abilities.push({
+        id: "orient-discard-card-cost",
+        timing: "on_buy",
+        effect: "discard_cards_cost",
+        status: "implemented",
+        color: costCardColor,
+        count: 2,
+        immediate_choice: false
+      });
+    }
+    if (!abilities.length) {
+      abilities.push({
+        id: "orient-fixed-bonus",
+        timing: "on_acquire",
+        effect: "fixed_bonus",
+        status: "implemented",
+        bonus_color: color,
+        bonus_count: row.nbBonus || 1,
+        immediate_choice: false
+      });
+    }
+    return abilities;
+  }
+
+  function buildOrientCards() {
+    var cardsByTier = { 1: [], 2: [], 3: [] };
+    ORIENT_CARDDB_ROWS.forEach(function (raw) {
+      var row = {
+        id: raw[0],
+        lvl: raw[1],
+        type: raw[2],
+        points: raw[3],
+        cost: raw[4],
+        symbolCopy: raw[5],
+        symbolTake: raw[6],
+        nbBonus: raw[7],
+        costCard: raw[8]
+      };
+      var tier = row.lvl - 10;
+      var color = row.type >= 0 && row.type <= 4 ? COLORS[row.type] : (row.type === 5 ? "wild" : "gold");
+      var costCard = costFromBgaCodes(row.costCard);
+      var costCardColor = COLORS.find(function (entry) { return costCard[entry] > 0; }) || "";
+      var orientBonus = emptyCounts(false);
+      if (row.type >= 0 && row.type <= 4 && row.nbBonus > 0) orientBonus[color] = row.nbBonus;
+      cardsByTier[tier].push({
+        id: "orient-" + row.id,
+        bga_id: String(row.id),
+        tier: tier,
+        color: color,
+        printed_color: row.type >= 0 && row.type <= 4 ? color : null,
+        points: row.points,
+        cost: costFromBgaCodes(row.cost),
+        module: ORIENT_MARKET_ID,
+        catalog_schema: ORIENT_CATALOG_SCHEMA,
+        bga_carddb: clone(row),
+        orient_effective: {
+          bonus: orientBonus,
+          virtual_gold: row.type === 6,
+          virtual_gold_value: row.type === 6 ? 2 : 0
+        },
+        orient_cost_card: costCardColor ? { color: costCardColor, count: costCard[costCardColor] || 2 } : null,
+        abilities: orientAbilitiesForRow(row, color, costCardColor)
+      });
+    });
+    return cardsByTier;
+  }
+
+  var ORIENT_CARDS = buildOrientCards();
+
+  function localOrientCardByBgaId(id) {
+    var value = String(id || "");
+    for (var tier = 1; tier <= 3; tier += 1) {
+      var found = (ORIENT_CARDS[tier] || []).find(function (card) {
+        return String(card.bga_id || "") === value || card.id === "orient-" + value;
+      });
+      if (found) return found;
+    }
+    return null;
+  }
 
   var DINOBOARD_CARDS = [
     [1, 1, 0, [0, 0, 0, 0, 3]], [1, 1, 0, [1, 0, 0, 0, 2]], [1, 1, 0, [0, 0, 2, 0, 2]],
@@ -2020,16 +2479,392 @@ Object.assign(I18N.de, {
     return copy;
   }
 
-  function randomSeed() {
+  function stableStringify(value) {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+    var keys = Object.keys(value).filter(function (key) {
+      return typeof value[key] !== "undefined";
+    }).sort();
+    return "{" + keys.map(function (key) {
+      return JSON.stringify(key) + ":" + stableStringify(value[key]);
+    }).join(",") + "}";
+  }
+
+  function hashString32(text) {
+    var hash = 2166136261;
+    for (var index = 0; index < text.length; index += 1) {
+      hash ^= text.charCodeAt(index);
+      hash = Math.imul(hash, 16777619) >>> 0;
+    }
+    return hash >>> 0;
+  }
+
+  function generateTableSeed() {
+    if (window.crypto && typeof window.crypto.getRandomValues === "function") {
+      var values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0] >>> 0;
+    }
     return (Date.now() ^ Math.floor(Math.random() * 4294967295)) >>> 0;
   }
 
-  function generateDeck(tier, size, seed) {
+  function normalizeTableSeed(value) {
+    var seed = Number(value);
+    return Number.isFinite(seed) ? seed >>> 0 : generateTableSeed();
+  }
+
+  function generateDeck(tier, size) {
     var deck = (DEVELOPMENT_CARDS[tier] || []).map(clone);
     if (deck.length !== size && window.console && window.console.warn) {
       window.console.warn("Unexpected development deck size", tier, deck.length, size);
     }
-    return shuffle(deck, (seed || 7000) + tier * 101);
+    return deck;
+  }
+
+  function generateOrientDeck(tier) {
+    return (ORIENT_CARDS[tier] || []).map(clone);
+  }
+
+  function emptyTieredMarket() {
+    return { 1: [], 2: [], 3: [] };
+  }
+
+  function createDeckDrawState() {
+    return {
+      base: { 1: 0, 2: 0, 3: 0 },
+      orient: { 1: 0, 2: 0, 3: 0 }
+    };
+  }
+
+  function normalizeDeckDrawState(value) {
+    var normalized = createDeckDrawState();
+    [BASE_MARKET_ID, ORIENT_MARKET_ID].forEach(function (marketId) {
+      var source = value && value[marketId] || {};
+      [1, 2, 3].forEach(function (tier) {
+        normalized[marketId][tier] = Math.max(0, Math.floor(Number(source[tier] || source[String(tier)]) || 0));
+      });
+    });
+    return normalized;
+  }
+
+  function inferDeckDrawState(game) {
+    var inferred = createDeckDrawState();
+    [1, 2, 3].forEach(function (tier) {
+      var baseRemaining = game && game.decks && Array.isArray(game.decks[tier]) ? game.decks[tier].length : TIER_SIZES[tier];
+      var orientTotal = (ORIENT_CARDS[tier] || []).length;
+      var orientRemaining = game && game.orient_decks && Array.isArray(game.orient_decks[tier]) ? game.orient_decks[tier].length : orientTotal;
+      inferred[BASE_MARKET_ID][tier] = Math.max(0, TIER_SIZES[tier] - baseRemaining);
+      inferred[ORIENT_MARKET_ID][tier] = Math.max(0, orientTotal - orientRemaining);
+    });
+    return inferred;
+  }
+
+  function deckDrawStateFor(game, marketId, tier) {
+    if (!game.deck_draw_state || typeof game.deck_draw_state !== "object") {
+      game.deck_draw_state = inferDeckDrawState(game);
+    }
+    game.deck_draw_state = normalizeDeckDrawState(game.deck_draw_state);
+    var bucket = marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    return {
+      bucket: bucket,
+      tier: Number(tier) || 1,
+      count: game.deck_draw_state[bucket][Number(tier) || 1] || 0
+    };
+  }
+
+  function cardDrawKey(card) {
+    return String(card && (card.id || card.bga_id || card.bga_card_id) || "");
+  }
+
+  function sortedDeckCandidates(deck) {
+    return deck.slice().sort(function (a, b) {
+      return cardDrawKey(a).localeCompare(cardDrawKey(b));
+    });
+  }
+
+  function cardIdSnapshot(card) {
+    if (!card) return null;
+    return {
+      id: card.id || "",
+      bga_id: card.bga_id || "",
+      module: card.module || BASE_MARKET_ID,
+      copied_color: card.copied_color || ""
+    };
+  }
+
+  function cardListSnapshot(cards) {
+    return (cards || []).map(cardIdSnapshot);
+  }
+
+  function tieredCardSnapshot(tiered) {
+    return {
+      1: cardListSnapshot(tiered && tiered[1]),
+      2: cardListSnapshot(tiered && tiered[2]),
+      3: cardListSnapshot(tiered && tiered[3])
+    };
+  }
+
+  function countSnapshot(counts) {
+    var snapshot = {};
+    ALL_TOKENS.forEach(function (color) {
+      if (counts && typeof counts[color] !== "undefined") snapshot[color] = Number(counts[color]) || 0;
+    });
+    return snapshot;
+  }
+
+  function strongholdDrawSnapshot(strongholds) {
+    var placements = strongholds && strongholds.placements || {};
+    return Object.keys(placements).sort().map(function (slotId) {
+      var holders = Array.isArray(placements[slotId]) ? placements[slotId].slice().sort() : [];
+      return [slotId, holders];
+    });
+  }
+
+  function playerDrawSnapshot(player) {
+    return {
+      id: player && player.id || "",
+      tokens: countSnapshot(player && player.tokens),
+      bonuses: countSnapshot(player && player.bonuses),
+      reserved: cardListSnapshot(player && player.reserved),
+      purchased: cardListSnapshot(player && player.purchased),
+      nobles: (player && player.nobles || []).map(function (noble) { return noble && noble.id || ""; }),
+      orient_effects: clone(player && player.orient_effects || {})
+    };
+  }
+
+  function drawStatePayload(game, marketId, tier, context, candidateDeck) {
+    var ruleset = normalizeRuleset(game && game.ruleset);
+    return {
+      table_seed: Number(game && game.table_seed) || 0,
+      draw_target: {
+        market_id: marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+        tier: Number(tier) || 1,
+        reason: context && context.reason || "",
+        slot_index: Number.isFinite(Number(context && context.slot_index)) ? Number(context.slot_index) : null
+      },
+      ruleset: {
+        id: ruleset.id,
+        modules: clone(ruleset.modules || {})
+      },
+      turn: {
+        current: Number(game && game.current) || 0,
+        round: Number(game && game.round) || 1,
+        end_triggered: !!(game && game.endTriggered),
+        final_turns_left: game && game.finalTurnsLeft
+      },
+      bank: countSnapshot(game && game.bank),
+      players: (game && game.players || []).map(playerDrawSnapshot),
+      market: tieredCardSnapshot(game && game.market),
+      orient_market: tieredCardSnapshot(game && game.orient_market),
+      nobles: (game && game.nobles || []).map(function (noble) { return noble && noble.id || ""; }),
+      strongholds: strongholdDrawSnapshot(game && game.strongholds),
+      candidate_ids: sortedDeckCandidates(candidateDeck || []).map(cardDrawKey)
+    };
+  }
+
+  function deckDrawSeed(game, marketId, tier, context, candidateDeck) {
+    var tableSeed = Number(game && game.table_seed);
+    if (!Number.isFinite(tableSeed)) tableSeed = LEGACY_TABLE_SEED_FALLBACK;
+    var stateHash = hashString32(stableStringify(drawStatePayload(game, marketId, tier, context, candidateDeck)));
+    return (tableSeed ^ stateHash) >>> 0;
+  }
+
+  function deckForMarket(game, marketId, tier) {
+    var decks = marketId === ORIENT_MARKET_ID ? game.orient_decks : game.decks;
+    return decks && decks[tier] || null;
+  }
+
+  function drawCardFromDeck(game, marketId, tier, context) {
+    var deck = deckForMarket(game, marketId, tier);
+    if (!Array.isArray(deck) || deck.length === 0) return null;
+    var drawState = deckDrawStateFor(game, marketId, tier);
+    var candidates = sortedDeckCandidates(deck);
+    var rng = makeRng(deckDrawSeed(game, drawState.bucket, drawState.tier, context || {}, candidates));
+    var candidateIndex = Math.floor(rng() * candidates.length);
+    var selected = candidates[candidateIndex] || null;
+    var selectedKey = cardDrawKey(selected);
+    var deckIndex = deck.findIndex(function (card) {
+      return cardDrawKey(card) === selectedKey;
+    });
+    var card = deckIndex >= 0 ? deck.splice(deckIndex, 1)[0] || null : deck.splice(candidateIndex, 1)[0] || null;
+    game.deck_draw_state[drawState.bucket][drawState.tier] = drawState.count + 1;
+    return card;
+  }
+
+  function marketSlotIdFor(marketId, tier, index) {
+    return marketId + "-t" + tier + "-s" + (index + 1);
+  }
+
+  function deckSlotIdFor(marketId, tier) {
+    return marketId + "-t" + tier + "-deck";
+  }
+
+  function createMarketSlotGroup(marketId, count) {
+    var slots = { 1: [], 2: [], 3: [] };
+    [1, 2, 3].forEach(function (tier) {
+      for (var index = 0; index < count; index += 1) {
+        slots[tier].push(marketSlotIdFor(marketId, tier, index));
+      }
+    });
+    return slots;
+  }
+
+  function createMarketSlots() {
+    return {
+      base: createMarketSlotGroup(BASE_MARKET_ID, BASE_MARKET_SLOT_COUNT),
+      orient: createMarketSlotGroup(ORIENT_MARKET_ID, ORIENT_MARKET_SLOT_COUNT)
+    };
+  }
+
+  function createModuleState(ruleset) {
+    var orientEnabled = orientEnabledForRuleset(ruleset);
+    var strongholdsEnabled = strongholdsEnabledForRuleset(ruleset);
+    return {
+      orient: {
+        enabled: orientEnabled,
+        status: orientEnabled ? "supported" : "disabled",
+        catalog_schema: ORIENT_CATALOG_SCHEMA,
+        card_count: [1, 2, 3].reduce(function (sum, tier) {
+          return sum + (ORIENT_CARDS[tier] || []).length;
+        }, 0),
+        market_slot_count: ORIENT_MARKET_SLOT_COUNT,
+        deck_initialized: false,
+        event_schema: MOVE_EVENT_SCHEMA
+      },
+      strongholds: {
+        enabled: strongholdsEnabled,
+        status: strongholdsEnabled ? "supported" : "disabled",
+        tokens_per_player: 3,
+        event_schema: MOVE_EVENT_SCHEMA
+      }
+    };
+  }
+
+  function ensureModuleState(game) {
+    if (!game) return null;
+    var base = createModuleState(game.ruleset);
+    var existing = game.module_state && typeof game.module_state === "object" ? game.module_state : {};
+    var orient = existing.orient && typeof existing.orient === "object" ? existing.orient : {};
+    var strongholds = existing.strongholds && typeof existing.strongholds === "object" ? existing.strongholds : {};
+    game.module_state = {
+      orient: Object.assign({}, base.orient, orient, {
+        enabled: base.orient.enabled,
+        status: base.orient.enabled ? (orient.status === "placeholder_market" ? "supported" : orient.status || "supported") : "disabled",
+        catalog_schema: ORIENT_CATALOG_SCHEMA,
+        market_slot_count: ORIENT_MARKET_SLOT_COUNT,
+        event_schema: MOVE_EVENT_SCHEMA
+      }),
+      strongholds: Object.assign({}, base.strongholds, strongholds, {
+        enabled: base.strongholds.enabled,
+        status: base.strongholds.enabled ? (strongholds.status || "supported") : "disabled",
+        tokens_per_player: 3,
+        event_schema: MOVE_EVENT_SCHEMA
+      })
+    };
+    return game.module_state;
+  }
+
+  function normalizeTieredMarket(value) {
+    var market = emptyTieredMarket();
+    [1, 2, 3].forEach(function (tier) {
+      var cards = value && (value[tier] || value[String(tier)]);
+      market[tier] = Array.isArray(cards) ? cards.filter(function (card) { return typeof card !== "undefined"; }) : [];
+    });
+    return market;
+  }
+
+  function normalizeTieredDecks(value) {
+    var decks = emptyTieredMarket();
+    [1, 2, 3].forEach(function (tier) {
+      var cards = value && (value[tier] || value[String(tier)]);
+      decks[tier] = Array.isArray(cards) ? cards : [];
+    });
+    return decks;
+  }
+
+  function ensureMarketSlotGroup(game, marketId, slotCount, market) {
+    if (!game.market_slots[marketId] || typeof game.market_slots[marketId] !== "object") {
+      game.market_slots[marketId] = {};
+    }
+    [1, 2, 3].forEach(function (tier) {
+      var existing = game.market_slots[marketId][tier] || game.market_slots[marketId][String(tier)] || [];
+      var target = Math.max(Array.isArray(market && market[tier]) ? market[tier].length : 0, slotCount);
+      if (!Array.isArray(existing)) existing = [];
+      while (existing.length < target) {
+        existing.push(marketSlotIdFor(marketId, tier, existing.length));
+      }
+      game.market_slots[marketId][tier] = existing;
+    });
+  }
+
+  function tieredCardsHaveAny(value) {
+    return [1, 2, 3].some(function (tier) {
+      var cards = value && (value[tier] || value[String(tier)]);
+      return Array.isArray(cards) && cards.some(Boolean);
+    });
+  }
+
+  function orientDecksAlreadyInitialized(game) {
+    if (!game) return false;
+    var orientState = game.module_state && game.module_state.orient || {};
+    return orientState.deck_initialized === true ||
+      tieredCardsHaveAny(game.orient_market) ||
+      tieredCardsHaveAny(game.orient_decks) ||
+      Number(game.next_move_id || 1) > 1 ||
+      !!game.bga_deck_unknown;
+  }
+
+  function setOrientDecksInitialized(game) {
+    if (!game) return;
+    if (!game.module_state || typeof game.module_state !== "object") {
+      game.module_state = createModuleState(game.ruleset);
+    }
+    if (!game.module_state.orient || typeof game.module_state.orient !== "object") {
+      game.module_state.orient = createModuleState(game.ruleset).orient;
+    }
+    game.module_state.orient.deck_initialized = true;
+  }
+
+  function ensureMarketStructure(game) {
+    if (!game) return game;
+    if (!Number.isFinite(Number(game.table_seed))) game.table_seed = generateTableSeed();
+    if (!game.market) game.market = emptyTieredMarket();
+    if (!game.decks) game.decks = emptyTieredMarket();
+    game.market = normalizeTieredMarket(game.market);
+    game.decks = normalizeTieredDecks(game.decks);
+    game.orient_market = normalizeTieredMarket(game.orient_market);
+    game.orient_decks = normalizeTieredDecks(game.orient_decks);
+    game.deck_draw_state = game.deck_draw_state && typeof game.deck_draw_state === "object"
+      ? normalizeDeckDrawState(game.deck_draw_state)
+      : inferDeckDrawState(game);
+    if (!game.market_slots || typeof game.market_slots !== "object") game.market_slots = createMarketSlots();
+    ensureMarketSlotGroup(game, BASE_MARKET_ID, BASE_MARKET_SLOT_COUNT, game.market);
+    ensureMarketSlotGroup(game, ORIENT_MARKET_ID, ORIENT_MARKET_SLOT_COUNT, game.orient_market);
+    if (orientEnabledForRuleset(game.ruleset)) {
+      var orientWasInitialized = orientDecksAlreadyInitialized(game);
+      var generatedOrientDecks = false;
+      [1, 2, 3].forEach(function (tier) {
+        if (!orientWasInitialized && game.orient_market[tier].length === 0 && game.orient_decks[tier].length === 0) {
+          game.orient_decks[tier] = generateOrientDeck(tier);
+          refillOrientMarket(game, tier);
+          generatedOrientDecks = true;
+        }
+      });
+      if (generatedOrientDecks || orientWasInitialized) setOrientDecksInitialized(game);
+    }
+    return game;
+  }
+
+  function marketSlotId(game, marketId, tier, index) {
+    ensureMarketStructure(game);
+    var group = game.market_slots && game.market_slots[marketId] && game.market_slots[marketId][tier];
+    return group && group[index] || marketSlotIdFor(marketId, tier, index);
+  }
+
+  function removeMarketSlotId(game, marketId, tier, index) {
+    ensureMarketStructure(game);
+    var group = game.market_slots && game.market_slots[marketId] && game.market_slots[marketId][tier];
+    if (Array.isArray(group)) group.splice(index, 1);
   }
 
   function emptySeenCards() {
@@ -2120,18 +2955,25 @@ Object.assign(I18N.de, {
     });
     if (!hasUnknown) return;
     var seen = collectSeenCardsByTier(game);
-    var seed = randomSeed();
+    var existingSeed = Number(game.table_seed);
+    var seed = Number.isFinite(existingSeed) ? existingSeed : generateTableSeed();
     game.table_seed = seed;
+    game.deck_draw_state = normalizeDeckDrawState(game.deck_draw_state);
     [1, 2, 3].forEach(function (tier) {
       var hiddenMarketSlots = [];
       (game.market[tier] || []).forEach(function (card, index) {
         if (isBgaHiddenCard(card)) hiddenMarketSlots.push(index);
       });
-      var candidates = shuffle((DEVELOPMENT_CARDS[tier] || []).filter(function (card) {
+      var candidates = (DEVELOPMENT_CARDS[tier] || []).filter(function (card) {
         return seen[tier].indexOf(card.id) < 0;
-      }).map(clone), seed + tier * 5099 + (Number(game.next_move_id) || 0) * 37);
+      }).map(clone);
+      game.decks[tier] = candidates;
+      game.deck_draw_state[BASE_MARKET_ID][tier] = Math.max(
+        game.deck_draw_state[BASE_MARKET_ID][tier] || 0,
+        TIER_SIZES[tier] - candidates.length
+      );
       hiddenMarketSlots.forEach(function (index) {
-        var replacement = candidates.pop();
+        var replacement = drawCardFromDeck(game, BASE_MARKET_ID, tier, { reason: "bga-hidden-market", slot_index: index });
         if (replacement) {
           game.market[tier][index] = replacement;
           rememberSeenCard(game, replacement);
@@ -2139,7 +2981,6 @@ Object.assign(I18N.de, {
           game.market[tier].splice(index, 1);
         }
       });
-      game.decks[tier] = candidates;
     });
     game.bga_deck_unknown = false;
     game.bga_continued_deck_seed = seed;
@@ -2165,20 +3006,28 @@ Object.assign(I18N.de, {
     return aiSelectionSequence;
   }
 
-  function createGame(playerCount, names, aiSettings) {
+  function createGame(playerCount, names, aiSettings, options) {
     var tokenCount = tokenCountForPlayers(playerCount);
     var aiConfig = aiSettings || [];
-    var tableSeed = randomSeed();
+    var tableSeed = normalizeTableSeed(options && options.seed);
+    var ruleset = createRuleset(options || {});
     var decks = {
-      1: generateDeck(1, TIER_SIZES[1], tableSeed),
-      2: generateDeck(2, TIER_SIZES[2], tableSeed + 1009),
-      3: generateDeck(3, TIER_SIZES[3], tableSeed + 2003)
+      1: generateDeck(1, TIER_SIZES[1]),
+      2: generateDeck(2, TIER_SIZES[2]),
+      3: generateDeck(3, TIER_SIZES[3])
     };
+    var orientDecks = orientEnabledForRuleset(ruleset) ? {
+      1: generateOrientDeck(1),
+      2: generateOrientDeck(2),
+      3: generateOrientDeck(3)
+    } : emptyTieredMarket();
     var game = {
       schema: SCHEMA,
       created_at: new Date().toISOString(),
       mode: "live",
       playerCount: playerCount,
+      ruleset: ruleset,
+      module_state: createModuleState(ruleset),
       table_seed: tableSeed,
       next_move_id: 1,
       players: Array.from({ length: playerCount }, function (_, index) {
@@ -2204,6 +3053,11 @@ Object.assign(I18N.de, {
       bank: emptyCounts(true),
       decks: decks,
       market: { 1: [], 2: [], 3: [] },
+      orient_decks: orientDecks,
+      orient_market: emptyTieredMarket(),
+      deck_draw_state: createDeckDrawState(),
+      market_slots: createMarketSlots(),
+      strongholds: { placements: {} },
       seen_cards: emptySeenCards(),
       nobles: shuffle(NOBLE_POOL, tableSeed + 9111).slice(0, playerCount + 1),
       current: 0,
@@ -2212,6 +3066,9 @@ Object.assign(I18N.de, {
       moves: [],
       initial_gamedatas: null,
       awaitingDiscard: false,
+      awaitingOrientAction: null,
+      awaitingStrongholdAction: null,
+      awaitingStrongholdConquest: null,
       awaitingNobleChoice: null,
       endTriggered: false,
       finalTurnsLeft: null,
@@ -2225,7 +3082,9 @@ Object.assign(I18N.de, {
     [1, 2, 3].forEach(function (tier) {
       refillMarket(game, tier);
       rememberSeenCards(game, game.market[tier]);
+      if (orientEnabledForRuleset(game.ruleset)) refillOrientMarket(game, tier);
     });
+    if (orientEnabledForRuleset(game.ruleset)) setOrientDecksInitialized(game);
     game.log.unshift("Started " + playerCount + "-player local table.");
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
     return game;
@@ -2239,20 +3098,229 @@ Object.assign(I18N.de, {
 
   function refillMarket(game, tier) {
     while (game.market[tier].length < 4 && game.decks[tier].length > 0) {
-      game.market[tier].push(game.decks[tier].pop());
+      game.market[tier].push(drawCardFromDeck(game, BASE_MARKET_ID, tier, { reason: "initial-market", slot_index: game.market[tier].length }));
+    }
+  }
+
+  function refillOrientMarket(game, tier) {
+    if (!game.orient_market) game.orient_market = emptyTieredMarket();
+    if (!game.orient_decks) game.orient_decks = emptyTieredMarket();
+    while (game.orient_market[tier].length < ORIENT_MARKET_SLOT_COUNT && game.orient_decks[tier].length > 0) {
+      game.orient_market[tier].push(drawCardFromDeck(game, ORIENT_MARKET_ID, tier, { reason: "initial-market", slot_index: game.orient_market[tier].length }));
     }
   }
 
   function fillMarketSlot(game, tier, index) {
     if (!game || !game.market[tier]) return null;
-    var replacement = game.decks[tier] && game.decks[tier].length ? game.decks[tier].pop() : null;
+    var replacement = game.decks[tier] && game.decks[tier].length ? drawCardFromDeck(game, BASE_MARKET_ID, tier, { reason: "market-refill", slot_index: index }) : null;
     if (replacement) {
       game.market[tier][index] = replacement;
       rememberSeenCard(game, replacement);
       return replacement;
     }
     game.market[tier].splice(index, 1);
+    removeMarketSlotId(game, BASE_MARKET_ID, tier, index);
     return null;
+  }
+
+  function fillOrientMarketSlot(game, tier, index) {
+    if (!game || !game.orient_market || !game.orient_market[tier]) return null;
+    var replacement = game.orient_decks[tier] && game.orient_decks[tier].length ? drawCardFromDeck(game, ORIENT_MARKET_ID, tier, { reason: "market-refill", slot_index: index }) : null;
+    if (replacement) {
+      game.orient_market[tier][index] = replacement;
+      rememberSeenCard(game, replacement);
+      return replacement;
+    }
+    game.orient_market[tier].splice(index, 1);
+    removeMarketSlotId(game, ORIENT_MARKET_ID, tier, index);
+    return null;
+  }
+
+  function parseMarketActionValue(value) {
+    var parts = String(value || "").split(":");
+    var marketId = parts.length === 3 ? parts[0] : BASE_MARKET_ID;
+    return {
+      marketId: marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+      tier: Number(parts.length === 3 ? parts[1] : parts[0]),
+      index: Number(parts.length === 3 ? parts[2] : parts[1])
+    };
+  }
+
+  function parseDeckActionValue(value) {
+    var parts = String(value || "").split(":");
+    if (parts.length >= 2 && parts[0] === ORIENT_MARKET_ID) {
+      return { marketId: ORIENT_MARKET_ID, tier: Number(parts[1]) || 1 };
+    }
+    return { marketId: BASE_MARKET_ID, tier: Number(parts[0]) || 1 };
+  }
+
+  function marketCardAt(game, ref) {
+    var market = ref.marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    return market && market[ref.tier] && market[ref.tier][ref.index];
+  }
+
+  function fillMarketSlotById(game, ref) {
+    if (ref.marketId === ORIENT_MARKET_ID) return fillOrientMarketSlot(game, ref.tier, ref.index);
+    return fillMarketSlot(game, ref.tier, ref.index);
+  }
+
+  function ensureStrongholds(game) {
+    if (!game.strongholds || typeof game.strongholds !== "object") game.strongholds = { placements: {} };
+    if (!game.strongholds.placements || typeof game.strongholds.placements !== "object") game.strongholds.placements = {};
+    if (!game.strongholds.tokens || typeof game.strongholds.tokens !== "object") game.strongholds.tokens = {};
+    return game.strongholds;
+  }
+
+  function strongholdsAtSlot(game, slotId) {
+    var strongholds = ensureStrongholds(game);
+    if (!Array.isArray(strongholds.placements[slotId])) strongholds.placements[slotId] = [];
+    var holders = strongholds.placements[slotId];
+    for (var index = holders.length - 1; index >= 0; index -= 1) {
+      var playerIndex = Number(holders[index]);
+      if (!Number.isInteger(playerIndex) || !game.players[playerIndex]) {
+        holders.splice(index, 1);
+      } else {
+        holders[index] = playerIndex;
+      }
+    }
+    return holders;
+  }
+
+  function strongholdSummaryFromHolders(holders, perspective) {
+    return GemTableRules.strongholdSummaryFromHolders(holders, perspective);
+  }
+
+  function strongholdSlotSummary(game, slotId, perspective) {
+    if (!game || !slotId) return strongholdSummaryFromHolders([], perspective);
+    return strongholdSummaryFromHolders(strongholdsAtSlot(game, slotId), perspective);
+  }
+
+  function strongholdDataAttrs(summary) {
+    summary = summary || strongholdSummaryFromHolders([], null);
+    var players = summary.players || [];
+    var counts = players.map(function (playerIndex) {
+      return playerIndex + ":" + (summary.counts && summary.counts[playerIndex] || 0);
+    }).join(",");
+    return [
+      ' data-stronghold-players="' + escapeHtml(players.join(",")) + '"',
+      ' data-stronghold-count="' + escapeHtml(summary.count || 0) + '"',
+      ' data-stronghold-owner="' + escapeHtml(summary.owner || "") + '"',
+      ' data-stronghold-counts="' + escapeHtml(counts) + '"',
+      ' data-stronghold-locked="' + (summary.locked ? "true" : "false") + '"'
+    ].join("");
+  }
+
+  function strongholdBadgeHtml(summary) {
+    summary = summary || strongholdSummaryFromHolders([], null);
+    if (!summary.count) return "";
+    return '<div class="stronghold-stack" data-stronghold-count="' + escapeHtml(summary.count) + '">' + summary.players.map(function (playerIndex) {
+      var color = strongholdPlayerColor(playerIndex);
+      var count = summary.counts[playerIndex] || 0;
+      return [
+        '<span class="stronghold-token" data-player-index="' + playerIndex + '" data-stronghold-count="' + count + '" style="' + gemStyle(color) + '">',
+        '<span class="stronghold-token-symbol">' + escapeHtml(playerStrongholdSymbol(playerIndex)) + "</span>",
+        '<span class="stronghold-token-count">' + escapeHtml(count) + "</span>",
+        "</span>"
+      ].join("");
+    }).join("") + "</div>";
+  }
+
+  function clearStrongholdsAtSlot(game, slotId) {
+    if (!slotId || !game || !game.strongholds || !game.strongholds.placements) return [];
+    var removed = strongholdsAtSlot(game, slotId).slice();
+    delete game.strongholds.placements[slotId];
+    Object.keys(game.strongholds.tokens || {}).forEach(function (tokenId) {
+      var token = game.strongholds.tokens[tokenId];
+      if (token && token.slot_id === slotId) {
+        token.location = "draw";
+        token.slot_id = null;
+        token.card_bga_id = "";
+      }
+    });
+    return removed;
+  }
+
+  function playerStrongholdsOnBoard(game, playerIndex) {
+    var placements = ensureStrongholds(game).placements;
+    return Object.keys(placements).reduce(function (count, slotId) {
+      return count + strongholdsAtSlot(game, slotId).filter(function (index) { return index === playerIndex; }).length;
+    }, 0);
+  }
+
+  function playerStrongholdSupply(game, playerIndex) {
+    return Math.max(0, 3 - playerStrongholdsOnBoard(game, playerIndex));
+  }
+
+  function strongholdPlayerColor(playerIndex) {
+    return COLORS[playerIndex % COLORS.length];
+  }
+
+  function playerStrongholdSymbol(playerIndex) {
+    return ["◆", "▲", "●", "■"][playerIndex % 4];
+  }
+
+  function strongholdSlotHasOpponent(game, slotId, playerIndex) {
+    return strongholdsAtSlot(game, slotId).some(function (holder) {
+      return holder !== playerIndex;
+    });
+  }
+
+  function playerStrongholdSymbol(playerIndex) {
+    return String((Number(playerIndex) || 0) + 1);
+  }
+
+  function canPlaceOrMoveStrongholdToSlot(game, slotId, playerIndex) {
+    var holders = strongholdsAtSlot(game, slotId);
+    if (holders.some(function (holder) { return holder !== playerIndex; })) return false;
+    return holders.filter(function (holder) { return holder === playerIndex; }).length < 3;
+  }
+
+  function canRemoveOpponentStrongholdAtSlot(game, slotId, playerIndex) {
+    var holders = strongholdsAtSlot(game, slotId);
+    return holders.length === 1 && holders[0] !== playerIndex;
+  }
+
+  function strongholdConquestSlotEligible(game, slotId, playerIndex) {
+    var holders = strongholdsAtSlot(game, slotId);
+    return holders.length === 3 && holders.every(function (holder) { return holder === playerIndex; });
+  }
+
+  function strongholdAccessStatus(slotId, playerIndex) {
+    if (!state || !strongholdsEnabledForRuleset(state.ruleset) || !slotId) return { ok: true };
+    var summary = strongholdSlotSummary(state, slotId, playerIndex);
+    var status = GemTableRules.strongholdAccessStatusFromSummary(summary);
+    if (status.ok) return { ok: true };
+    return { ok: false, reason: t(status.reasonKey || "strongholdBlocked") };
+  }
+
+  function strongholdActionKindForSlot(slotId, playerIndex) {
+    if (!state || !state.awaitingStrongholdAction || !slotId) return "";
+    var selectedSource = state.awaitingStrongholdAction.selected_source_slot_id || "";
+    if (selectedSource) {
+      if (selectedSource === slotId) return "source";
+      return canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex) ? "move-target" : "";
+    }
+    if (playerStrongholdSupply(state, playerIndex) > 0 && canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      return "place";
+    }
+    if (strongholdsAtSlot(state, slotId).indexOf(playerIndex) >= 0) return "source";
+    if (canRemoveOpponentStrongholdAtSlot(state, slotId, playerIndex)) return "remove";
+    return "";
+  }
+
+  function marketRefsForStrongholds(game) {
+    var refs = [];
+    [BASE_MARKET_ID, ORIENT_MARKET_ID].forEach(function (marketId) {
+      if (marketId === ORIENT_MARKET_ID && !orientEnabledForRuleset(game.ruleset)) return;
+      var market = marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+      [3, 2, 1].forEach(function (tier) {
+        (market[tier] || []).forEach(function (card, index) {
+          if (!card) return;
+          refs.push({ marketId: marketId, tier: tier, index: index, card: card, slotId: marketSlotId(game, marketId, tier, index) });
+        });
+      });
+    });
+    return refs;
   }
 
   function activePlayer() {
@@ -2299,6 +3367,219 @@ Object.assign(I18N.de, {
     }, 0);
   }
 
+  function cardIsOrient(card) {
+    return !!(card && card.module === ORIENT_MARKET_ID);
+  }
+
+  function orientCardAbilities(card, effect) {
+    var abilities = Array.isArray(card && card.abilities) ? card.abilities : [];
+    return effect ? abilities.filter(function (ability) { return ability && ability.effect === effect; }) : abilities;
+  }
+
+  function orientCardHasAbility(card, effect) {
+    return orientCardAbilities(card, effect).length > 0;
+  }
+
+  function cardPrimaryBonusColor(card) {
+    var bonuses = effectiveCardBonuses(card);
+    return COLORS.find(function (color) { return bonuses[color] > 0; }) || "";
+  }
+
+  function orientDiscardCost(card) {
+    if (!cardIsOrient(card) || !card.orient_cost_card) return null;
+    var color = card.orient_cost_card.color;
+    var count = Number(card.orient_cost_card.count) || 2;
+    return COLORS.indexOf(color) >= 0 ? { color: color, count: count } : null;
+  }
+
+  function orientDiscardCostCandidates(player, card) {
+    var requirement = orientDiscardCost(card);
+    if (!player || !requirement) return [];
+    return (player.purchased || []).filter(function (candidate) {
+      return candidate && candidate.id !== card.id && cardPrimaryBonusColor(candidate) === requirement.color;
+    }).sort(function (a, b) {
+      var aCopied = a.copied_color === requirement.color ? 0 : 1;
+      var bCopied = b.copied_color === requirement.color ? 0 : 1;
+      return aCopied - bCopied || String(a.id).localeCompare(String(b.id));
+    });
+  }
+
+  function orientDiscardSelectionHasPriority(player, card, selectedIds) {
+    var requirement = orientDiscardCost(card);
+    if (!requirement) return true;
+    var priorityIds = orientDiscardCostCandidates(player, card).filter(function (candidate) {
+      return candidate.copied_color === requirement.color;
+    }).map(function (candidate) {
+      return candidate.id;
+    });
+    var requiredPriority = priorityIds.slice(0, Math.min(priorityIds.length, requirement.count));
+    return requiredPriority.every(function (cardId) {
+      return selectedIds.indexOf(cardId) >= 0;
+    });
+  }
+
+  function orientCopyCandidates(player, card) {
+    if (!player || !orientCardHasAbility(card, "copy_bonus")) return [];
+    return (player.purchased || []).filter(function (candidate) {
+      return candidate && candidate.id !== card.id && !!cardPrimaryBonusColor(candidate);
+    });
+  }
+
+  function orientCardNeedsManualChoice(card) {
+    return cardIsOrient(card) && (orientCardHasAbility(card, "copy_bonus") || orientCardHasAbility(card, "take_level_free"));
+  }
+
+  function orientAbilityBuyStatus(card, player) {
+    if (!cardIsOrient(card)) return { ok: true, reason: "" };
+    if (player && orientCardHasAbility(card, "copy_bonus") && orientCopyCandidates(player, card).length === 0) {
+      return { ok: false, reason: t("msgOrientCopyNeedsBonus") };
+    }
+    var discardCost = orientDiscardCost(card);
+    if (player && discardCost && orientDiscardCostCandidates(player, card).length < discardCost.count) {
+      return { ok: false, reason: t("msgOrientDiscardNeedsCards", { count: discardCost.count, color: TOKEN_LABEL[discardCost.color] }) };
+    }
+    return { ok: true, reason: "" };
+  }
+
+  function orientAbilityBuyStatusLegacy(card) {
+    if (!cardIsOrient(card)) return { ok: true, reason: "" };
+    var abilities = Array.isArray(card.abilities) ? card.abilities : [];
+    var safeEffects = ["double_bonus", "virtual_gold_placeholder", "no_bonus_placeholder", "metadata"];
+    for (var index = 0; index < abilities.length; index += 1) {
+      var ability = abilities[index] || {};
+      var effect = String(ability.effect || "");
+      var status = String(ability.status || "");
+      var safe = status === "implemented" || status === "metadata" || ability.immediate_choice === false || safeEffects.indexOf(effect) >= 0;
+      var pendingChoice = ability.requires_choice === true || (status === "pending" && ability.immediate_choice !== false && safeEffects.indexOf(effect) < 0);
+      if (!safe || pendingChoice) {
+        return { ok: false, reason: t("orientAbilityPending") };
+      }
+    }
+    return { ok: true, reason: "" };
+  }
+
+  function effectiveCardBonuses(card) {
+    return GemTableRules.effectiveCardBonuses(card, { colors: COLORS, orientMarketId: ORIENT_MARKET_ID });
+  }
+
+  function orientVirtualGoldMetadata(card) {
+    if (!cardIsOrient(card)) return null;
+    var hasVirtualGold = !!(card.orient_effective && card.orient_effective.virtual_gold);
+    (card.abilities || []).forEach(function (ability) {
+      if (ability && (ability.effect === "virtual_gold_placeholder" || ability.effect === "virtual_gold_2")) hasVirtualGold = true;
+    });
+    return hasVirtualGold ? {
+      card_id: card.id,
+      value: 2,
+      status: "available",
+      source: ORIENT_MARKET_ID
+    } : null;
+  }
+
+  function ensurePlayerOrientEffects(player) {
+    if (!player.orient_effects || typeof player.orient_effects !== "object") {
+      player.orient_effects = { virtual_gold_cards: [] };
+    }
+    if (!Array.isArray(player.orient_effects.virtual_gold_cards)) player.orient_effects.virtual_gold_cards = [];
+    return player.orient_effects;
+  }
+
+  function applyCardBonuses(player, card) {
+    var bonuses = effectiveCardBonuses(card);
+    COLORS.forEach(function (color) {
+      player.bonuses[color] = (Number(player.bonuses[color]) || 0) + (bonuses[color] || 0);
+    });
+    var virtualGold = orientVirtualGoldMetadata(card);
+    if (virtualGold) {
+      var effects = ensurePlayerOrientEffects(player);
+      if (!effects.virtual_gold_cards.some(function (entry) { return entry.card_id === virtualGold.card_id; })) {
+        effects.virtual_gold_cards.push(virtualGold);
+      }
+    }
+    return bonuses;
+  }
+
+  function removeCardBonuses(player, card) {
+    var bonuses = effectiveCardBonuses(card);
+    COLORS.forEach(function (color) {
+      player.bonuses[color] = Math.max(0, (Number(player.bonuses[color]) || 0) - (bonuses[color] || 0));
+    });
+    var virtualGold = orientVirtualGoldMetadata(card);
+    if (virtualGold && player.orient_effects && Array.isArray(player.orient_effects.virtual_gold_cards)) {
+      player.orient_effects.virtual_gold_cards = player.orient_effects.virtual_gold_cards.filter(function (entry) {
+        return entry.card_id !== virtualGold.card_id;
+      });
+    }
+    return bonuses;
+  }
+
+  function purchaseRecordCard(card) {
+    if (!cardIsOrient(card)) return card;
+    var record = clone(card);
+    record.effective_bonuses = effectiveCardBonuses(card);
+    var virtualGold = orientVirtualGoldMetadata(card);
+    if (virtualGold) record.orient_payment_effect = virtualGold;
+    return record;
+  }
+
+  function availableOrientVirtualGoldCards(player) {
+    return (player && player.purchased || []).filter(function (card) {
+      return !!orientVirtualGoldMetadata(card);
+    });
+  }
+
+  function orientVirtualGoldCapacity(player) {
+    return availableOrientVirtualGoldCards(player).reduce(function (sum, card) {
+      var meta = orientVirtualGoldMetadata(card);
+      return sum + (Number(meta && meta.value) || 0);
+    }, 0);
+  }
+
+  function orientVirtualGoldCardCount(player) {
+    return availableOrientVirtualGoldCards(player).length;
+  }
+
+  function orientVirtualGoldPaymentCapacity(player) {
+    return orientVirtualGoldCardCount(player) > 0 ? 2 : 0;
+  }
+
+  function selectedVirtualGoldCardIds(player, payment) {
+    var availableIds = availableOrientVirtualGoldCards(player).map(function (card) { return card.id; });
+    var selected = Array.isArray(payment && payment.selected_virtual_card_ids) ? payment.selected_virtual_card_ids : [];
+    return selected.filter(function (cardId, index) {
+      return selected.indexOf(cardId) === index && availableIds.indexOf(cardId) >= 0;
+    }).slice(0, 1);
+  }
+
+  function selectedVirtualGoldValue(player, payment) {
+    return selectedVirtualGoldCardIds(player, payment).reduce(function (sum, cardId) {
+      var card = availableOrientVirtualGoldCards(player).find(function (candidate) { return candidate.id === cardId; });
+      var meta = orientVirtualGoldMetadata(card);
+      return sum + (Number(meta && meta.value) || 0);
+    }, 0);
+  }
+
+  function paymentVirtualCards(player, payment) {
+    if (paymentVirtualTotal(payment) <= 0) return [];
+    var selected = selectedVirtualGoldCardIds(player, payment);
+    if (selected.length) return selected;
+    return availableOrientVirtualGoldCards(player).slice(0, 1).map(function (card) { return card.id; });
+  }
+
+  function removePurchasedCardsByIds(player, cardIds) {
+    var removed = [];
+    (cardIds || []).forEach(function (cardId) {
+      var index = (player.purchased || []).findIndex(function (card) {
+        return card && card.id === cardId;
+      });
+      if (index < 0) return;
+      var card = player.purchased.splice(index, 1)[0];
+      removeCardBonuses(player, card);
+      removed.push(card);
+    });
+    return removed;
+  }
+
   function totalTokens(player) {
     return ALL_TOKENS.reduce(function (sum, color) {
       return sum + (Number(player.tokens[color]) || 0);
@@ -2307,7 +3588,7 @@ Object.assign(I18N.de, {
 
   function canAct(options) {
     var allowAi = !!(options && options.allowAi) || aiTurnInProgress;
-    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment;
+    return !!state && state.mode !== "replay" && !state.gameOver && !state.turnTransition && (allowAi || !state.aiThinking) && (allowAi || !isAiPlayer(activePlayer())) && !state.awaitingDiscard && !state.awaitingNobleChoice && !pendingPayment && !state.awaitingOrientAction && !state.awaitingStrongholdAction && !state.awaitingStrongholdConquest;
   }
 
   function aiSelectionOrder(player, index) {
@@ -2324,7 +3605,7 @@ Object.assign(I18N.de, {
   }
 
   function dinoBoardAiSeatFor(game) {
-    if (!game || game.players.length !== 2) return -1;
+    if (!game || game.players.length !== 2 || !dinoBoardSupportsRuleset(game.ruleset)) return -1;
     var seats = enabledAiSeats(game);
     if (!seats.length) return -1;
     seats.sort(function (a, b) {
@@ -2713,6 +3994,7 @@ Object.assign(I18N.de, {
         showStartMessage(t("msgSavedInvalidCleared"));
         return null;
       }
+      ensureStateRuleset(parsed);
       parsed.mode = "live";
       return parsed;
     } catch (error) {
@@ -2724,6 +4006,7 @@ Object.assign(I18N.de, {
 
   function validateState(candidate) {
     if (!candidate || candidate.schema !== SCHEMA) return false;
+    if (!rulesetSupportedByEngine(candidate.ruleset)) return false;
     if (!Array.isArray(candidate.players) || candidate.players.length < 2 || candidate.players.length > 4) return false;
     if (!candidate.bank || !candidate.decks || !candidate.market) return false;
     if (!Array.isArray(candidate.nobles) || !Array.isArray(candidate.log) || !Array.isArray(candidate.moves)) return false;
@@ -2811,7 +4094,21 @@ Object.assign(I18N.de, {
   }
 
   function gemStyle(color) {
+    if (color === "wild") {
+      return "--gem:#b9f7ff;--gem2:#ffbf45";
+    }
     return "--gem:" + GEM_HEX[color];
+  }
+
+  function colorMarkHtml(color, extraClass) {
+    if (color === "wild") {
+      return [
+        '<span class="wild-element-mark ' + escapeHtml(extraClass || "") + '" aria-label="' + escapeHtml(TOKEN_LABEL.wild) + '">',
+        "&#21325;",
+        "</span>"
+      ].join("");
+    }
+    return escapeHtml(TOKEN_LABEL[color] || "");
   }
 
   function queueFlightFromElement(source, color, label, targetSelector) {
@@ -2823,6 +4120,7 @@ Object.assign(I18N.de, {
       color: color || "gold",
       label: label || "",
       targetSelector: targetSelector || ".active-hand-panel",
+      targetElement: targetSelector && targetSelector.getBoundingClientRect ? targetSelector : null,
       from: {
         x: rect.left + rect.width / 2,
         y: rect.top + rect.height / 2,
@@ -2863,18 +4161,22 @@ Object.assign(I18N.de, {
       return window.setTimeout(callback, 16);
     };
     schedule(function () {
-      var target = document.querySelector(flight.targetSelector) || el.activeHandPanel || el.players;
+      var target = flight.targetElement;
+      if (!target && typeof flight.targetSelector === "string") target = document.querySelector(flight.targetSelector);
+      target = target || el.activeHandPanel || el.players;
       if (!target || !target.getBoundingClientRect) return;
       var rect = target.getBoundingClientRect();
       var node = document.createElement("div");
       node.className = "flight-card";
+      var isStrongholdFlight = /^SH(?:\+|>|-)$/.test(String(flight.label || ""));
+      if (isStrongholdFlight) node.classList.add("stronghold-flight");
       node.style.setProperty("--gem", GEM_HEX[flight.color] || GEM_HEX.gold);
       node.style.setProperty("--from-x", flight.from.x + "px");
       node.style.setProperty("--from-y", flight.from.y + "px");
       node.style.setProperty("--to-x", rect.left + rect.width / 2 + "px");
       node.style.setProperty("--to-y", rect.top + rect.height / 2 + "px");
-      node.style.setProperty("--w", Math.max(62, flight.from.width * 0.82) + "px");
-      node.style.setProperty("--h", Math.max(82, flight.from.height * 0.82) + "px");
+      node.style.setProperty("--w", (isStrongholdFlight ? 46 : Math.max(62, flight.from.width * 0.82)) + "px");
+      node.style.setProperty("--h", (isStrongholdFlight ? 42 : Math.max(82, flight.from.height * 0.82)) + "px");
       node.textContent = flight.label;
       document.body.append(node);
       node.addEventListener("animationend", function () {
@@ -2904,6 +4206,12 @@ Object.assign(I18N.de, {
     return parts.length ? parts.join("") : '<span class="muted">Free</span>';
   }
 
+  function hasCost(cost) {
+    return COLORS.some(function (color) {
+      return (cost && cost[color] || 0) > 0;
+    });
+  }
+
   function requirementHtml(cost) {
     var parts = COLORS.filter(function (color) {
       return (cost[color] || 0) > 0;
@@ -2916,12 +4224,14 @@ Object.assign(I18N.de, {
   function bonusCardsPreviewHtml(player, color) {
     if (!player) return "";
     var cards = player.purchased.filter(function (card) {
-      return card.color === color;
+      return effectiveCardBonuses(card)[color] > 0;
     });
     var title = t("bonusCardsTitle", { color: TOKEN_LABEL[color] });
     var body = cards.length ? cards.map(function (card) {
+      var copyChoice = orientCopyChoiceForPurchasedCard(player, card);
+      var copyAttrs = copyChoice ? ' data-orient-copy-card="' + escapeHtml(card.id) + '"' : "";
       return [
-        '<span class="bonus-card-row">',
+        '<span class="bonus-card-row' + (copyChoice ? " orient-copy-target" : "") + '"' + copyAttrs + '>',
         '<span class="bonus-card-main"><strong>' + escapeHtml(card.id) + '</strong><span>' + t("tier") + " " + card.tier + " / " + card.points + " " + t("prestige") + "</span></span>",
         '<span class="bonus-card-cost">' + costHtml(card.cost) + "</span>",
         "</span>"
@@ -2930,10 +4240,17 @@ Object.assign(I18N.de, {
     return '<span class="bonus-preview" role="tooltip"><span class="bonus-preview-title">' + escapeHtml(title) + "</span>" + body + "</span>";
   }
 
+  function bonusDisplaySummary(counts, player, color) {
+    return GemTableRules.bonusDisplaySummary(counts, player, color, { colors: COLORS, orientMarketId: ORIENT_MARKET_ID });
+  }
+
   function bonusesHtml(counts, player) {
     return COLORS.map(function (color) {
       var previewAttrs = player ? ' data-bonus-preview-toggle="true" tabindex="0" role="button"' : "";
-      return '<span class="bonus-pill" data-color="' + color + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + (counts[color] || 0) + '"' + previewAttrs + '><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span>' + (counts[color] || 0) + "</span>" + bonusCardsPreviewHtml(player, color) + "</span>";
+      var summary = bonusDisplaySummary(counts, player, color);
+      var extraBadge = summary.extra > 0 ? '<span class="bonus-extra-badge">+' + summary.extra + "</span>" : "";
+      var copyColor = orientCopyChoiceForColor(player, color);
+      return '<span class="bonus-pill' + (copyColor ? " orient-copy-color" : "") + '" data-color="' + color + '" data-bonus-cards="' + summary.cards + '" data-bonus-extra="' + summary.extra + '" data-bonus-total="' + summary.total + '" style="' + gemStyle(color) + '" aria-label="' + color + " bonus " + summary.total + " from " + summary.cards + " cards" + (summary.extra ? " plus " + summary.extra : "") + '"' + previewAttrs + '><span class="bonus-label">' + TOKEN_LABEL[color] + '</span><span class="bonus-count">' + summary.cards + "</span>" + extraBadge + bonusCardsPreviewHtml(player, color) + "</span>";
     }).join("");
   }
 
@@ -2960,14 +4277,24 @@ Object.assign(I18N.de, {
 
   function emptyPaymentPlan() {
     return {
+      selected_tokens: emptyCounts(true),
+      selected_virtual_card_ids: [],
       colored: emptyCounts(false),
-      gold: emptyCounts(false)
+      gold: emptyCounts(false),
+      virtual: emptyCounts(false),
+      discard_cards: []
     };
   }
 
   function paymentGoldTotal(payment) {
     return COLORS.reduce(function (sum, color) {
       return sum + (Number(payment && payment.gold && payment.gold[color]) || 0);
+    }, 0);
+  }
+
+  function paymentVirtualTotal(payment) {
+    return COLORS.reduce(function (sum, color) {
+      return sum + (Number(payment && payment.virtual && payment.virtual[color]) || 0);
     }, 0);
   }
 
@@ -2982,32 +4309,89 @@ Object.assign(I18N.de, {
 
   function paymentSelectedText(payment) {
     var parts = [];
-    COLORS.forEach(function (color) {
-      var colored = Number(payment && payment.colored && payment.colored[color]) || 0;
-      var gold = Number(payment && payment.gold && payment.gold[color]) || 0;
-      if (colored > 0) parts.push(TOKEN_LABEL[color] + " " + colored);
-      if (gold > 0) parts.push(TOKEN_LABEL.gold + " " + gold + " -> " + TOKEN_LABEL[color]);
+    var selected = paymentSelectedTokenCounts(payment);
+    ALL_TOKENS.forEach(function (color) {
+      var count = Number(selected[color]) || 0;
+      if (count > 0) parts.push(TOKEN_LABEL[color] + " " + count);
+    });
+    var selectedVirtual = Array.isArray(payment && payment.selected_virtual_card_ids) ? payment.selected_virtual_card_ids.length : 0;
+    if (selectedVirtual > 0) parts.push(t("orientVirtualSelected", { count: selectedVirtual }));
+    (payment && payment.discard_cards || []).forEach(function (cardId) {
+      parts.push(t("orientPaymentDiscard") + " " + cardId);
     });
     return parts.length ? parts.join(", ") : "-";
+  }
+
+  function paymentSelectedTokenCounts(payment) {
+    var selected = emptyCounts(true);
+    if (payment && payment.selected_tokens) {
+      ALL_TOKENS.forEach(function (color) {
+        selected[color] = Math.max(0, Number(payment.selected_tokens[color]) || 0);
+      });
+      return selected;
+    }
+    COLORS.forEach(function (color) {
+      selected[color] = Math.max(0, Number(payment && payment.colored && payment.colored[color]) || 0);
+    });
+    selected.gold = paymentGoldTotal(payment);
+    return selected;
+  }
+
+  function paymentTokenUsefulMax(context, payment, color) {
+    if (!context || !context.player || !context.card || ALL_TOKENS.indexOf(color) < 0) return 0;
+    var selected = paymentSelectedTokenCounts(payment);
+    var needs = paymentNeeds(context.player, context.card);
+    var available = Number(context.player.tokens[color]) || 0;
+    if (color !== "gold") return Math.min(available, needs[color] || 0);
+    var coloredCovered = COLORS.reduce(function (sum, neededColor) {
+      return sum + Math.min(Number(selected[neededColor]) || 0, needs[neededColor] || 0);
+    }, 0);
+    var totalNeed = COLORS.reduce(function (sum, neededColor) {
+      return sum + (needs[neededColor] || 0);
+    }, 0);
+    return Math.min(available, Math.max(0, totalNeed - coloredCovered));
   }
 
   function normalizePaymentPlan(player, card, payment) {
     var needs = paymentNeeds(player, card);
     var normalized = emptyPaymentPlan();
-    COLORS.forEach(function (color) {
-      var colored = Math.max(0, Number(payment && payment.colored && payment.colored[color]) || 0);
-      colored = Math.min(colored, player.tokens[color] || 0, needs[color]);
-      normalized.colored[color] = colored;
-      var gold = Math.max(0, Number(payment && payment.gold && payment.gold[color]) || 0);
-      normalized.gold[color] = Math.min(gold, Math.max(needs[color] - colored, 0));
+    var selected = paymentSelectedTokenCounts(payment);
+    ALL_TOKENS.forEach(function (color) {
+      normalized.selected_tokens[color] = Math.min(selected[color], Math.max(0, Number(player.tokens[color]) || 0));
     });
-    var excessGold = paymentGoldTotal(normalized) - (player.tokens.gold || 0);
-    if (excessGold > 0) {
-      COLORS.slice().reverse().forEach(function (color) {
-        var remove = Math.min(normalized.gold[color], excessGold);
-        normalized.gold[color] -= remove;
-        excessGold -= remove;
-      });
+    var selectedVirtualIds = selectedVirtualGoldCardIds(player, payment);
+    if (!selectedVirtualIds.length && paymentVirtualTotal(payment) > 0) {
+      selectedVirtualIds = availableOrientVirtualGoldCards(player).slice(0, 1).map(function (card) { return card.id; });
+    }
+    normalized.selected_virtual_card_ids = selectedVirtualIds;
+    var remaining = emptyCounts(false);
+    COLORS.forEach(function (color) {
+      var colored = Math.min(normalized.selected_tokens[color] || 0, needs[color]);
+      normalized.colored[color] = colored;
+      remaining[color] = Math.max(needs[color] - colored, 0);
+    });
+    var goldLeft = normalized.selected_tokens.gold || 0;
+    COLORS.forEach(function (color) {
+      var gold = Math.min(goldLeft, remaining[color]);
+      normalized.gold[color] = gold;
+      goldLeft -= gold;
+      remaining[color] -= gold;
+    });
+    var virtualLeft = selectedVirtualGoldValue(player, normalized);
+    COLORS.forEach(function (color) {
+      var virtual = Math.min(virtualLeft, remaining[color]);
+      normalized.virtual[color] = virtual;
+      virtualLeft -= virtual;
+      remaining[color] -= virtual;
+    });
+    var discardRequirement = orientDiscardCost(card);
+    if (discardRequirement) {
+      var candidates = orientDiscardCostCandidates(player, card);
+      var selected = Array.isArray(payment && payment.discard_cards) ? payment.discard_cards.slice() : [];
+      var candidateIds = candidates.map(function (candidate) { return candidate.id; });
+      normalized.discard_cards = selected.filter(function (cardId, index) {
+        return selected.indexOf(cardId) === index && candidateIds.indexOf(cardId) >= 0;
+      }).slice(0, discardRequirement.count);
     }
     return normalized;
   }
@@ -3015,29 +4399,63 @@ Object.assign(I18N.de, {
   function paymentIsLegal(player, card, payment) {
     if (!player || !card || !payment) return false;
     var needs = paymentNeeds(player, card);
-    if (paymentGoldTotal(payment) > (player.tokens.gold || 0)) return false;
-    return COLORS.every(function (color) {
-      var colored = Number(payment.colored && payment.colored[color]) || 0;
-      var gold = Number(payment.gold && payment.gold[color]) || 0;
-      return colored <= (player.tokens[color] || 0) && colored + gold === needs[color];
+    var normalized = normalizePaymentPlan(player, card, payment);
+    var selected = paymentSelectedTokenCounts(normalized);
+    if (selected.gold > (player.tokens.gold || 0)) return false;
+    if (selectedVirtualGoldCardIds(player, normalized).length > 1) return false;
+    var rowsCovered = COLORS.every(function (color) {
+      var colored = Number(normalized.colored && normalized.colored[color]) || 0;
+      var gold = Number(normalized.gold && normalized.gold[color]) || 0;
+      var virtual = Number(normalized.virtual && normalized.virtual[color]) || 0;
+      if (selected[color] > (player.tokens[color] || 0)) return false;
+      if (selected[color] !== colored) return false;
+      return colored + gold + virtual === needs[color];
     });
+    if (!rowsCovered) return false;
+    if (selected.gold !== paymentGoldTotal(normalized)) return false;
+    if (normalized.selected_virtual_card_ids.length && paymentVirtualTotal(normalized) <= 0) return false;
+    var discardRequirement = orientDiscardCost(card);
+    if (!discardRequirement) return true;
+    var selectedDiscards = Array.isArray(normalized.discard_cards) ? normalized.discard_cards : [];
+    if (selectedDiscards.length !== discardRequirement.count) return false;
+    return orientDiscardSelectionHasPriority(player, card, selectedDiscards);
   }
 
-  function paymentMoveArgs(payment) {
+  function paymentMoveArgs(payment, player) {
+    var virtualIds = paymentVirtualCards(player, payment);
     return {
       tokens: paymentSpend(payment),
-      gold_as: clone(payment.gold || emptyCounts(false))
+      gold_as: clone(payment.gold || emptyCounts(false)),
+      virtual_as: clone(payment.virtual || emptyCounts(false)),
+      virtual_card_ids: virtualIds,
+      discarded_card_ids: Array.isArray(payment.discard_cards) ? payment.discard_cards.slice() : []
     };
   }
 
   function autoPaymentPlan(player, card) {
     var needs = paymentNeeds(player, card);
     var payment = emptyPaymentPlan();
+    var goldLeft = player.tokens.gold || 0;
+    var needsLeft = emptyCounts(false);
     COLORS.forEach(function (color) {
       var colored = Math.min(player.tokens[color] || 0, needs[color]);
-      payment.colored[color] = colored;
-      payment.gold[color] = Math.max(needs[color] - colored, 0);
+      payment.selected_tokens[color] = colored;
+      needsLeft[color] = Math.max(needs[color] - colored, 0);
+      var gold = Math.min(goldLeft, needsLeft[color]);
+      payment.selected_tokens.gold += gold;
+      goldLeft -= gold;
+      needsLeft[color] -= gold;
     });
+    if (COLORS.some(function (color) { return needsLeft[color] > 0; })) {
+      var virtualCard = availableOrientVirtualGoldCards(player)[0];
+      if (virtualCard) payment.selected_virtual_card_ids = [virtualCard.id];
+    }
+    var discardRequirement = orientDiscardCost(card);
+    if (discardRequirement) {
+      payment.discard_cards = orientDiscardCostCandidates(player, card).slice(0, discardRequirement.count).map(function (candidate) {
+        return candidate.id;
+      });
+    }
     return normalizePaymentPlan(player, card, payment);
   }
 
@@ -3052,7 +4470,10 @@ Object.assign(I18N.de, {
       goldNeeded += needed - coloredPay;
     });
     pay.gold = goldNeeded;
-    return { ok: goldNeeded <= (player.tokens.gold || 0), pay: pay };
+    var paymentOk = goldNeeded <= (player.tokens.gold || 0) + orientVirtualGoldPaymentCapacity(player);
+    var discardRequirement = orientDiscardCost(card);
+    var discardOk = !discardRequirement || orientDiscardCostCandidates(player, card).length >= discardRequirement.count;
+    return { ok: paymentOk && discardOk, pay: pay };
   }
 
   function spendForCard(player, pay) {
@@ -3065,26 +4486,126 @@ Object.assign(I18N.de, {
     state.bank.gold += pay.gold || 0;
   }
 
+  function orientAbilityLabel(card) {
+    if (!cardIsOrient(card)) return "";
+    var ability = Array.isArray(card.abilities) && card.abilities[0] || {};
+    if (ability.effect === "double_bonus") return t("orientDoubleBonus");
+    if (ability.effect === "virtual_gold_placeholder" || ability.effect === "virtual_gold_2") return t("orientVirtualGold");
+    if (ability.effect === "copy_bonus" && orientCardHasAbility(card, "take_level_free")) {
+      return t("orientFreeCard", { tier: orientCardAbilities(card, "take_level_free")[0].free_tier || 1 });
+    }
+    if (ability.effect === "copy_bonus") return t("orientCopyBonus");
+    if (ability.effect === "take_level_free") return t("orientFreeCard", { tier: ability.free_tier || 1 });
+    if (ability.effect === "discard_cards_cost") {
+      return t("orientDiscardCost", { count: ability.count || 2, color: TOKEN_LABEL[ability.color] || "" });
+    }
+    if (!orientAbilityBuyStatus(card).ok) return t("orientAbilityPending");
+    return t("orientAbilityPlaceholder");
+  }
+
+  function orientAbilityShortLabel(ability) {
+    if (!ability) return "";
+    if (ability.effect === "double_bonus") return "2x";
+    if (ability.effect === "virtual_gold_placeholder" || ability.effect === "virtual_gold_2") return "Au2";
+    if (ability.effect === "copy_bonus") return "Copy";
+    if (ability.effect === "take_level_free") return "Free T" + (ability.free_tier || 1);
+    if (ability.effect === "fixed_bonus") return "";
+    return orientAbilityLabel({ module: ORIENT_MARKET_ID, abilities: [ability] });
+  }
+
+  function orientCardOrdinal(card) {
+    var tier = Number(card && card.tier) || 0;
+    var cards = ORIENT_CARDS[tier] || [];
+    var rawId = String(card && card.id || "");
+    var rawBgaId = String(card && card.bga_id || rawId.replace(/^orient-/, ""));
+    var index = cards.findIndex(function (entry) {
+      return entry && (entry.id === rawId || String(entry.bga_id || "") === rawBgaId);
+    });
+    return index >= 0 ? String(index + 1).padStart(2, "0") : rawBgaId;
+  }
+
+  function orientCardDisplayId(card) {
+    return "orient-t" + (card && card.tier || "") + "-" + orientCardOrdinal(card);
+  }
+
+  function orientDiscardCostHtml(card) {
+    var discardCost = orientDiscardCost(card);
+    if (!discardCost) return "";
+    var tiles = Array.from({ length: discardCost.count }).map(function () {
+      return '<span class="orient-discard-dot" data-color="' + discardCost.color + '" style="' + gemStyle(discardCost.color) + '"></span>';
+    }).join("");
+    var title = t("msgOrientDiscardNeedsCards", { count: discardCost.count, color: TOKEN_LABEL[discardCost.color] });
+    return '<span class="orient-discard-chip" title="' + escapeHtml(title) + '"><span class="orient-discard-icons">' + tiles + "</span></span>";
+  }
+
+  function orientAbilityHtml(card) {
+    if (!cardIsOrient(card)) return "";
+    var discard = orientDiscardCostHtml(card);
+    if (discard) return discard;
+    var chips = orientCardAbilities(card).map(function (ability) {
+      var label = orientAbilityShortLabel(ability);
+      if (!label) return "";
+      var title = orientAbilityLabel({ module: ORIENT_MARKET_ID, abilities: [ability] });
+      return '<span class="orient-ability-chip" title="' + escapeHtml(title) + '">' + escapeHtml(label) + "</span>";
+    }).filter(Boolean);
+    return chips.length ? '<div class="orient-ability-row">' + chips.join("") + "</div>" : "";
+  }
+
   function renderCard(card, controls) {
-    var buyAttr = controls.buy ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
-    var reserveAttr = controls.reserve ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
+    controls = controls || {};
+    var buyAttr = controls.buy && !controls.buyDisabled ? 'data-' + controls.buy + '="' + controls.value + '"' : "";
+    var reserveAttr = controls.reserve && !controls.reserveDisabled ? 'data-' + controls.reserve + '="' + controls.value + '"' : "";
     var afford = controls.afford;
-    var affordText = afford && afford.ok ? t("affordable") : t("needTokens");
+    var affordText = controls.statusText || (afford ? (afford.ok ? t("affordable") : t("needTokens")) : "");
+    var cardModule = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var moduleTitle = card && card.bga_id ? ' title="' + escapeHtml("BGA card id: " + card.bga_id) + '"' : "";
+    var moduleBadge = cardModule === ORIENT_MARKET_ID ? '<span class="card-module-badge"' + moduleTitle + ">" + escapeHtml(orientCardDisplayId(card)) + "</span>" : "";
+    var abilityBadge = cardModule === ORIENT_MARKET_ID ? orientAbilityHtml(card) : "";
+    var strongholdSummary = controls.strongholdSummary || strongholdSummaryFromHolders(controls.strongholds || [], state && state.current);
+    var strongholdBadge = strongholdBadgeHtml(strongholdSummary);
+    var strongholdAttrs = strongholdDataAttrs(strongholdSummary);
+    var strongholdTarget = controls.value ? ' data-stronghold-target="' + escapeHtml(controls.value) + '"' : "";
+    var orientFreeAttr = controls.orientFreeValue && !controls.orientChoiceDisabled ? ' data-orient-free-card="' + escapeHtml(controls.orientFreeValue) + '"' : "";
+    var orientChoiceReasonAttr = controls.orientChoiceReason ? ' data-orient-choice-reason="' + escapeHtml(controls.orientChoiceReason) + '"' : "";
+    var slotAttr = controls.slotId ? ' data-market-slot-id="' + escapeHtml(controls.slotId) + '"' : "";
+    var costRow = hasCost(card.cost) ? '<div class="cost-row">' + costHtml(card.cost) + "</div>" : "";
+    var strongholdSelectedSource = state && state.awaitingStrongholdAction && state.awaitingStrongholdAction.selected_source_slot_id && controls.slotId === state.awaitingStrongholdAction.selected_source_slot_id;
+    var strongholdLockMark = controls.strongholdBlocked ? '<span class="stronghold-lock-text" title="' + escapeHtml(t("strongholdBlocked")) + '" aria-label="' + escapeHtml(t("strongholdBlocked")) + '">&#128274;</span>' : "";
+    var idHtml = cardModule === ORIENT_MARKET_ID ? "" : '<span class="card-id">' + card.id + "</span>";
+    var titleMarks = '<span class="card-title-marks">' + colorMarkHtml(card.color, "card-color-mark") + strongholdLockMark + "</span>";
+    var cardClasses = ["dev-card"];
+    if (strongholdSelectedSource) cardClasses.push("stronghold-selected-source");
+    if (controls.conquestEligible) cardClasses.push("stronghold-conquest-target");
+    if (controls.strongholdBlocked) cardClasses.push("stronghold-blocked");
+    if (controls.strongholdActionKind) cardClasses.push("stronghold-action-" + controls.strongholdActionKind);
+    if (controls.orientChoiceTarget) cardClasses.push("orient-choice-target");
+    if (controls.orientChoiceDisabled) cardClasses.push("orient-choice-disabled");
     var actions = [];
     if (controls.buy) {
-      actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '" ' + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + t("buy") + "</button>");
+      var buyTitle = controls.buyDisabledReason ? ' title="' + escapeHtml(controls.buyDisabledReason) + '"' : "";
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("buyShort")) + '"' + buyTitle + " " + buyAttr + " " + (controls.buyDisabled ? "disabled" : "") + ">" + escapeHtml(t("buyShort")) + "</button>");
     }
     if (controls.reserve) {
-      actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + t("reserve") + "</button>");
+      actions.push('<button type="button" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + reserveAttr + " " + (controls.reserveDisabled ? "disabled" : "") + ">" + escapeHtml(t("reserveShort")) + "</button>");
     }
     return [
-      '<article class="dev-card" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" style="' + gemStyle(card.color) + '">',
-      "<h3><span>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + '<br><span class="card-id">' + card.id + '</span></span><span class="points">' + card.points + "</span></h3>",
-      '<div class="cost-row">' + costHtml(card.cost) + "</div>",
-      '<p class="card-affordability compact">' + affordText + "</p>",
+      '<article class="' + cardClasses.join(" ") + '" data-card-id="' + escapeHtml(card.id) + '" data-card-color="' + card.color + '" data-card-module="' + cardModule + '"' + strongholdTarget + orientFreeAttr + orientChoiceReasonAttr + slotAttr + strongholdAttrs + ' style="' + gemStyle(card.color) + '">',
+      '<h3><span class="card-title-main"><span class="card-title-line"><span class="card-tier-text">' + t("tier") + " " + card.tier + "</span>" + titleMarks + "</span>" + idHtml + '</span><span class="points">' + card.points + "</span></h3>",
+      strongholdBadge,
+      moduleBadge,
+      costRow,
+      abilityBadge,
+      affordText ? '<p class="card-affordability compact">' + affordText + "</p>" : "",
       actions.length ? '<div class="card-actions">' + actions.join("") + "</div>" : "",
       "</article>"
     ].join("");
+  }
+
+  function renderMarketEmptySlot(label, controls) {
+    controls = controls || {};
+    var strongholdSummary = controls.strongholdSummary || strongholdSummaryFromHolders([], state && state.current);
+    var slotAttr = controls.slotId ? ' data-market-slot-id="' + escapeHtml(controls.slotId) + '"' : "";
+    return '<div class="market-empty-slot"' + slotAttr + strongholdDataAttrs(strongholdSummary) + '><span>' + escapeHtml(label || t("noFaceUpCards")) + "</span></div>";
   }
 
   function renderNoble(noble, choiceMode) {
@@ -3095,6 +4616,64 @@ Object.assign(I18N.de, {
       '<div class="cost-row requirement-row">' + requirementHtml(noble.req) + "</div>",
       button,
       "</article>"
+    ].join("");
+  }
+
+  function noblePreviewHtml(noble) {
+    if (!noble) return "";
+    return [
+      '<span class="player-noble-preview" role="tooltip">',
+      '<span class="player-noble-preview-title"><strong>' + escapeHtml(noble.name || noble.id) + "</strong><span>" + escapeHtml(noble.points + " " + t("prestige")) + "</span></span>",
+      '<span class="requirement-row">' + requirementHtml(noble.req || {}) + "</span>",
+      "</span>"
+    ].join("");
+  }
+
+  function playerNoblesHtml(player) {
+    var nobles = player && Array.isArray(player.nobles) ? player.nobles : [];
+    var body = nobles.length ? nobles.map(function (noble, index) {
+      var edgeClass = index >= Math.max(0, nobles.length - 2) ? " edge-right" : "";
+      return [
+        '<span class="player-noble-badge' + edgeClass + '" data-noble-preview-toggle="true" tabindex="0" role="button" data-player-noble-id="' + escapeHtml(noble.id) + '">',
+        '<span class="player-noble-points">' + escapeHtml(noble.points) + "</span>",
+        '<span class="player-noble-name">' + escapeHtml(noble.name || noble.id) + "</span>",
+        noblePreviewHtml(noble),
+        "</span>"
+      ].join("");
+    }).join("") : '<span class="player-noble-empty">' + escapeHtml(t("none")) + "</span>";
+    return [
+      '<div class="player-nobles-section">',
+      '<span class="label">' + escapeHtml(t("nobles")) + " (" + nobles.length + ")</span>",
+      '<div class="player-noble-list">' + body + "</div>",
+      "</div>"
+    ].join("");
+  }
+
+  function orientVirtualGoldZoneHtml(player) {
+    var cards = availableOrientVirtualGoldCards(player);
+    if (!cards.length) return "";
+    var title = cards.map(function (card) { return card.id; }).join(", ");
+    return [
+      '<div class="orient-virtual-gold-row">',
+      '<span class="label">' + escapeHtml(t("orientVirtualGoldZone")) + "</span>",
+      '<span class="orient-virtual-card compact" style="' + gemStyle("gold") + '" title="' + escapeHtml(title) + '">',
+      '<span class="orient-virtual-card-face">*</span>',
+      '<span class="orient-virtual-token-pair"><span></span><span></span></span>',
+      '<span class="orient-virtual-count">x' + cards.length + "</span>",
+      "</span>",
+      "</div>"
+    ].join("");
+  }
+
+  function strongholdStockHtml(playerIndex) {
+    if (!state || !strongholdsEnabledForRuleset(state.ruleset)) return "";
+    var color = strongholdPlayerColor(playerIndex);
+    return [
+      '<div class="stronghold-stock" style="' + gemStyle(color) + '">',
+      '<span class="label">' + escapeHtml(t("strongholdStock")) + "</span>",
+      '<span class="stronghold-stock-token">' + escapeHtml(playerStrongholdSymbol(playerIndex)) + "</span>",
+      '<span class="stronghold-stock-count">x' + playerStrongholdSupply(state, playerIndex) + "</span>",
+      "</div>"
     ].join("");
   }
 
@@ -3130,18 +4709,57 @@ Object.assign(I18N.de, {
     }).join(", ") });
   }
 
-  function renderMarket() {
+  function renderMarketTabs() {
+    if (!el.marketTabBase || !el.marketTabOrient) return;
+    var orientEnabled = !!(state && orientEnabledForRuleset(state.ruleset));
+    if (!orientEnabled && activeMarketPage === ORIENT_MARKET_ID) activeMarketPage = BASE_MARKET_ID;
+    if (el.marketTabs) {
+      el.marketTabs.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+      el.marketTabs.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+      el.marketTabs.classList.toggle("market-has-orient", orientEnabled);
+    }
+    [
+      [el.marketTabBase, BASE_MARKET_ID, true],
+      [el.marketTabOrient, ORIENT_MARKET_ID, orientEnabled]
+    ].forEach(function (entry) {
+      var button = entry[0];
+      var page = entry[1];
+      var enabled = entry[2];
+      button.classList.toggle("active", activeMarketPage === page);
+      button.disabled = !enabled;
+      button.setAttribute("aria-selected", activeMarketPage === page ? "true" : "false");
+      button.setAttribute("aria-disabled", enabled ? "false" : "true");
+    });
+  }
+
+  function renderBaseMarket() {
     var active = displayPlayer();
-    el.market.innerHTML = [3, 2, 1].map(function (tier) {
+    return [3, 2, 1].map(function (tier) {
       var cards = state.market[tier].map(function (card, index) {
+        var slotId = marketSlotId(state, BASE_MARKET_ID, tier, index);
+        var strongholdSummary = strongholdSlotSummary(state, slotId, state.current);
+        if (!card) return renderMarketEmptySlot(t("orientActionsPending"), { slotId: slotId, strongholdSummary: strongholdSummary });
         var afford = affordability(active, card);
+        var strongholdAccess = strongholdAccessStatus(slotId, state.current);
+        var strongholdActionKind = strongholdActionKindForSlot(slotId, state.current);
+        var orientChoice = orientFreeChoiceForSlot(BASE_MARKET_ID, tier, index, slotId);
         return renderCard(card, {
           buy: "buy-market",
           reserve: "reserve-market",
           value: tier + ":" + index,
+          slotId: slotId,
           afford: afford,
-          buyDisabled: !canAct() || !afford.ok,
-          reserveDisabled: !canAct() || active.reserved.length >= 3
+          strongholdSummary: strongholdSummary,
+          strongholdBlocked: !strongholdAccess.ok,
+          strongholdActionKind: strongholdActionKind,
+          conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
+          buyDisabled: !canAct() || !afford.ok || !strongholdAccess.ok,
+          buyDisabledReason: strongholdAccess.reason,
+          reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok,
+          orientChoiceTarget: !!orientChoice,
+          orientChoiceDisabled: !!(orientChoice && !orientChoice.ok),
+          orientChoiceReason: orientChoice && orientChoice.reason,
+          orientFreeValue: orientChoice && orientChoice.value
         });
       }).join("");
       return [
@@ -3150,12 +4768,191 @@ Object.assign(I18N.de, {
         '<span class="label">' + t("tier") + " " + tier + "</span>",
         "<strong>" + state.decks[tier].length + "</strong>",
         '<span class="muted compact">' + t("deckCards") + "</span>",
-        '<button type="button" data-reserve-deck="' + tier + '" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + t("reserveDeck") + "</button>",
+        '<button type="button" data-reserve-deck="' + tier + '" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + (!canAct() || active.reserved.length >= 3 || state.decks[tier].length === 0 ? "disabled" : "") + ">" + escapeHtml(t("reserveShort")) + "</button>",
         "</div>",
         '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
         "</section>"
       ].join("");
     }).join("");
+  }
+
+  function renderOrientMarket() {
+    ensureStateRuleset(state);
+    var active = displayPlayer();
+    return [3, 2, 1].map(function (tier) {
+      var cards = (state.orient_market[tier] || []).map(function (card, index) {
+        var slotId = marketSlotId(state, ORIENT_MARKET_ID, tier, index);
+        var strongholdSummary = strongholdSlotSummary(state, slotId, state.current);
+        if (!card) return renderMarketEmptySlot(t("orientActionsPending"), { slotId: slotId, strongholdSummary: strongholdSummary });
+        var afford = affordability(active, card);
+        var abilityStatus = orientAbilityBuyStatus(card, active);
+        var strongholdAccess = strongholdAccessStatus(slotId, state.current);
+        var strongholdActionKind = strongholdActionKindForSlot(slotId, state.current);
+        var buyReason = abilityStatus.ok ? "" : t("msgOrientAbilityPending");
+        var orientChoice = orientFreeChoiceForSlot(ORIENT_MARKET_ID, tier, index, slotId);
+        return renderCard(card, {
+          buy: "buy-market",
+          reserve: "reserve-market",
+          value: ORIENT_MARKET_ID + ":" + tier + ":" + index,
+          slotId: slotId,
+          afford: afford,
+          strongholdSummary: strongholdSummary,
+          strongholdBlocked: !strongholdAccess.ok,
+          strongholdActionKind: strongholdActionKind,
+          conquestEligible: !!(state.awaitingStrongholdConquest && strongholdConquestSlotEligible(state, slotId, state.current) && afford.ok),
+          statusText: abilityStatus.ok ? "" : abilityStatus.reason,
+          buyDisabled: !canAct() || !afford.ok || !abilityStatus.ok || !strongholdAccess.ok,
+          buyDisabledReason: strongholdAccess.reason || buyReason,
+          reserveDisabled: !canAct() || active.reserved.length >= 3 || !strongholdAccess.ok,
+          orientChoiceTarget: !!orientChoice,
+          orientChoiceDisabled: !!(orientChoice && !orientChoice.ok),
+          orientChoiceReason: orientChoice && orientChoice.reason,
+          orientFreeValue: orientChoice && orientChoice.value
+        });
+      }).join("");
+      var deckCount = state.orient_decks && state.orient_decks[tier] ? state.orient_decks[tier].length : 0;
+      return [
+        '<section class="tier orient-tier">',
+        '<div class="deck-box" data-market-deck="' + ORIENT_MARKET_ID + '" data-tier="' + tier + '">',
+        '<span class="label">' + t("orientModule") + " " + t("tier") + " " + tier + "</span>",
+        "<strong>" + deckCount + "</strong>",
+        '<span class="muted compact">' + t("deckCards") + "</span>",
+        '<button type="button" data-reserve-deck="' + ORIENT_MARKET_ID + ":" + tier + '" data-short-label="' + escapeHtml(t("reserveShort")) + '" ' + (!canAct() || active.reserved.length >= 3 || deckCount === 0 ? "disabled" : "") + ">" + escapeHtml(t("reserveShort")) + "</button>",
+        "</div>",
+        '<div class="card-grid">' + (cards || '<span class="muted">' + t("noFaceUpCards") + "</span>") + "</div>",
+        "</section>"
+      ].join("");
+    }).join("");
+  }
+
+  function renderMarket() {
+    renderMarketTabs();
+    var orientEnabled = orientEnabledForRuleset(state.ruleset);
+    el.market.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+    el.market.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+    el.market.classList.toggle("market-has-orient", orientEnabled);
+    if (orientEnabled) {
+      el.market.innerHTML = [
+        '<div class="market-stack">',
+        '<section class="market-page market-page-base-panel" data-market-section="base">',
+        '<div class="market-page-heading"><strong>' + escapeHtml(t("baseMarketTab")) + "</strong></div>",
+        renderBaseMarket(),
+        "</section>",
+        '<section class="market-page market-page-orient-panel" data-market-section="orient">',
+        '<div class="market-page-heading"><strong>' + escapeHtml(t("orientMarketTab")) + "</strong></div>",
+        renderOrientMarket(),
+        "</section>",
+        "</div>"
+      ].join("");
+      scheduleMarketOrientWrapSync();
+      return;
+    }
+    el.market.classList.remove("market-orient-wrapped");
+    el.market.innerHTML = renderBaseMarket();
+  }
+
+  function syncMarketOrientWrap() {
+    if (!el.market) return;
+    var basePanel = el.market.querySelector(".market-page-base-panel");
+    var orientPanel = el.market.querySelector(".market-page-orient-panel");
+    if (!basePanel || !orientPanel) {
+      el.market.classList.remove("market-orient-wrapped");
+      return;
+    }
+    var baseRect = basePanel.getBoundingClientRect();
+    var orientRect = orientPanel.getBoundingClientRect();
+    var wrapped = orientRect.top > baseRect.top + 4;
+    el.market.classList.toggle("market-orient-wrapped", wrapped);
+  }
+
+  function scheduleMarketOrientWrapSync() {
+    if (marketOrientWrapSyncScheduled) return;
+    marketOrientWrapSyncScheduled = true;
+    var schedule = window.requestAnimationFrame || function (callback) {
+      return window.setTimeout(callback, 16);
+    };
+    schedule(function () {
+      marketOrientWrapSyncScheduled = false;
+      syncMarketOrientWrap();
+    });
+  }
+
+  function syncMarketPageClasses() {
+    if (!el.market) return;
+    var orientEnabled = state && orientEnabledForRuleset(state.ruleset);
+    el.market.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+    el.market.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+    el.market.classList.toggle("market-has-orient", !!orientEnabled);
+    if (el.marketTabs) {
+      el.marketTabs.classList.toggle("market-page-base", activeMarketPage === BASE_MARKET_ID);
+      el.marketTabs.classList.toggle("market-page-orient", activeMarketPage === ORIENT_MARKET_ID);
+      el.marketTabs.classList.toggle("market-has-orient", !!orientEnabled);
+    }
+    var basePanel = el.market.querySelector(".market-page-base-panel");
+    var orientPanel = el.market.querySelector(".market-page-orient-panel");
+    if (basePanel) basePanel.setAttribute("aria-hidden", activeMarketPage === BASE_MARKET_ID ? "false" : "true");
+    if (orientPanel) orientPanel.setAttribute("aria-hidden", activeMarketPage === ORIENT_MARKET_ID ? "false" : "true");
+  }
+
+  function switchMarketPage(page) {
+    if (!state || page === activeMarketPage) return;
+    if (page === ORIENT_MARKET_ID && !orientEnabledForRuleset(state.ruleset)) return;
+    activeMarketPage = page === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    syncMarketPageClasses();
+    renderMarketTabs();
+  }
+
+  function marketSwipePoint(event) {
+    return event.touches && event.touches[0] || event.changedTouches && event.changedTouches[0] || event;
+  }
+
+  function clearMarketSwipeDrag() {
+    if (!el.market) return;
+    el.market.classList.remove("market-dragging");
+    el.market.style.removeProperty("--market-drag-x");
+  }
+
+  function handleMarketSwipeStart(event) {
+    if (!state || !orientEnabledForRuleset(state.ruleset)) return;
+    if (!(window.matchMedia && window.matchMedia("(max-width: 1180px)").matches)) return;
+    if (event.type === "pointerdown" && event.button !== undefined && event.button !== 0) return;
+    var point = marketSwipePoint(event);
+    marketSwipeStart = { x: point.clientX, y: point.clientY, page: activeMarketPage, dragging: false };
+  }
+
+  function handleMarketSwipeMove(event) {
+    if (!marketSwipeStart || !el.market) return;
+    var point = marketSwipePoint(event);
+    var dx = point.clientX - marketSwipeStart.x;
+    var dy = point.clientY - marketSwipeStart.y;
+    var absDx = Math.abs(dx);
+    if (!marketSwipeStart.dragging && (absDx < 10 || absDx < Math.abs(dy) * 1.15)) return;
+    var width = el.market.getBoundingClientRect().width || window.innerWidth || 1;
+    var allowedDx = marketSwipeStart.page === BASE_MARKET_ID ? Math.min(0, dx) : Math.max(0, dx);
+    var clampedDx = Math.max(-width, Math.min(width, allowedDx));
+    marketSwipeStart.dragging = true;
+    el.market.classList.add("market-dragging");
+    el.market.style.setProperty("--market-drag-x", Math.round(clampedDx) + "px");
+  }
+
+  function handleMarketSwipeEnd(event) {
+    if (!marketSwipeStart) return;
+    var point = marketSwipePoint(event);
+    var dx = point.clientX - marketSwipeStart.x;
+    var dy = point.clientY - marketSwipeStart.y;
+    marketSwipeStart = null;
+    if (Math.abs(dx) < 58 || Math.abs(dx) < Math.abs(dy) * 1.35) {
+      clearMarketSwipeDrag();
+      return;
+    }
+    if (dx < 0) switchMarketPage(ORIENT_MARKET_ID);
+    else switchMarketPage(BASE_MARKET_ID);
+    clearMarketSwipeDrag();
+  }
+
+  function handleMarketSwipeCancel() {
+    marketSwipeStart = null;
+    clearMarketSwipeDrag();
   }
 
   function reservedSourceText(card) {
@@ -3167,7 +4964,7 @@ Object.assign(I18N.de, {
     return [
       '<span class="reserve-preview" role="tooltip" style="' + gemStyle(card.color) + '">',
       '<span class="reserve-preview-title">',
-      "<strong>" + t("tier") + " " + card.tier + " " + TOKEN_LABEL[card.color] + "</strong>",
+      "<strong>" + t("tier") + " " + card.tier + " " + colorMarkHtml(card.color, "card-color-mark") + "</strong>",
       '<span>' + card.points + " " + t("prestige") + "</span>",
       "</span>",
       '<span class="card-id">' + escapeHtml(card.id) + "</span>",
@@ -3207,6 +5004,7 @@ Object.assign(I18N.de, {
     ].join("");
     el.activeTokenRow.innerHTML = tokensHtml(player.tokens, false, null, true);
     el.activeBonusRow.innerHTML = bonusesHtml(player.bonuses, player);
+    if (el.activeVirtualGold) el.activeVirtualGold.innerHTML = orientVirtualGoldZoneHtml(player);
     if (!player.reserved.length) {
       el.activeReserved.innerHTML = '<span class="muted">' + t("noActiveReserved") + "</span>";
       return;
@@ -3232,7 +5030,6 @@ Object.assign(I18N.de, {
     var visibleIndex = displayCurrentIndex();
     el.players.innerHTML = state.players.map(function (player, playerIndex) {
       var reservedCards = renderReservedSummary(player);
-      var nobleText = player.nobles.length ? player.nobles.map(function (noble) { return noble.name; }).join(", ") : t("none");
       var aiBadgeKey = player.ai && player.ai.provider === "dinoboard" ? "aiBadgeFormat" : "randomAiBadgeFormat";
       var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t(aiBadgeKey, { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
@@ -3242,9 +5039,12 @@ Object.assign(I18N.de, {
         '<div class="player-resource-panel">',
         '<span class="label">' + t("tokens") + " (" + totalTokens(player) + '/10)</span><div class="token-row">' + tokensHtml(player.tokens, false, null, true) + "</div>",
         '<span class="label">' + t("bonuses") + '</span><div class="bonus-row">' + bonusesHtml(player.bonuses, player) + "</div>",
+        orientVirtualGoldZoneHtml(player),
+        strongholdStockHtml(playerIndex),
         "</div>",
         '<div><span class="label">' + t("reserved") + " (" + player.reserved.length + '/3)</span><div class="reserved-list">' + reservedCards + "</div></div>",
-        '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: nobleText })) + "</span></div>",
+        playerNoblesHtml(player),
+        '<div class="purchased-summary" style="' + gemStyle("gold") + '"><span>' + escapeHtml(t("purchasedSummary", { cards: player.purchased.length, nobles: player.nobles.length })) + "</span></div>",
         "</article>"
       ].join("");
     }).join("");
@@ -3282,10 +5082,13 @@ Object.assign(I18N.de, {
     var card = null;
     var context = null;
     if (pendingPayment.source === "market") {
-      var tier = Number(parts[0]);
-      var marketIndex = Number(parts[1]);
-      card = state.market[tier] && state.market[tier][marketIndex];
-      context = { type: "buyMarket", player: player, card: card, tier: tier, index: marketIndex };
+      var marketRef = parseMarketActionValue(pendingPayment.value);
+      card = marketCardAt(state, marketRef);
+      context = { type: "buyMarket", player: player, card: card, tier: marketRef.tier, index: marketRef.index, market_id: marketRef.marketId };
+    } else if (pendingPayment.source === "strongholdConquest") {
+      var conquestRef = parseMarketActionValue(pendingPayment.value);
+      card = marketCardAt(state, conquestRef);
+      context = { type: "strongholdConquest", player: player, card: card, tier: conquestRef.tier, index: conquestRef.index, market_id: conquestRef.marketId, parent: pendingPayment.parent || null };
     } else if (pendingPayment.source === "reserved") {
       var playerIndex = Number(parts[0]);
       var reservedIndex = Number(parts[1]);
@@ -3298,34 +5101,111 @@ Object.assign(I18N.de, {
     return context;
   }
 
+  function orientDiscardCandidateIsPriority(candidate, requirement) {
+    return !!(candidate && requirement && candidate.copied_color === requirement.color);
+  }
+
+  function discardCandidateMiniCardHtml(candidate, requirement, active) {
+    var bonusColor = cardPrimaryBonusColor(candidate) || requirement.color;
+    var priority = orientDiscardCandidateIsPriority(candidate, requirement);
+    var classes = ["payment-discard-card"];
+    var points = Number(candidate.points) || 0;
+    if (active) classes.push("active");
+    if (priority) classes.push("priority");
+    var priorityBadge = priority ? [
+      '<span class="payment-discard-priority-badge">',
+      colorMarkHtml("wild", "payment-discard-wild"),
+      '<span>' + escapeHtml(t("orientDiscardPriorityBadge")) + "</span>",
+      "</span>"
+    ].join("") : "";
+    return [
+      '<button type="button" class="' + classes.join(" ") + '" data-payment-toggle-discard-card="' + escapeHtml(candidate.id) + '" style="' + gemStyle(bonusColor) + '" aria-label="' + escapeHtml(candidate.id + " " + t("tier") + " " + candidate.tier + " " + points + " " + t("prestige")) + '">',
+      '<span class="payment-discard-card-face">',
+      '<span class="payment-discard-card-top">',
+      '<span class="payment-discard-bonus" data-color="' + bonusColor + '" style="' + gemStyle(bonusColor) + '"><span class="gem-dot"></span><span>' + colorMarkHtml(bonusColor) + "</span></span>",
+      '<span class="payment-discard-card-points">' + points + "</span>",
+      "</span>",
+      '<span class="payment-discard-card-id">' + escapeHtml(candidate.id) + "</span>",
+      '<span class="payment-discard-card-meta">',
+      '<span>' + escapeHtml(t("tier")) + " " + escapeHtml(candidate.tier || "") + "</span>",
+      '<span class="payment-discard-prestige"><span></span>' + points + "</span>",
+      "</span>",
+      priorityBadge,
+      "</span>",
+      "</button>"
+    ].join("");
+  }
+
   function paymentRowsHtml(context) {
     var player = context.player;
     var needs = paymentNeeds(player, context.card);
     var payment = pendingPayment.payment;
-    var rows = COLORS.filter(function (color) {
-      return needs[color] > 0;
-    }).map(function (color) {
-      var colored = payment.colored[color] || 0;
-      var gold = payment.gold[color] || 0;
-      var remaining = Math.max(needs[color] - colored - gold, 0);
-      var canAddColor = remaining > 0 && colored < (player.tokens[color] || 0);
-      var canAddGold = remaining > 0 && paymentGoldTotal(payment) < (player.tokens.gold || 0);
+    var rows = [];
+    var selected = paymentSelectedTokenCounts(payment);
+    var selectedVirtualIds = selectedVirtualGoldCardIds(player, payment);
+    var needsHtml = requirementHtml(needs) || '<span class="muted compact">' + escapeHtml(t("noPaymentNeeded")) + "</span>";
+    var tokenButtons = ALL_TOKENS.map(function (color) {
+      var available = Number(player.tokens[color]) || 0;
+      var chosen = Number(selected[color]) || 0;
+      var usefulMax = paymentTokenUsefulMax(context, payment, color);
+      var disabled = available <= 0 || (chosen <= 0 && usefulMax <= 0);
       return [
-        '<div class="payment-row" style="' + gemStyle(color) + '">',
-        '<div class="payment-need">',
-        '<span class="requirement-tile" data-color="' + color + '" style="' + gemStyle(color) + '"><span>' + needs[color] + "</span></span>",
-        '<div><strong>' + TOKEN_LABEL[color] + '</strong><span>' + t("paymentRemaining", { count: remaining }) + "</span></div>",
+        '<button type="button" class="payment-token-choice ' + (chosen ? "active" : "") + '" data-payment-token-color="' + color + '" data-color="' + color + '" style="' + gemStyle(color) + '" ' + (disabled ? "disabled" : "") + ">",
+        '<span class="token payment-token-dot" data-color="' + color + '" style="' + gemStyle(color) + '">' + TOKEN_LABEL[color] + "</span>",
+        '<span class="payment-token-count">' + chosen + "/" + available + "</span>",
+        "</button>"
+      ].join("");
+    }).join("");
+    var virtualCards = availableOrientVirtualGoldCards(player);
+    var virtualHtml = virtualCards.length ? [
+      '<div class="payment-virtual-grid">',
+      virtualCards.map(function (card) {
+        var active = selectedVirtualIds.indexOf(card.id) >= 0;
+        return [
+          '<button type="button" class="payment-virtual-choice ' + (active ? "active" : "") + '" data-payment-toggle-virtual-card="' + escapeHtml(card.id) + '" style="' + gemStyle("gold") + '">',
+          '<span class="orient-virtual-card-face">*</span>',
+          '<span class="orient-virtual-token-pair"><span></span><span></span></span>',
+          '<span class="card-id">' + escapeHtml(card.id) + "</span>",
+          "</button>"
+        ].join("");
+      }).join(""),
+      "</div>",
+      '<p class="muted compact">' + escapeHtml(t("paymentVirtualHint")) + "</p>"
+    ].join("") : "";
+    var overpay = selectedVirtualGoldValue(player, payment) > paymentVirtualTotal(payment) && selectedVirtualIds.length > 0 && ALL_TOKENS.some(function (color) {
+      return (selected[color] || 0) > 0;
+    });
+    rows.push([
+      '<div class="payment-choice-board">',
+      '<div class="payment-choice-section"><span class="label">' + escapeHtml(t("paymentNeeds")) + '</span><div class="payment-needs">' + needsHtml + "</div></div>",
+      '<div class="payment-choice-section"><span class="label">' + escapeHtml(t("paymentPlayerTokens")) + '</span><div class="payment-token-grid">' + tokenButtons + "</div></div>",
+      virtualHtml ? '<div class="payment-choice-section"><span class="label">' + escapeHtml(t("orientVirtualGoldZone")) + "</span>" + virtualHtml + "</div>" : "",
+      overpay ? '<p class="payment-hint">' + escapeHtml(t("paymentVirtualOverpayHint")) + "</p>" : "",
+      "</div>"
+    ].filter(Boolean).join(""));
+    var discardRequirement = orientDiscardCost(context.card);
+    if (discardRequirement) {
+      var selected = payment.discard_cards || [];
+      var candidates = orientDiscardCostCandidates(player, context.card);
+      var hasPriorityCandidate = candidates.some(function (candidate) {
+        return orientDiscardCandidateIsPriority(candidate, discardRequirement);
+      });
+      rows.push([
+        '<div class="payment-discard-row" style="' + gemStyle(discardRequirement.color) + '">',
+        '<div class="payment-discard-head">',
+        '<strong>' + escapeHtml(t("orientPaymentDiscard")) + "</strong>",
+        '<span>' + escapeHtml(t("orientDiscardCost", { count: discardRequirement.count, color: TOKEN_LABEL[discardRequirement.color] })) + "</span>",
         "</div>",
-        '<div class="payment-used"><span>' + TOKEN_LABEL[color] + " " + colored + '</span><span>' + TOKEN_LABEL.gold + " " + gold + "</span></div>",
-        '<div class="payment-controls">',
-        '<button type="button" data-payment-add-color="' + color + '" style="' + gemStyle(color) + '" ' + (canAddColor ? "" : "disabled") + ">+ " + TOKEN_LABEL[color] + "</button>",
-        '<button type="button" data-payment-remove-color="' + color + '" ' + (colored > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL[color] + "</button>",
-        '<button type="button" data-payment-add-gold="' + color + '" style="' + gemStyle("gold") + '" ' + (canAddGold ? "" : "disabled") + ">+ " + TOKEN_LABEL.gold + "</button>",
-        '<button type="button" data-payment-remove-gold="' + color + '" ' + (gold > 0 ? "" : "disabled") + ">- " + TOKEN_LABEL.gold + "</button>",
+        hasPriorityCandidate ? '<p class="payment-discard-hint">' + colorMarkHtml("wild", "payment-discard-wild") + '<span>' + escapeHtml(t("orientDiscardPriorityHint")) + "</span></p>" : "",
+        '<div class="payment-discard-cards">',
+        candidates.map(function (candidate) {
+          var active = selected.indexOf(candidate.id) >= 0;
+          return discardCandidateMiniCardHtml(candidate, discardRequirement, active);
+        }).join("") || '<span class="muted compact">' + escapeHtml(t("orientNoChoices")) + "</span>",
         "</div>",
         "</div>"
-      ].join("");
-    });
+      ].join(""));
+    }
     return rows.length ? rows.join("") : '<p class="muted compact">' + t("noPaymentNeeded") + "</p>";
   }
 
@@ -3350,15 +5230,300 @@ Object.assign(I18N.de, {
     el.confirmPayment.disabled = !paymentIsLegal(context.player, context.card, pendingPayment.payment);
   }
 
+  function orientCurrentTask() {
+    var action = state && state.awaitingOrientAction;
+    return action && Array.isArray(action.queue) ? action.queue[0] : null;
+  }
+
+  function orientMarketChoiceList(tier) {
+    var choices = [];
+    [BASE_MARKET_ID, ORIENT_MARKET_ID].forEach(function (marketId) {
+      var market = marketId === ORIENT_MARKET_ID ? state.orient_market : state.market;
+      (market && market[tier] || []).forEach(function (card, index) {
+        if (!card) return;
+        choices.push({ marketId: marketId, tier: tier, index: index, card: card, slotId: marketSlotId(state, marketId, tier, index) });
+      });
+    });
+    return choices;
+  }
+
+  function orientFreeChoiceForSlot(marketId, tier, index, slotId) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    if (!action || !task || task.type !== "free_card") return null;
+    if ((Number(tier) || 0) !== (Number(task.tier) || 0)) return null;
+    var value = [marketId, tier, index].join(":");
+    var access = strongholdAccessStatus(slotId, state.current);
+    return {
+      value: value,
+      ok: !!access.ok,
+      reason: access.reason || t("strongholdBlocked")
+    };
+  }
+
+  function orientCopyChoiceForPurchasedCard(player, card) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    var active = activePlayer();
+    if (!action || !task || task.type !== "copy_bonus" || !player || !card || !active || player.id !== active.id) return false;
+    var target = findPlayerPurchasedCard(player, task.card_id);
+    if (!target) return false;
+    return orientCopyCandidates(player, target).some(function (candidate) {
+      return candidate && candidate.id === card.id;
+    });
+  }
+
+  function orientCopyChoiceForColor(player, color) {
+    return !!(player && player.purchased || []).some(function (card) {
+      return effectiveCardBonuses(card)[color] > 0 && orientCopyChoiceForPurchasedCard(player, card);
+    });
+  }
+
+  function renderOrientCopyOptions(player, card) {
+    var candidates = orientCopyCandidates(player, card);
+    return candidates.map(function (candidate) {
+      var color = cardPrimaryBonusColor(candidate);
+      return [
+        '<button type="button" class="orient-choice-card" data-orient-copy-card="' + escapeHtml(candidate.id) + '" style="' + gemStyle(color || "gold") + '">',
+        renderCard(candidate, {}),
+        '<span class="orient-choice-note">' + TOKEN_LABEL[color] + "</span>",
+        "</button>"
+      ].join("");
+    }).join("") || '<p class="muted compact">' + t("orientNoChoices") + "</p>";
+  }
+
+  function renderOrientFreeOptions(tier) {
+    var choices = orientMarketChoiceList(tier);
+    return choices.map(function (choice) {
+      var value = [choice.marketId, choice.tier, choice.index].join(":");
+      var strongholdAccess = strongholdAccessStatus(choice.slotId, state.current);
+      return [
+        '<button type="button" class="orient-choice-card" data-orient-free-card="' + escapeHtml(value) + '" ' + (!strongholdAccess.ok ? "disabled" : "") + ">",
+        renderCard(choice.card, {
+          value: value,
+          slotId: choice.slotId,
+          strongholdSummary: strongholdSlotSummary(state, choice.slotId, state.current),
+          strongholdBlocked: !strongholdAccess.ok
+        }),
+        "</button>"
+      ].join("");
+    }).join("") || '<p class="muted compact">' + t("orientNoChoices") + "</p>";
+  }
+
+  function renderOrientAction() {
+    if (!el.orientActionPanel) return;
+    var action = state && state.awaitingOrientAction;
+    pendingOrientAction = action || null;
+    el.orientActionPanel.hidden = !action;
+    if (!action) {
+      el.orientActionOptions.innerHTML = "";
+      return;
+    }
+    var task = orientCurrentTask();
+    if (el.activeHandPanel && (!task || (task.type !== "free_card" && task.type !== "copy_bonus"))) el.activeHandPanel.open = true;
+    var player = activePlayer();
+    var card = task && findPlayerPurchasedCard(player, task.card_id);
+    var title = t("orientChoiceTitle");
+    var body = t("orientChoiceBody");
+    var html = "";
+    if (!task || !card) {
+      html = '<p class="muted compact">' + t("orientNoChoices") + "</p>";
+    } else if (task.type === "copy_bonus") {
+      body = t("msgOrientChooseCopy", { card: card.id });
+      html = '<p class="orient-direct-choice-note">' + escapeHtml(t("orientCopyDirectClickHint")) + "</p>";
+    } else if (task.type === "free_card") {
+      body = t("msgOrientChooseFree", { tier: task.tier });
+      html = '<p class="orient-direct-choice-note">' + escapeHtml(t("orientDirectClickHint")) + "</p>";
+    }
+    if (el.orientActionTitle) el.orientActionTitle.textContent = title;
+    if (el.orientActionSummary) el.orientActionSummary.textContent = body;
+    el.orientActionOptions.classList.toggle("orient-action-options-direct", !!(task && (task.type === "free_card" || task.type === "copy_bonus")));
+    el.orientActionOptions.innerHTML = html;
+  }
+
+  function renderStrongholdTargetButton(ref, kind, label) {
+    var value = [ref.marketId, ref.tier, ref.index].join(":");
+    var blocked = kind === "remove";
+    return [
+      '<button type="button" class="stronghold-choice" data-stronghold-' + kind + '="' + escapeHtml(value) + '">',
+      '<span class="stronghold-choice-title">' + escapeHtml(label) + "</span>",
+      renderCard(ref.card, {
+        value: value,
+        slotId: ref.slotId,
+        strongholdSummary: strongholdSlotSummary(state, ref.slotId, state.current),
+        strongholdBlocked: blocked
+      }),
+      "</button>"
+    ].join("");
+  }
+
+  function strongholdChoiceGroupHtml(titleKey, refs, kind, labelKey) {
+    if (!refs.length) return "";
+    return [
+      '<section class="stronghold-choice-group">',
+      '<span class="stronghold-choice-group-title">' + escapeHtml(t(titleKey)) + "</span>",
+      '<div class="stronghold-choice-grid">',
+      refs.map(function (ref) {
+        return renderStrongholdTargetButton(ref, kind, t(labelKey));
+      }).join(""),
+      "</div>",
+      "</section>"
+    ].join("");
+  }
+
+  function strongholdActionOptionsHtml() {
+    if (!state || !state.awaitingStrongholdAction) return "";
+    return '<div class="stronghold-selection-hint">' + escapeHtml(strongholdActionPrompt()) + "</div>";
+  }
+
+  function marketActionValueFromRef(ref) {
+    if (!ref) return "";
+    return (ref.marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID + ":" : "") + ref.tier + ":" + ref.index;
+  }
+
+  function strongholdConquestChoiceButton(ref) {
+    var value = marketActionValueFromRef(ref);
+    return [
+      '<button type="button" class="stronghold-choice stronghold-conquest-choice" data-stronghold-conquest-buy="' + escapeHtml(value) + '">',
+      '<span class="stronghold-choice-title">' + escapeHtml(t("strongholdConquestBuy")) + "</span>",
+      renderCard(ref.card, {
+        value: value,
+        slotId: ref.slotId,
+        strongholdSummary: strongholdSlotSummary(state, ref.slotId, state.current),
+        conquestEligible: true
+      }),
+      "</button>"
+    ].join("");
+  }
+
+  function strongholdConquestOptionsHtml(conquest) {
+    var choices = strongholdConquestChoices(state, strongholdConquestPlayerIndex(conquest), conquest && conquest.targets);
+    var choiceHtml = choices.length
+      ? choices.map(strongholdConquestChoiceButton).join("")
+      : '<div class="stronghold-selection-hint">' + escapeHtml(t("strongholdNoLegalTarget")) + "</div>";
+    return [
+      '<section class="stronghold-choice-group stronghold-conquest-options">',
+      '<span class="stronghold-choice-group-title">' + escapeHtml(t("strongholdConquest")) + "</span>",
+      '<div class="stronghold-choice-grid stronghold-conquest-grid">' + choiceHtml + "</div>",
+      '<div class="stronghold-conquest-actions">',
+      '<button type="button" class="stronghold-skip" data-stronghold-conquest-skip="true">' + escapeHtml(t("strongholdConquestSkip")) + "</button>",
+      "</div>",
+      "</section>"
+    ].join("");
+  }
+
+  function renderStrongholdAction() {
+    if (!el.strongholdActionPanel) return;
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (conquest) {
+      if (el.activeHandPanel) el.activeHandPanel.open = true;
+      el.strongholdActionPanel.hidden = false;
+      if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdConquestTitle");
+      if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = t("strongholdConquestBody");
+      if (el.strongholdActionOptions) {
+        el.strongholdActionOptions.innerHTML = strongholdConquestOptionsHtml(conquest);
+      }
+      return;
+    }
+    var action = state && state.awaitingStrongholdAction;
+    if (action) {
+      el.strongholdActionPanel.hidden = false;
+      if (el.strongholdActionTitle) el.strongholdActionTitle.textContent = t("strongholdActionTitle");
+      if (el.strongholdActionSummary) el.strongholdActionSummary.textContent = strongholdActionPrompt();
+      if (el.strongholdActionOptions) {
+        el.strongholdActionOptions.innerHTML = strongholdActionOptionsHtml();
+      }
+      if (!messageText) showMessage(strongholdActionPrompt(), "ok");
+      return;
+    }
+    el.strongholdActionPanel.hidden = true;
+    if (el.strongholdActionOptions) el.strongholdActionOptions.innerHTML = "";
+  }
+
+  function strongholdActionPrompt() {
+    if (!state || !state.awaitingStrongholdAction) return "";
+    if (playerStrongholdSupply(state, state.current) > 0) return t("strongholdSelectTarget");
+    return state.awaitingStrongholdAction.selected_source_slot_id ? t("strongholdSelectTarget") : t("strongholdSelectSource");
+  }
+
+  function findPlayerPurchasedCard(player, cardId) {
+    return (player && player.purchased || []).find(function (card) {
+      return card && card.id === cardId;
+    }) || null;
+  }
+
   function findDevelopmentCardById(cardId) {
     var id = String(cardId || "");
     for (var tier = 1; tier <= 3; tier += 1) {
       var found = (DEVELOPMENT_CARDS[tier] || []).find(function (card) {
         return card.id === id;
+      }) || (ORIENT_CARDS[tier] || []).find(function (card) {
+        return card.id === id;
       });
       if (found) return found;
     }
     return null;
+  }
+
+  function replayStateForMove(move) {
+    return move && move.state_after && (move.state_after.source_state || move.state_after) || state;
+  }
+
+  function marketRefFromSlotId(game, slotId) {
+    if (!game || !slotId) return null;
+    ensureMarketStructure(game);
+    var target = String(slotId);
+    var markets = [BASE_MARKET_ID, ORIENT_MARKET_ID];
+    for (var m = 0; m < markets.length; m += 1) {
+      var marketId = markets[m];
+      var groups = game.market_slots && game.market_slots[marketId] || {};
+      for (var tier = 1; tier <= 3; tier += 1) {
+        var slots = groups[tier] || groups[String(tier)] || [];
+        var index = Array.isArray(slots) ? slots.indexOf(target) : -1;
+        if (index >= 0) return { marketId: marketId, tier: tier, index: index, slotId: target };
+      }
+    }
+    var compactMatch = target.match(/^(base|orient)-t(\d+)-s(\d+)$/);
+    if (compactMatch) {
+      return {
+        marketId: compactMatch[1] === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+        tier: Number(compactMatch[2]) || 1,
+        index: Math.max(0, (Number(compactMatch[3]) || 1) - 1),
+        slotId: target
+      };
+    }
+    var bgaStyleMatch = target.match(/^(base|orient):t(\d+):s(\d+)$/);
+    if (bgaStyleMatch) {
+      return {
+        marketId: bgaStyleMatch[1] === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID,
+        tier: Number(bgaStyleMatch[2]) || 1,
+        index: Math.max(0, Number(bgaStyleMatch[3]) || 0),
+        slotId: target
+      };
+    }
+    return null;
+  }
+
+  function cardForMarketSlotId(game, slotId) {
+    var ref = marketRefFromSlotId(game, slotId);
+    return ref ? marketCardAt(game, ref) : null;
+  }
+
+  function strongholdEffectTitleKey(effect) {
+    if (effect && effect.type === "place") return "logStrongholdPlaceTitle";
+    if (effect && effect.type === "remove") return "logStrongholdRemoveTitle";
+    return "logStrongholdMoveTitle";
+  }
+
+  function strongholdMoveTitleKey(move) {
+    var effects = move && move.args && move.args.stronghold_effects || [];
+    return strongholdEffectTitleKey(effects[0]);
+  }
+
+  function strongholdFlightLabel(type) {
+    if (type === "place") return "SH+";
+    if (type === "remove") return "SH-";
+    return "SH>";
   }
 
   function playerNameForMove(move) {
@@ -3371,12 +5536,14 @@ Object.assign(I18N.de, {
   }
 
   function moveTitle(move) {
+    if (move && move.type === "strongholdMove") return t(strongholdMoveTitleKey(move));
     var byType = {
       takeTokens: "logTakeTokensTitle",
       reserveMarket: "logReserveTitle",
       reserveDeck: "logReserveTitle",
       buyMarket: "logBuyTitle",
       buyReserved: "logBuyTitle",
+      strongholdConquest: "strongholdConquest",
       discardToken: "logDiscardTitle",
       chooseNoble: "logNobleTitle"
     };
@@ -3402,6 +5569,35 @@ Object.assign(I18N.de, {
     return chips.length ? '<span class="log-token-set">' + chips.join("") + "</span>" : "";
   }
 
+  function logPaymentSet(payment) {
+    if (!payment) return "";
+    var html = logTokenSet(payment.tokens, payment.gold_as);
+    var virtualChips = [];
+    COLORS.forEach(function (color) {
+      var amount = Number(payment.virtual_as && payment.virtual_as[color]) || 0;
+      if (amount > 0) {
+        virtualChips.push('<span class="log-payment-route" style="' + gemStyle(color) + '">' + escapeHtml(t("orientUseVirtual")) + " -> " + TOKEN_LABEL[color] + " " + amount + "</span>");
+      }
+    });
+    (payment.discarded_card_ids || []).forEach(function (cardId) {
+      virtualChips.push('<span class="log-source-chip">' + escapeHtml(t("orientPaymentDiscard")) + " " + escapeHtml(cardId) + "</span>");
+    });
+    return html + (virtualChips.length ? '<span class="log-token-set">' + virtualChips.join("") + "</span>" : "");
+  }
+
+  function logStrongholdEffects(effects) {
+    return (effects || []).map(function (effect) {
+      var playerIndex = Number(effect.player_index) || 0;
+      var color = strongholdPlayerColor(playerIndex);
+      var label = effect.type === "place" ? t("strongholdPlace") : effect.type === "move" ? t("strongholdMove") : t("strongholdRemove");
+      var text = playerStrongholdSymbol(playerIndex) + " " + label;
+      if (effect.type === "remove" && Number.isInteger(Number(effect.removed_player_index))) {
+        text += " " + playerStrongholdSymbol(Number(effect.removed_player_index));
+      }
+      return '<span class="log-source-chip stronghold-log-chip" style="' + gemStyle(color) + '">' + escapeHtml(text) + "</span>";
+    }).join("");
+  }
+
   function logCardBadge(cardId, options) {
     var card = findDevelopmentCardById(cardId) || options && options.card;
     var hidden = options && options.hidden;
@@ -3419,11 +5615,35 @@ Object.assign(I18N.de, {
     }
     return [
       '<span class="log-card-badge" style="' + gemStyle(card.color) + '" data-log-card-preview-toggle="true" tabindex="0" role="button">',
-      '<span class="reserve-slot" data-color="' + card.color + '" style="' + gemStyle(card.color) + '">' + TOKEN_LABEL[card.color] + "</span>",
+      '<span class="reserve-slot" data-color="' + card.color + '" style="' + gemStyle(card.color) + '">' + colorMarkHtml(card.color, "reserve-slot-mark") + "</span>",
       escapeHtml(card.id),
       cardPreviewHtml(card),
       "</span>"
     ].join("");
+  }
+
+  function logStrongholdSlotTarget(move, slotId, labelKey) {
+    if (!slotId) return "";
+    var card = cardForMarketSlotId(replayStateForMove(move), slotId);
+    var target = card
+      ? logCardBadge(card.id, { card: card, tier: card.tier })
+      : '<span class="log-source-chip">' + escapeHtml(slotId) + "</span>";
+    return '<span class="log-source-chip">' + escapeHtml(t(labelKey)) + "</span>" + target;
+  }
+
+  function logStrongholdMoveBody(move) {
+    var effects = move && move.args && move.args.stronghold_effects || [];
+    if (!effects.length) return move.notification && move.notification.log ? escapeHtml(move.notification.log) : escapeHtml(t("logStrongholdMoveTitle"));
+    return effects.map(function (effect) {
+      var chunks = [logStrongholdEffects([effect])];
+      if (effect.type === "move") {
+        chunks.push(logStrongholdSlotTarget(move, effect.from_slot_id, "logStrongholdFrom"));
+        chunks.push(logStrongholdSlotTarget(move, effect.slot_id, "logStrongholdTo"));
+      } else {
+        chunks.push(logStrongholdSlotTarget(move, effect.slot_id, "logStrongholdTarget"));
+      }
+      return chunks.filter(Boolean).join("");
+    }).join("");
   }
 
   function renderLogMoveBody(move) {
@@ -3449,15 +5669,30 @@ Object.assign(I18N.de, {
         args.took_gold ? '<span class="log-source-chip gold">' + escapeHtml(t("logGoldTaken")) + " " + logTokenChip("gold", 1, true) + "</span>" : ""
       ].filter(Boolean).join("");
     }
-    if (move.type === "buyMarket" || move.type === "buyReserved") {
+    if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") {
       var hiddenBuy = mode === "safe" && move.type === "buyReserved" && args.reserved_from === "deck";
+      var orientEffects = (args.orient_effects || []).map(function (effect) {
+        if (effect.type === "copy_bonus") {
+          return '<span class="log-source-chip">' + escapeHtml(t("orientCopyBonus")) + " " + TOKEN_LABEL[effect.color] + "</span>";
+        }
+        if (effect.type === "free_card") {
+          return '<span class="log-source-chip">' + escapeHtml(t("orientFreeCard", { tier: effect.tier })) + " " + escapeHtml(effect.card_id) + "</span>";
+        }
+        return "";
+      }).filter(Boolean).join("");
       return [
         logCardBadge(args.card_id, { hidden: hiddenBuy, tier: args.tier, card: args.card }),
         args.payment ? '<span class="log-source-chip">' + escapeHtml(t("logPayment")) + "</span>" : "",
-        args.payment ? logTokenSet(args.payment.tokens, args.payment.gold_as) : "",
+        args.payment ? logPaymentSet(args.payment) : "",
+        orientEffects,
+        logStrongholdEffects(args.stronghold_effects),
+        args.conquest ? '<span class="log-source-chip stronghold-log-chip">' + escapeHtml(t("strongholdConquest")) + "</span>" : "",
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(t("logNobleTitle")) + "</span>" : "",
         args.noble_id ? '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id) + "</span>" : ""
       ].filter(Boolean).join("");
+    }
+    if (move.type === "strongholdMove") {
+      return logStrongholdMoveBody(move);
     }
     if (move.type === "chooseNoble") {
       return '<span class="log-source-chip">' + escapeHtml(args.noble && args.noble.name || args.noble_id || t("logNobleTitle")) + "</span>";
@@ -3504,7 +5739,9 @@ Object.assign(I18N.de, {
   }
 
   function replayDeckElement(tier) {
-    var button = document.querySelector('[data-reserve-deck="' + tier + '"]');
+    var ref = parseDeckActionValue(tier);
+    var value = ref.marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID + ":" + ref.tier : String(ref.tier);
+    var button = document.querySelector('[data-reserve-deck="' + value.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]');
     return button && button.closest(".deck-box") || null;
   }
 
@@ -3536,7 +5773,11 @@ Object.assign(I18N.de, {
     }
     if (move.type === "reserveDeck") return t("blind");
     if (move.type === "reserveMarket") return t("reserve");
-    if (move.type === "buyMarket" || move.type === "buyReserved") return t("buy");
+    if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") return t("buy");
+    if (move.type === "strongholdMove") {
+      var effect = args.stronghold_effects && args.stronghold_effects[0] || {};
+      return strongholdFlightLabel(effect.type);
+    }
     if (move.type === "chooseNoble") return t("logNobleTitle");
     return moveTitle(move);
   }
@@ -3559,16 +5800,32 @@ Object.assign(I18N.de, {
       targetSelector = ".bank-tokens";
     } else if (move.type === "reserveDeck") {
       color = "gold";
-      source = replayDeckElement(args.tier) || el.market;
+      source = replayDeckElement(args.market_id === ORIENT_MARKET_ID ? ORIENT_MARKET_ID + ":" + args.tier : args.tier) || el.market;
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".reserved-list");
     } else if (move.type === "reserveMarket") {
       color = args.card && args.card.color || "gold";
       source = cardElementForFlight(args.card || { id: args.card_id }) || el.market;
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".reserved-list");
-    } else if (move.type === "buyMarket" || move.type === "buyReserved") {
+    } else if (move.type === "buyMarket" || move.type === "buyReserved" || move.type === "strongholdConquest") {
       color = args.card && args.card.color || "gold";
       source = cardElementForFlight(args.card || { id: args.card_id }) || (move.type === "buyReserved" ? el.activeHandPanel : el.market);
       targetSelector = playerPanelTargetForPlayerId(move.player_id, ".purchased-summary");
+    } else if (move.type === "strongholdMove") {
+      var effect = args.stronghold_effects && args.stronghold_effects[0] || {};
+      var actor = replayMoveActor(move);
+      var targetCard = cardForMarketSlotId(replayStateForMove(move), effect.slot_id);
+      color = strongholdPlayerColor(Number(effect.player_index) || 0);
+      if (effect.type === "place") {
+        source = replayPlayerSourceElement(actor.id, ".stronghold-stock-token") || replayPlayerSourceElement(actor.id, ".player-card");
+        targetSelector = targetCard ? '[data-card-id="' + String(targetCard.id).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]' : ".market-panel";
+      } else if (effect.type === "remove") {
+        source = targetCard ? cardElementForFlight(targetCard) : el.market;
+        targetSelector = playerPanelTargetForPlayerId(actor.id, ".stronghold-stock");
+      } else {
+        var sourceCard = cardForMarketSlotId(replayStateForMove(move), effect.from_slot_id);
+        source = sourceCard ? cardElementForFlight(sourceCard) : el.market;
+        targetSelector = targetCard ? '[data-card-id="' + String(targetCard.id).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]' : ".market-panel";
+      }
     } else if (move.type === "chooseNoble") {
       source = document.querySelector('[data-noble-id="' + String(args.noble_id || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"]') || document.querySelector(".noble-card") || el.nobles;
       color = "gold";
@@ -3770,6 +6027,11 @@ Object.assign(I18N.de, {
     document.documentElement.classList.toggle("game-active-root", !!state);
     document.body.classList.toggle("turn-locked", !!(state && (state.turnTransition || state.aiThinking)));
     document.body.classList.toggle("replay-mode", !!(state && state.mode === "replay"));
+    var currentOrientTask = orientCurrentTask();
+    document.body.classList.toggle("orient-free-selecting", !!(currentOrientTask && currentOrientTask.type === "free_card"));
+    document.body.classList.toggle("orient-copy-selecting", !!(currentOrientTask && currentOrientTask.type === "copy_bonus"));
+    document.body.classList.toggle("stronghold-selecting", !!(state && state.awaitingStrongholdAction));
+    document.body.classList.toggle("stronghold-conquest-selecting", !!(state && state.awaitingStrongholdConquest));
 
     if (!state) {
       el.startPanel.hidden = false;
@@ -3781,6 +6043,7 @@ Object.assign(I18N.de, {
       return;
     }
 
+    ensureStateRuleset(state);
     if (!state.turnTransition && !state.aiThinking && !isAiPlayer(activePlayer())) {
       lastHumanPlayerIndex = state.current;
     }
@@ -3811,6 +6074,8 @@ Object.assign(I18N.de, {
     renderDiscard();
     renderNobleChoice();
     renderPaymentChoice();
+    renderOrientAction();
+    renderStrongholdAction();
     renderLog();
     renderReplayStatus();
     renderHandoffOverlay();
@@ -3842,6 +6107,9 @@ Object.assign(I18N.de, {
     if (state.turnTransition) return t("gameTurnTransition");
     if (pendingPayment) return t("gamePayment");
     if (state.awaitingDiscard) return t("gameDiscard");
+    if (state.awaitingOrientAction) return t("orientAbilityPending");
+    if (state.awaitingStrongholdAction) return t("strongholdActionTitle");
+    if (state.awaitingStrongholdConquest) return t("strongholdConquestTitle");
     if (state.awaitingNobleChoice) return t("gameNoble");
     if (state.endTriggered) return t("gameFinal", { turns: state.finalTurnsLeft });
     return t("gameProgress");
@@ -3851,8 +6119,13 @@ Object.assign(I18N.de, {
     return !!(window.matchMedia && window.matchMedia("(hover: none), (pointer: coarse), (max-width: 760px)").matches);
   }
 
-  function closeTapPreviews(except) {
-    Array.from(document.querySelectorAll(".reserve-badge.preview-open, .log-card-badge.preview-open")).forEach(function (badge) {
+  function holdTapPreviewOpen() {
+    tapPreviewIgnoreCloseUntil = Date.now() + 650;
+  }
+
+  function closeTapPreviews(except, force) {
+    if (!except && !force && Date.now() < tapPreviewIgnoreCloseUntil) return;
+    Array.from(document.querySelectorAll(".reserve-badge.preview-open, .log-card-badge.preview-open, .player-noble-badge.preview-open")).forEach(function (badge) {
       if (badge !== except) badge.classList.remove("preview-open");
     });
   }
@@ -4002,48 +6275,64 @@ Object.assign(I18N.de, {
 
   function reserveMarket(value, trigger) {
     if (!canAct()) return;
-    var parts = value.split(":");
-    var tier = Number(parts[0]);
-    var index = Number(parts[1]);
+    var ref = parseMarketActionValue(value);
     var player = activePlayer();
     if (player.reserved.length >= 3) {
       showMessage(t("msgReserveLimit"));
       render();
       return;
     }
-    var card = state.market[tier][index];
+    var card = marketCardAt(state, ref);
     if (!card) {
       showMessage(t("msgMarketGone"));
       render();
       return;
     }
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var strongholdAccess = strongholdAccessStatus(slotId, state.current);
+    if (!strongholdAccess.ok) {
+      showMessage(strongholdAccess.reason || t("strongholdBlocked"));
+      render();
+      return;
+    }
     queueFlightFromElement(trigger && trigger.closest(".dev-card"), card.color, t("reserve"), playerPanelTarget(".reserved-list"));
-    fillMarketSlot(state, tier, index);
-    reserveCard(player, card, "reserveMarket", { card_id: card.id, card: card, tier: tier, market_index: index });
+    clearStrongholdsAtSlot(state, slotId);
+    fillMarketSlotById(state, ref);
+    reserveCard(player, card, "reserveMarket", { card_id: card.id, card: card, tier: ref.tier, market_index: ref.index, market_id: ref.marketId, market_slot_id: slotId });
   }
 
   function reserveDeck(tier, trigger) {
     if (!canAct()) return;
+    var ref = parseDeckActionValue(tier);
     var player = activePlayer();
     if (player.reserved.length >= 3) {
       showMessage(t("msgReserveLimit"));
       render();
       return;
     }
-    var card = state.decks[tier].pop();
+    var card = drawCardFromDeck(state, ref.marketId, ref.tier, { reason: "reserve-deck" });
     if (!card) {
       showMessage(t("msgDeckEmpty"));
       render();
       return;
     }
     queueFlightFromElement(trigger && trigger.closest(".deck-box"), "gold", t("blind"), playerPanelTarget(".reserved-list"));
-    reserveCard(player, card, "reserveDeck", { card_id: card.id, card: card, tier: tier });
+    reserveCard(player, card, "reserveDeck", {
+      card_id: card.id,
+      card: card,
+      tier: ref.tier,
+      market_id: ref.marketId,
+      deck_slot_id: deckSlotIdFor(ref.marketId, ref.tier)
+    });
   }
 
   function reserveCard(player, card, type, args) {
     var reservedCard = clone(card);
     reservedCard.reserved_from = type === "reserveDeck" ? "deck" : "market";
     reservedCard.reserved_public = type !== "reserveDeck";
+    reservedCard.market_id = args.market_id || BASE_MARKET_ID;
+    if (args.market_slot_id) reservedCard.market_slot_id = args.market_slot_id;
+    if (args.deck_slot_id) reservedCard.deck_slot_id = args.deck_slot_id;
     player.reserved.push(reservedCard);
     var tookGold = false;
     if (state.bank.gold > 0) {
@@ -4057,6 +6346,147 @@ Object.assign(I18N.de, {
     afterAction(type, args);
   }
 
+  function removeMarketCardForDeferredRefill(game, ref) {
+    if (!game || !ref) return null;
+    ensureMarketStructure(game);
+    var market = ref.marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    if (!market || !market[ref.tier] || !market[ref.tier][ref.index]) return null;
+    market[ref.tier][ref.index] = null;
+    return { marketId: ref.marketId, tier: ref.tier, index: ref.index };
+  }
+
+  function refillDeferredMarketSlots(slots) {
+    (slots || []).forEach(function (slot) {
+      fillMarketSlotById(state, slot);
+    });
+  }
+
+  function appendDeferredMarketRefills(args, slots) {
+    if (!args) return;
+    var validSlots = (slots || []).filter(Boolean);
+    if (!validSlots.length) return;
+    if (!Array.isArray(args._deferred_refills)) args._deferred_refills = [];
+    args._deferred_refills = args._deferred_refills.concat(validSlots);
+  }
+
+  function flushDeferredMarketRefills(args) {
+    if (!args || !Array.isArray(args._deferred_refills)) return;
+    var refills = args._deferred_refills.filter(Boolean);
+    delete args._deferred_refills;
+    refillDeferredMarketSlots(refills);
+  }
+
+  function orientTasksForCard(card) {
+    if (!cardIsOrient(card)) return [];
+    var tasks = [];
+    if (orientCardHasAbility(card, "copy_bonus")) {
+      tasks.push({ type: "copy_bonus", card_id: card.id });
+    }
+    orientCardAbilities(card, "take_level_free").forEach(function (ability) {
+      tasks.push({ type: "free_card", card_id: card.id, tier: Number(ability.free_tier) || 1 });
+    });
+    return tasks;
+  }
+
+  function orientActionEffects(action) {
+    if (!action) return [];
+    if (!Array.isArray(action.effects)) action.effects = [];
+    return action.effects;
+  }
+
+  function beginOrientAction(moveType, args, actor, tasks, deferredRefills) {
+    var queue = (tasks || []).filter(Boolean);
+    if (!queue.length) {
+      appendDeferredMarketRefills(args, deferredRefills);
+      afterAction(moveType, args);
+      return;
+    }
+    state.awaitingOrientAction = {
+      move_type: moveType,
+      args: args || {},
+      actor: actor,
+      queue: queue,
+      effects: [],
+      deferred_refills: (deferredRefills || []).filter(Boolean)
+    };
+    pendingOrientAction = state.awaitingOrientAction;
+    pendingPayment = null;
+    showMessage(queue[0].type === "free_card" ? t("msgOrientChooseFree", { tier: queue[0].tier }) : queue[0].type === "copy_bonus" ? t("msgOrientChooseCopy", { card: queue[0].card_id }) : t("msgOrientAbilityPending"), "ok");
+    render();
+  }
+
+  function finishOrientTask() {
+    var action = state && state.awaitingOrientAction;
+    if (!action) return;
+    action.queue.shift();
+    if (action.queue.length) {
+      showMessage(action.queue[0].type === "free_card" ? t("msgOrientChooseFree", { tier: action.queue[0].tier }) : action.queue[0].type === "copy_bonus" ? t("msgOrientChooseCopy", { card: action.queue[0].card_id }) : t("msgOrientAbilityPending"), "ok");
+      render();
+      return;
+    }
+    var args = action.args || {};
+    if (action.effects && action.effects.length) args.orient_effects = clone(action.effects);
+    appendDeferredMarketRefills(args, action.deferred_refills);
+    var moveType = action.move_type;
+    state.awaitingOrientAction = null;
+    pendingOrientAction = null;
+    showMessage("");
+    afterAction(moveType, args);
+  }
+
+  function resolveOrientCopy(cardId) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    var player = activePlayer();
+    var target = task && findPlayerPurchasedCard(player, task.card_id);
+    var source = findPlayerPurchasedCard(player, cardId);
+    if (!action || !task || task.type !== "copy_bonus" || !target || !source) return;
+    var color = cardPrimaryBonusColor(source);
+    if (!color) return;
+    var previousColor = target.copied_color;
+    if (previousColor && player.bonuses[previousColor] > 0) player.bonuses[previousColor] -= 1;
+    target.copied_color = color;
+    target.copied_from_id = source.id;
+    target.color = color;
+    target.effective_bonuses = emptyCounts(false);
+    target.effective_bonuses[color] = 1;
+    player.bonuses[color] = (player.bonuses[color] || 0) + 1;
+    orientActionEffects(action).push({ type: "copy_bonus", card_id: target.id, copied_from_id: source.id, color: color });
+    logEntry(player.name + " resolved Orient copy for " + target.id + " as " + TOKEN_LABEL[color] + ".");
+    finishOrientTask();
+  }
+
+  function resolveOrientFreeCard(value, trigger) {
+    var action = state && state.awaitingOrientAction;
+    var task = orientCurrentTask();
+    var player = activePlayer();
+    if (!action || !task || task.type !== "free_card") return;
+    var ref = parseMarketActionValue(value);
+    if (ref.tier !== task.tier) return;
+    var card = marketCardAt(state, ref);
+    if (!card) return;
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var strongholdAccess = strongholdAccessStatus(slotId, state.current);
+    if (!strongholdAccess.ok) {
+      showMessage(strongholdAccess.reason || t("strongholdBlocked"));
+      render();
+      return;
+    }
+    var strongholdsReturned = clearStrongholdsAtSlot(state, slotId);
+    removeMarketCardForDeferredRefill(state, ref);
+    action.deferred_refills.push({ marketId: ref.marketId, tier: ref.tier, index: ref.index });
+    var acquired = purchaseRecordCard(card);
+    player.purchased.push(acquired);
+    applyCardBonuses(player, acquired);
+    var source = trigger && trigger.closest(".orient-choice-card") || cardElementForFlight(card);
+    queueFlightFromElement(source, card.color, t("orientFreeCard", { tier: ref.tier }), playerPanelTarget(".purchased-summary"));
+    orientActionEffects(action).push({ type: "free_card", source_card_id: task.card_id, card_id: acquired.id, tier: ref.tier, market_id: ref.marketId, market_slot_id: slotId, strongholds_returned: strongholdsReturned, card: clone(acquired) });
+    logEntry(player.name + " took " + acquired.id + " for free with an Orient ability.");
+    var nested = orientTasksForCard(acquired);
+    action.queue.splice.apply(action.queue, [1, 0].concat(nested));
+    finishOrientTask();
+  }
+
   function scrollToPaymentPanel() {
     if (!el.paymentPanel || el.paymentPanel.hidden) return;
     if (el.activeHandPanel) el.activeHandPanel.open = true;
@@ -4064,6 +6494,12 @@ Object.assign(I18N.de, {
 
   function beginPaymentChoice(source, value, card) {
     var player = activePlayer();
+    var abilityStatus = orientAbilityBuyStatus(card, player);
+    if (!abilityStatus.ok) {
+      showMessage(abilityStatus.reason || t("msgOrientAbilityPending"));
+      render();
+      return false;
+    }
     var afford = affordability(player, card);
     if (!afford.ok) {
       showMessage(t("msgNotEnoughForCard"));
@@ -4100,7 +6536,7 @@ Object.assign(I18N.de, {
     }
     var needs = paymentNeeds(context.player, context.card);
     var payment = pendingPayment.payment;
-    var selected = (payment.colored[color] || 0) + (payment.gold[color] || 0);
+    var selected = (payment.colored[color] || 0) + (payment.gold[color] || 0) + (payment.virtual[color] || 0);
     if (kind === "colored") {
       if (delta > 0 && selected < needs[color] && (payment.colored[color] || 0) < (context.player.tokens[color] || 0)) {
         payment.colored[color] += 1;
@@ -4113,7 +6549,69 @@ Object.assign(I18N.de, {
       } else if (delta < 0 && payment.gold[color] > 0) {
         payment.gold[color] -= 1;
       }
+    } else if (kind === "virtual") {
+      if (delta > 0 && selected < needs[color] && paymentVirtualTotal(payment) < orientVirtualGoldCapacity(context.player)) {
+        payment.virtual[color] += 1;
+      } else if (delta < 0 && payment.virtual[color] > 0) {
+        payment.virtual[color] -= 1;
+      }
     }
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
+  function cyclePaymentToken(color) {
+    if (!pendingPayment || ALL_TOKENS.indexOf(color) < 0) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var payment = pendingPayment.payment;
+    if (!payment.selected_tokens) payment.selected_tokens = emptyCounts(true);
+    var max = paymentTokenUsefulMax(context, payment, color);
+    var current = Number(payment.selected_tokens[color]) || 0;
+    if (max <= 0 && current <= 0) return;
+    payment.selected_tokens[color] = current >= max ? 0 : current + 1;
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
+  function togglePaymentVirtualCard(cardId) {
+    if (!pendingPayment) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var payment = pendingPayment.payment;
+    var current = selectedVirtualGoldCardIds(context.player, payment);
+    payment.selected_virtual_card_ids = current.indexOf(cardId) >= 0 ? [] : [cardId];
+    pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
+    showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
+    render();
+  }
+
+  function togglePaymentDiscardCard(cardId) {
+    if (!pendingPayment) return;
+    var context = pendingPaymentContext();
+    if (!context) {
+      render();
+      return;
+    }
+    var requirement = orientDiscardCost(context.card);
+    if (!requirement) return;
+    var payment = pendingPayment.payment;
+    var selected = Array.isArray(payment.discard_cards) ? payment.discard_cards.slice() : [];
+    var index = selected.indexOf(cardId);
+    if (index >= 0) {
+      selected.splice(index, 1);
+    } else if (selected.length < requirement.count) {
+      selected.push(cardId);
+    }
+    payment.discard_cards = selected;
     pendingPayment.payment = normalizePaymentPlan(context.player, context.card, payment);
     showMessage(t("msgChoosePayment", { card: context.card.id }), "ok");
     render();
@@ -4128,6 +6626,9 @@ Object.assign(I18N.de, {
 
   function cancelPayment() {
     if (!pendingPayment) return;
+    if (pendingPayment.source === "strongholdConquest" && pendingPayment.parent) {
+      state.awaitingStrongholdConquest = clone(pendingPayment.parent);
+    }
     pendingPayment = null;
     showMessage(t("msgPaymentCancelled"), "ok");
     render();
@@ -4135,32 +6636,57 @@ Object.assign(I18N.de, {
 
   function completePurchase(context, payment, sourceElement, options) {
     var card = context.card;
+    var purchasedCard = purchaseRecordCard(card);
     var flightSource = sourceElement || cardElementForFlight(card) || el.market;
+    var player = context.player;
+    var actor = { id: player.id, name: player.name };
+    var paymentArgs = paymentMoveArgs(payment, player);
+    var usedVirtualCards = paymentArgs.virtual_card_ids || [];
+    var discardedCostCards = payment.discard_cards || [];
     var args = {
       card_id: card.id,
-      payment: paymentMoveArgs(payment)
+      payment: paymentArgs
     };
     if (options && options.ai) args.ai = true;
-    spendForCard(context.player, paymentSpend(payment));
-    context.player.purchased.push(card);
-    context.player.bonuses[card.color] += 1;
-    logEntry(t("logBought", { player: context.player.name, card: card.id, points: card.points }));
-    if (context.type === "buyMarket") {
+    if (context.type === "strongholdConquest" && context.parent) {
+      args.conquest_parent = clone(context.parent);
+      args.conquest = true;
+    }
+    spendForCard(player, paymentSpend(payment));
+    var removedVirtual = removePurchasedCardsByIds(player, usedVirtualCards);
+    var removedDiscard = removePurchasedCardsByIds(player, discardedCostCards);
+    if (removedVirtual.length) {
+      args.payment.virtual_cards = removedVirtual.map(function (removed) { return clone(removed); });
+    }
+    if (removedDiscard.length) {
+      args.orient_discarded_cards = removedDiscard.map(function (removed) { return clone(removed); });
+    }
+    player.purchased.push(purchasedCard);
+    applyCardBonuses(player, purchasedCard);
+    logEntry(t("logBought", { player: player.name, card: card.id, points: card.points }));
+    var deferredRefills = [];
+    if (context.type === "buyMarket" || context.type === "strongholdConquest") {
       args.tier = context.tier;
       args.market_index = context.index;
-      args.card = card;
-      fillMarketSlot(state, context.tier, context.index);
+      args.market_id = context.market_id || BASE_MARKET_ID;
+      args.market_slot_id = marketSlotId(state, args.market_id, context.tier, context.index);
+      args.card = purchasedCard;
+      args.strongholds_returned = clearStrongholdsAtSlot(state, args.market_slot_id);
+      deferredRefills.push(removeMarketCardForDeferredRefill(state, { marketId: args.market_id, tier: context.tier, index: context.index }));
     } else {
       args.tier = card.tier;
       args.reserved_index = context.index;
-      args.card = card;
+      args.card = purchasedCard;
       args.reserved_from = card.reserved_from || "market";
-      context.player.reserved.splice(context.index, 1);
+      args.market_id = card.market_id || BASE_MARKET_ID;
+      if (card.market_slot_id) args.market_slot_id = card.market_slot_id;
+      if (card.deck_slot_id) args.deck_slot_id = card.deck_slot_id;
+      player.reserved.splice(context.index, 1);
     }
     queueFlightFromElement(flightSource, card.color, t("buy"), playerPanelTarget(".purchased-summary"));
     pendingPayment = null;
     showMessage("");
-    afterAction(context.type, args);
+    beginOrientAction(context.type, args, actor, orientTasksForCard(purchasedCard), deferredRefills);
   }
 
   function confirmPayment() {
@@ -4173,6 +6699,7 @@ Object.assign(I18N.de, {
       return;
     }
     var payment = clone(pendingPayment.payment);
+    payment = normalizePaymentPlan(context.player, context.card, payment);
     if (!paymentIsLegal(context.player, context.card, payment)) {
       showMessage(t("msgPaymentInvalid"));
       render();
@@ -4184,12 +6711,23 @@ Object.assign(I18N.de, {
 
   function buyMarket(value) {
     if (!canAct()) return;
-    var parts = value.split(":");
-    var tier = Number(parts[0]);
-    var index = Number(parts[1]);
-    var card = state.market[tier][index];
+    var ref = parseMarketActionValue(value);
+    var card = marketCardAt(state, ref);
     if (!card) {
       showMessage(t("msgMarketGone"));
+      render();
+      return;
+    }
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var strongholdAccess = strongholdAccessStatus(slotId, state.current);
+    if (!strongholdAccess.ok) {
+      showMessage(strongholdAccess.reason || t("strongholdBlocked"));
+      render();
+      return;
+    }
+    var abilityStatus = orientAbilityBuyStatus(card, activePlayer());
+    if (!abilityStatus.ok) {
+      showMessage(t("msgOrientAbilityPending"));
       render();
       return;
     }
@@ -4209,6 +6747,12 @@ Object.assign(I18N.de, {
       render();
       return;
     }
+    var abilityStatus = orientAbilityBuyStatus(card, player);
+    if (!abilityStatus.ok) {
+      showMessage(t("msgOrientAbilityPending"));
+      render();
+      return;
+    }
     beginPaymentChoice("reserved", value, card);
   }
 
@@ -4216,6 +6760,11 @@ Object.assign(I18N.de, {
     var player = activePlayer();
     var actor = { id: player.id, name: player.name };
     if (aiTurnInProgress) args = aiMoveArgs(args);
+    resolveStrongholdsOrTurn(type, args, actor);
+  }
+
+  function resolveTokenCapOrNoblesOrTurn(type, args, actor) {
+    var player = activePlayer();
     if (totalTokens(player) > 10) {
       state.awaitingDiscard = true;
       showMessage(t("msgMustDiscard", { player: player.name, count: totalTokens(player) }));
@@ -4225,6 +6774,310 @@ Object.assign(I18N.de, {
       return;
     }
     resolveNoblesOrTurn(type, args, actor);
+  }
+
+  function resolveConquestOrTokenCapOrTurn(type, args, actor) {
+    if (type !== "strongholdConquest" && strongholdsEnabledForRuleset(state.ruleset) && beginStrongholdConquestIfAvailable({ move_type: type, args: args || {}, actor: actor || {} })) return;
+    resolveTokenCapOrNoblesOrTurn(type, args, actor);
+  }
+
+  function actionAcquiredDevelopmentCard(type, args) {
+    return !!(args && args.card_id && (type === "buyMarket" || type === "buyReserved" || type === "strongholdConquest"));
+  }
+
+  function resolveStrongholdsOrTurn(type, args, actor) {
+    if (strongholdsEnabledForRuleset(state.ruleset) && actionAcquiredDevelopmentCard(type, args)) {
+      state.awaitingStrongholdAction = {
+        move_type: type,
+        args: args || {},
+        actor: actor || {},
+        effects: []
+      };
+      pendingPayment = null;
+      showMessage(t("strongholdActionBody"), "ok");
+      saveState();
+      render();
+      return;
+    }
+    flushDeferredMarketRefills(args);
+    resolveConquestOrTokenCapOrTurn(type, args, actor);
+  }
+
+  function strongholdConquestTargetFromRef(ref) {
+    return ref ? {
+      marketId: ref.marketId,
+      tier: ref.tier,
+      index: ref.index,
+      slotId: ref.slotId,
+      card_id: ref.card && ref.card.id || ""
+    } : null;
+  }
+
+  function refFromStrongholdConquestTarget(game, target) {
+    if (!game || !target) return null;
+    var ref = {
+      marketId: target.marketId || BASE_MARKET_ID,
+      tier: Number(target.tier) || 1,
+      index: Number(target.index) || 0
+    };
+    ref.card = marketCardAt(game, ref);
+    ref.slotId = target.slotId || marketSlotId(game, ref.marketId, ref.tier, ref.index);
+    if (target.card_id && ref.card && ref.card.id !== target.card_id) return null;
+    return ref.card ? ref : null;
+  }
+
+  function strongholdConquestCandidateRefs(game, targets) {
+    if (!Array.isArray(targets) || !targets.length) return marketRefsForStrongholds(game);
+    return targets.map(function (target) {
+      return refFromStrongholdConquestTarget(game, target);
+    }).filter(Boolean);
+  }
+
+  function strongholdConquestPlayerIndex(conquest) {
+    if (!state || !Array.isArray(state.players)) return 0;
+    var stored = Number(conquest && conquest.player_index);
+    if (Number.isInteger(stored) && state.players[stored]) return stored;
+    var actorId = conquest && conquest.actor && conquest.actor.id;
+    if (actorId) {
+      var actorIndex = state.players.findIndex(function (player) {
+        return String(player.id) === String(actorId);
+      });
+      if (actorIndex >= 0) return actorIndex;
+    }
+    return state.current;
+  }
+
+  function syncCurrentForStrongholdConquest(conquest) {
+    var playerIndex = strongholdConquestPlayerIndex(conquest);
+    if (state && state.players[playerIndex]) state.current = playerIndex;
+    return playerIndex;
+  }
+
+  function strongholdConquestChoices(game, playerIndex, targets) {
+    if (!strongholdsEnabledForRuleset(game.ruleset)) return [];
+    return strongholdConquestCandidateRefs(game, targets).filter(function (ref) {
+      var card = marketCardAt(game, ref);
+      if (!card || !strongholdConquestSlotEligible(game, ref.slotId, playerIndex)) return false;
+      var player = game.players[playerIndex];
+      return affordability(player, card).ok && orientAbilityBuyStatus(card, player).ok;
+    });
+  }
+
+  function beginStrongholdConquestIfAvailable(parentAction) {
+    var playerIndex = state.current;
+    var choices = strongholdConquestChoices(state, playerIndex);
+    if (!choices.length) return false;
+    state.awaitingStrongholdConquest = {
+      move_type: parentAction.move_type,
+      args: clone(parentAction.args || {}),
+      actor: clone(parentAction.actor || { id: activePlayer().id, name: activePlayer().name }),
+      player_index: playerIndex,
+      player_id: state.players[playerIndex] && state.players[playerIndex].id || "",
+      targets: choices.map(strongholdConquestTargetFromRef).filter(Boolean)
+    };
+    showMessage(t("strongholdConquestBody"), "ok");
+    saveState();
+    render();
+    return true;
+  }
+
+  function skipStrongholdConquest() {
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (!conquest) return;
+    syncCurrentForStrongholdConquest(conquest);
+    state.awaitingStrongholdConquest = null;
+    showMessage("");
+    resolveTokenCapOrNoblesOrTurn(conquest.move_type, conquest.args || {}, conquest.actor || { id: activePlayer().id, name: activePlayer().name });
+  }
+
+  function beginStrongholdConquestPayment(value, trigger) {
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (!conquest) return false;
+    var playerIndex = syncCurrentForStrongholdConquest(conquest);
+    var ref = parseMarketActionValue(value);
+    var card = marketCardAt(state, ref);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    if (!card || !strongholdConquestSlotEligible(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return true;
+    }
+    var player = activePlayer();
+    if (!affordability(player, card).ok || !orientAbilityBuyStatus(card, player).ok) {
+      showMessage(t("msgNotEnoughForCard"));
+      render();
+      return true;
+    }
+    pendingTake = [];
+    pendingPayment = {
+      source: "strongholdConquest",
+      value: String(value),
+      card_id: card.id,
+      parent: clone(conquest),
+      payment: emptyPaymentPlan()
+    };
+    state.awaitingStrongholdConquest = null;
+    showMessage(t("msgChoosePayment", { card: card.id }), "ok");
+    render();
+    scrollToPaymentPanel();
+    return true;
+  }
+
+  function finishStrongholdAction(effect) {
+    var action = state && state.awaitingStrongholdAction;
+    if (!action) return;
+    if (effect) {
+      if (!Array.isArray(action.effects)) action.effects = [];
+      action.effects.push(effect);
+      action.args.stronghold_effects = clone(action.effects);
+    }
+    var moveType = action.move_type;
+    var args = action.args || {};
+    var actor = action.actor || { id: activePlayer().id, name: activePlayer().name };
+    state.awaitingStrongholdAction = null;
+    flushDeferredMarketRefills(args);
+    showMessage("");
+    resolveConquestOrTokenCapOrTurn(moveType, args, actor);
+  }
+
+  function resolveStrongholdPlace(value, trigger) {
+    if (!state || !state.awaitingStrongholdAction) return;
+    var ref = parseMarketActionValue(value);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var holders = strongholdsAtSlot(state, slotId);
+    var playerIndex = state.current;
+    if (!marketCardAt(state, ref) || playerStrongholdSupply(state, playerIndex) <= 0) return;
+    if (!canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return;
+    }
+    holders.push(playerIndex);
+    queueFlightFromElement(document.querySelector('.player-card[data-player-index="' + playerIndex + '"] .stronghold-stock-token') || document.querySelector('.player-card[data-player-index="' + playerIndex + '"]'), strongholdPlayerColor(playerIndex), strongholdFlightLabel("place"), trigger && trigger.closest("[data-market-slot-id]") || cardElementForFlight(marketCardAt(state, ref)));
+    finishStrongholdAction({ type: "place", slot_id: slotId, player_index: playerIndex });
+  }
+
+  function resolveStrongholdMove(value, trigger, sourceSlotOverride) {
+    if (!state || !state.awaitingStrongholdAction) return;
+    var ref = parseMarketActionValue(value);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var playerIndex = state.current;
+    if (!marketCardAt(state, ref)) return;
+    if (!canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return;
+    }
+    var sourceSlot = sourceSlotOverride || state.awaitingStrongholdAction.selected_source_slot_id || Object.keys(ensureStrongholds(state).placements).find(function (candidate) {
+      return candidate !== slotId && strongholdsAtSlot(state, candidate).indexOf(playerIndex) >= 0;
+    });
+    if (!sourceSlot || sourceSlot === slotId) return;
+    var sourceHolders = strongholdsAtSlot(state, sourceSlot);
+    if (sourceHolders.indexOf(playerIndex) < 0) return;
+    sourceHolders.splice(sourceHolders.indexOf(playerIndex), 1);
+    if (!sourceHolders.length) delete state.strongholds.placements[sourceSlot];
+    strongholdsAtSlot(state, slotId).push(playerIndex);
+    var sourceSelector = '[data-market-slot-id="' + String(sourceSlot).replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"] .stronghold-token[data-player-index="' + playerIndex + '"]';
+    queueFlightFromElement(document.querySelector(sourceSelector), strongholdPlayerColor(playerIndex), strongholdFlightLabel("move"), trigger && trigger.closest("[data-market-slot-id]") || cardElementForFlight(marketCardAt(state, ref)));
+    finishStrongholdAction({ type: "move", from_slot_id: sourceSlot, slot_id: slotId, player_index: playerIndex });
+  }
+
+  function resolveStrongholdRemove(value, trigger) {
+    if (!state || !state.awaitingStrongholdAction) return;
+    var ref = parseMarketActionValue(value);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var playerIndex = state.current;
+    var holders = strongholdsAtSlot(state, slotId);
+    if (!canRemoveOpponentStrongholdAtSlot(state, slotId, playerIndex)) {
+      showMessage(t("strongholdNoLegalTarget"));
+      render();
+      return;
+    }
+    var removeIndex = holders.findIndex(function (holder) { return holder !== playerIndex; });
+    if (removeIndex < 0) return;
+    var removedPlayer = holders.splice(removeIndex, 1)[0];
+    if (!holders.length) delete state.strongholds.placements[slotId];
+    queueFlightFromElement(trigger && trigger.querySelector && trigger.querySelector('.stronghold-token[data-player-index="' + removedPlayer + '"]') || trigger && trigger.closest("[data-market-slot-id]"), strongholdPlayerColor(removedPlayer), strongholdFlightLabel("remove"), '.player-card[data-player-index="' + removedPlayer + '"] .stronghold-stock-token');
+    finishStrongholdAction({ type: "remove", slot_id: slotId, player_index: playerIndex, removed_player_index: removedPlayer });
+  }
+
+  function resolveStrongholdCardClick(value, trigger) {
+    if (!state || !state.awaitingStrongholdAction) return false;
+    var ref = parseMarketActionValue(value);
+    var card = marketCardAt(state, ref);
+    if (!card) return true;
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    var holders = strongholdsAtSlot(state, slotId);
+    var playerIndex = state.current;
+    if (state.awaitingStrongholdAction.selected_source_slot_id) {
+      if (state.awaitingStrongholdAction.selected_source_slot_id === slotId) {
+        state.awaitingStrongholdAction.selected_source_slot_id = null;
+        if (playerStrongholdSupply(state, playerIndex) > 0 && canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+          resolveStrongholdPlace(value, trigger);
+          return true;
+        }
+        showMessage(t("strongholdSelectSource"), "ok");
+        saveState();
+        render();
+        return true;
+      }
+      resolveStrongholdMove(value, trigger, state.awaitingStrongholdAction.selected_source_slot_id);
+      return true;
+    }
+    if (playerStrongholdSupply(state, playerIndex) > 0 && canPlaceOrMoveStrongholdToSlot(state, slotId, playerIndex)) {
+      resolveStrongholdPlace(value, trigger);
+      return true;
+    }
+    if (holders.indexOf(playerIndex) >= 0) {
+      state.awaitingStrongholdAction.selected_source_slot_id = slotId;
+      showMessage(t("strongholdSelectTarget"), "ok");
+      saveState();
+      render();
+      return true;
+    }
+    if (canRemoveOpponentStrongholdAtSlot(state, slotId, playerIndex)) {
+      resolveStrongholdRemove(value, trigger);
+      return true;
+    }
+    showMessage(t("strongholdSelectSource"));
+    render();
+    return true;
+  }
+
+  function runRandomStrongholdAction() {
+    if (!state || !state.awaitingStrongholdAction) return;
+    var playerIndex = state.current;
+    var refs = marketRefsForStrongholds(state);
+    if (!refs.length) return;
+    if (playerStrongholdSupply(state, playerIndex) > 0) {
+      var placeRefs = refs.filter(function (ref) {
+        return canPlaceOrMoveStrongholdToSlot(state, ref.slotId, playerIndex);
+      });
+      if (placeRefs.length) {
+        var place = randomChoice(placeRefs);
+        resolveStrongholdPlace([place.marketId, place.tier, place.index].join(":"));
+        return;
+      }
+    }
+    var removeRefs = refs.filter(function (ref) {
+      var holders = strongholdsAtSlot(state, ref.slotId);
+      return holders.length === 1 && holders[0] !== playerIndex;
+    });
+    if (removeRefs.length) {
+      var remove = randomChoice(removeRefs);
+      resolveStrongholdRemove([remove.marketId, remove.tier, remove.index].join(":"));
+      return;
+    }
+    var sourceSlot = Object.keys(ensureStrongholds(state).placements).find(function (slotId) {
+      return strongholdsAtSlot(state, slotId).indexOf(playerIndex) >= 0;
+    });
+    var targetRefs = refs.filter(function (ref) {
+      return ref.slotId !== sourceSlot && canPlaceOrMoveStrongholdToSlot(state, ref.slotId, playerIndex);
+    });
+    if (sourceSlot && targetRefs.length) {
+      var target = randomChoice(targetRefs);
+      resolveStrongholdMove([target.marketId, target.tier, target.index].join(":"), null, sourceSlot);
+    }
   }
 
   function discardToken(color) {
@@ -4274,6 +7127,19 @@ Object.assign(I18N.de, {
     }
   }
 
+  function clearHandDockTransitionTimers() {
+    if (handDockSwitchTimer) {
+      window.clearTimeout(handDockSwitchTimer);
+      handDockSwitchTimer = null;
+    }
+    if (handDockReenterTimer) {
+      window.clearTimeout(handDockReenterTimer);
+      handDockReenterTimer = null;
+    }
+    turnSwitchInProgress = false;
+    document.body.classList.remove("hand-dock-retracting", "hand-dock-entering");
+  }
+
   function clearReplayStepTimer() {
     if (replayStepTimer) {
       window.clearTimeout(replayStepTimer);
@@ -4316,7 +7182,20 @@ Object.assign(I18N.de, {
 
   function transitionSecondsRemaining() {
     if (!state || !state.turnTransition) return 0;
-    return Math.max(1, Math.ceil(((state.turnTransition.until || Date.now()) - Date.now()) / 1000));
+    return Math.max(0, Math.ceil(((state.turnTransition.until || Date.now()) - Date.now()) / 1000));
+  }
+
+  function turnTransitionReady() {
+    return !!(state && state.turnTransition && !state.turnTransition.replay && Date.now() >= (state.turnTransition.ready_at || state.turnTransition.until || 0));
+  }
+
+  function transitionProgress() {
+    if (!state || !state.turnTransition) return 1;
+    var started = Date.parse(state.turnTransition.started_at || "");
+    var until = Number(state.turnTransition.until) || Date.now();
+    if (!Number.isFinite(started)) started = until - TURN_SWITCH_READY_MS;
+    var total = Math.max(1, until - started);
+    return Math.max(0, Math.min(1, 1 - ((until - Date.now()) / total)));
   }
 
   function replayStepSecondsRemaining() {
@@ -4334,6 +7213,10 @@ Object.assign(I18N.de, {
       window.clearTimeout(overlayRefreshTimer);
       overlayRefreshTimer = null;
     }
+    if (overlayProgressFrame) {
+      window.cancelAnimationFrame(overlayProgressFrame);
+      overlayProgressFrame = null;
+    }
   }
 
   function scheduleOverlayRefresh() {
@@ -4345,6 +7228,26 @@ Object.assign(I18N.de, {
     }, 240);
   }
 
+  function scheduleHandoffProgressFrame() {
+    if (overlayProgressFrame) return;
+    var tick = function () {
+      overlayProgressFrame = null;
+      if (!state || !state.turnTransition || state.turnTransition.replay || !el.handoffContinue || el.handoffContinue.hidden) return;
+      var seconds = transitionSecondsRemaining();
+      var ring = el.handoffContinue.querySelector(".handoff-continue-ring");
+      if (ring) {
+        ring.style.setProperty("--handoff-progress", transitionProgress().toFixed(4));
+        var label = ring.querySelector("span");
+        if (label) label.textContent = String(seconds);
+      }
+      if (el.handoffBody) el.handoffBody.textContent = t("msgSwitchingPlayer", { seconds: seconds });
+      if (state && state.turnTransition && Date.now() < (state.turnTransition.until || Date.now())) {
+        overlayProgressFrame = window.requestAnimationFrame(tick);
+      }
+    };
+    overlayProgressFrame = window.requestAnimationFrame(tick);
+  }
+
   function renderHandoffOverlay() {
     if (!el.handoffOverlay) return;
     var mode = state && state.aiThinking ? "ai" : state && state.turnTransition ? (state.turnTransition.replay ? "replay" : "turn") : "";
@@ -4352,6 +7255,7 @@ Object.assign(I18N.de, {
       el.handoffOverlay.hidden = true;
       el.handoffOverlay.classList.remove("ai-thinking");
       if (el.handoffAction) el.handoffAction.innerHTML = "";
+      if (el.handoffContinue) el.handoffContinue.hidden = true;
       clearOverlayRefreshTimer();
       return;
     }
@@ -4366,10 +7270,31 @@ Object.assign(I18N.de, {
     if (el.handoffAction) {
       el.handoffAction.innerHTML = mode === "turn" || mode === "replay" ? renderTransitionAction(state.turnTransition) : "";
     }
-    el.handoffCountdown.textContent = String(seconds);
+    if (el.handoffCountdown) {
+      el.handoffCountdown.textContent = String(seconds);
+      el.handoffCountdown.hidden = mode === "turn";
+    }
+    if (el.handoffContinue) {
+      if (mode === "turn") {
+        el.handoffContinue.innerHTML = [
+          '<span class="handoff-continue-ring" style="--handoff-progress:' + transitionProgress().toFixed(3) + '"><span>' + seconds + "</span></span>",
+          '<span>' + escapeHtml(t("handoffContinue")) + "</span>"
+        ].join("");
+      }
+      el.handoffContinue.hidden = mode !== "turn";
+      el.handoffContinue.disabled = turnSwitchInProgress;
+    }
     el.handoffOverlay.hidden = false;
     el.handoffOverlay.classList.toggle("ai-thinking", mode === "ai");
-    scheduleOverlayRefresh();
+    if (mode === "turn") {
+      if (overlayRefreshTimer) {
+        window.clearTimeout(overlayRefreshTimer);
+        overlayRefreshTimer = null;
+      }
+      scheduleHandoffProgressFrame();
+    } else {
+      scheduleOverlayRefresh();
+    }
   }
 
   function scheduleTurnTransitionTimer() {
@@ -4379,7 +7304,10 @@ Object.assign(I18N.de, {
     }
     if (turnAdvanceTimer) return;
     var remaining = Math.max(0, (state.turnTransition.until || Date.now()) - Date.now());
-    turnAdvanceTimer = window.setTimeout(completeTurnTransition, remaining);
+    turnAdvanceTimer = window.setTimeout(function () {
+      turnAdvanceTimer = null;
+      completeTurnTransition();
+    }, remaining);
   }
 
   function scheduleTurnSwitch(type, args, actor) {
@@ -4391,22 +7319,42 @@ Object.assign(I18N.de, {
       actor: clone(actor || {}),
       display_current: fallbackVisiblePlayerIndex(),
       started_at: new Date(now).toISOString(),
-      until: now + TURN_SWITCH_DELAY_MS
+      ready_at: now + TURN_SWITCH_READY_MS,
+      until: now + TURN_SWITCH_READY_MS
     };
-    showMessage(t("msgSwitchingPlayer", { seconds: Math.ceil(TURN_SWITCH_DELAY_MS / 1000) }), "ok");
+    showMessage(t("msgSwitchingPlayer", { seconds: Math.ceil(TURN_SWITCH_READY_MS / 1000) }), "ok");
     saveState();
     render();
   }
 
   function completeTurnTransition() {
     clearTurnAdvanceTimer();
-    if (!state || !state.turnTransition || state.mode === "replay") return;
+    if (!state || !state.turnTransition || state.mode === "replay" || turnSwitchInProgress) return;
     var transition = clone(state.turnTransition);
-    state.turnTransition = null;
-    proceedToNextTurn();
-    recordMove(transition.type, transition.args, transition.actor);
-    saveState();
-    render();
+    turnSwitchInProgress = true;
+    document.body.classList.remove("hand-dock-entering");
+    document.body.classList.add("hand-dock-retracting");
+    if (el.handoffContinue) el.handoffContinue.disabled = true;
+    handDockSwitchTimer = window.setTimeout(function () {
+      handDockSwitchTimer = null;
+      if (!state || !state.turnTransition) {
+        clearHandDockTransitionTimers();
+        render();
+        return;
+      }
+      state.turnTransition = null;
+      proceedToNextTurn();
+      recordMove(transition.type, transition.args, transition.actor);
+      saveState();
+      document.body.classList.remove("hand-dock-retracting");
+      document.body.classList.add("hand-dock-entering");
+      turnSwitchInProgress = false;
+      render();
+      handDockReenterTimer = window.setTimeout(function () {
+        handDockReenterTimer = null;
+        document.body.classList.remove("hand-dock-entering");
+      }, HAND_DOCK_REENTER_MS);
+    }, HAND_DOCK_RETRACT_MS);
   }
 
   function resolveNoblesOrTurn(type, args, actor) {
@@ -4486,6 +7434,55 @@ Object.assign(I18N.de, {
     return t("logWinner", { player: best.player.name });
   }
 
+  function moveEventRefs(args, player) {
+    var refs = {
+      player_id: player && player.id || null,
+      card_id: args && args.card_id || null,
+      market_id: args && args.market_id || null,
+      market_slot_id: args && args.market_slot_id || null,
+      deck_slot_id: args && args.deck_slot_id || null,
+      noble_id: args && args.noble_id || null
+    };
+    Object.keys(refs).forEach(function (key) {
+      if (refs[key] === null || refs[key] === undefined) delete refs[key];
+    });
+    return refs;
+  }
+
+  function buildMoveEvents(moveId, type, args, player) {
+    var refs = moveEventRefs(args || {}, player);
+    var orientCardAction = args && (args.market_id === ORIENT_MARKET_ID || cardIsOrient(args.card)) && (type === "buyMarket" || type === "buyReserved" || type === "reserveMarket" || type === "strongholdConquest");
+    var events = [{
+      schema: MOVE_EVENT_SCHEMA,
+      event_id: "m" + moveId + ":core",
+      channel: "core",
+      type: type,
+      status: "resolved",
+      refs: clone(refs)
+    }];
+    if (state && orientEnabledForRuleset(state.ruleset)) {
+      events.push({
+        schema: MOVE_EVENT_SCHEMA,
+        event_id: "m" + moveId + ":orient-ability-window",
+        channel: ORIENT_MARKET_ID,
+        type: "abilityWindow",
+        status: args && args.orient_effects && args.orient_effects.length ? "resolved" : "available",
+        refs: clone(refs)
+      });
+    }
+    if (orientCardAction) {
+      events.push({
+        schema: MOVE_EVENT_SCHEMA,
+        event_id: "m" + moveId + ":orient-card-action",
+        channel: ORIENT_MARKET_ID,
+        type: type,
+        status: "resolved",
+        refs: clone(refs)
+      });
+    }
+    return events;
+  }
+
   function recordMove(type, args, actor) {
     if (!state || state.mode === "replay") return;
     var player = actor || state.players[state.current] || state.players[0];
@@ -4500,6 +7497,7 @@ Object.assign(I18N.de, {
         log: state.log[0] || "",
         args: Object.assign({ player_id: player.id, player_name: player.name }, args || {})
       },
+      events: buildMoveEvents(state.next_move_id, type, args || {}, player),
       state_after: toGamedatas(state, { includeSourceState: true })
     };
     state.moves.push(move);
@@ -4509,6 +7507,8 @@ Object.assign(I18N.de, {
 
   function toGamedatas(game, options) {
     var includeSourceState = options && options.includeSourceState;
+    ensureStateRuleset(game);
+    var ruleset = normalizeRuleset(game.ruleset);
     var players = {};
     game.players.forEach(function (player, index) {
       players[player.id] = {
@@ -4533,10 +7533,13 @@ Object.assign(I18N.de, {
         current_player_id: game.players[game.current] ? game.players[game.current].id : null,
         active_player_id: game.players[game.current] ? game.players[game.current].id : null,
         next_move_id: game.next_move_id,
-        mode: game.mode || "live"
+        mode: game.mode || "live",
+        ruleset_id: ruleset.id
       },
+      ruleset: clone(ruleset),
+      module_state: clone(game.module_state || createModuleState(ruleset)),
       gamestate: {
-        name: game.gameOver ? "gameEnd" : game.awaitingDiscard ? "discard" : game.awaitingNobleChoice ? "chooseNoble" : "playerTurn",
+        name: game.gameOver ? "gameEnd" : game.awaitingDiscard ? "discard" : game.awaitingStrongholdConquest ? "strongholdConquest" : game.awaitingNobleChoice ? "chooseNoble" : "playerTurn",
         description: gameStateTextFor(game),
         active_player: game.players[game.current] ? game.players[game.current].id : null
       },
@@ -4544,14 +7547,26 @@ Object.assign(I18N.de, {
       playerorder: game.players.map(function (player) { return player.id; }),
       bank: clone(game.bank),
       market: clone(game.market),
+      market_slots: clone(game.market_slots || createMarketSlots()),
+      orient_market: clone(game.orient_market || emptyTieredMarket()),
+      deck_draw_state: clone(normalizeDeckDrawState(game.deck_draw_state)),
+      strongholds: clone(game.strongholds || { placements: {} }),
       nobles: clone(game.nobles),
       decks_remaining: {
         1: game.decks[1].length,
         2: game.decks[2].length,
         3: game.decks[3].length
       },
+      orient_decks_remaining: {
+        1: game.orient_decks && game.orient_decks[1] ? game.orient_decks[1].length : 0,
+        2: game.orient_decks && game.orient_decks[2] ? game.orient_decks[2].length : 0,
+        3: game.orient_decks && game.orient_decks[3] ? game.orient_decks[3].length : 0
+      },
       awaiting: {
         discard: !!game.awaitingDiscard,
+        orient_action: game.awaitingOrientAction ? clone(game.awaitingOrientAction) : null,
+        stronghold_action: game.awaitingStrongholdAction ? clone(game.awaitingStrongholdAction) : null,
+        stronghold_conquest: game.awaitingStrongholdConquest ? clone(game.awaitingStrongholdConquest) : null,
         noble_choice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null
       },
       end: {
@@ -4571,6 +7586,9 @@ Object.assign(I18N.de, {
     if (game.gameOver) return "Game finished";
     if (game.turnTransition) return "Turn handoff";
     if (game.awaitingDiscard) return "Active player must discard to token cap";
+    if (game.awaitingOrientAction) return "Active player must resolve an Orient ability";
+    if (game.awaitingStrongholdAction) return "Active player must resolve a Stronghold move";
+    if (game.awaitingStrongholdConquest) return "Active player may resolve a Stronghold conquest";
     if (game.awaitingNobleChoice) return "Active player must choose one noble";
     if (game.endTriggered) return "Final round";
     return "Player turn";
@@ -4582,14 +7600,22 @@ Object.assign(I18N.de, {
 
   function compactSourceState(game) {
     if (!game || !Array.isArray(game.players)) return null;
+    ensureStateRuleset(game);
     return {
       schema: SCHEMA,
+      ruleset: normalizeRuleset(game.ruleset),
+      module_state: clone(game.module_state || createModuleState(game.ruleset)),
       table_seed: game.table_seed,
       next_move_id: game.next_move_id,
       players: clone(game.players),
       bank: clone(game.bank),
       decks: clone(game.decks),
       market: clone(game.market),
+      market_slots: clone(game.market_slots || createMarketSlots()),
+      orient_decks: clone(game.orient_decks || emptyTieredMarket()),
+      orient_market: clone(game.orient_market || emptyTieredMarket()),
+      deck_draw_state: clone(normalizeDeckDrawState(game.deck_draw_state)),
+      strongholds: clone(game.strongholds || { placements: {} }),
       seen_cards: clone(collectSeenCardsByTier(game)),
       bga_deck_unknown: !!game.bga_deck_unknown,
       bga_continued_deck_seed: game.bga_continued_deck_seed,
@@ -4600,6 +7626,9 @@ Object.assign(I18N.de, {
       moves: [],
       initial_gamedatas: null,
       awaitingDiscard: !!game.awaitingDiscard,
+      awaitingOrientAction: game.awaitingOrientAction ? clone(game.awaitingOrientAction) : null,
+      awaitingStrongholdAction: game.awaitingStrongholdAction ? clone(game.awaitingStrongholdAction) : null,
+      awaitingStrongholdConquest: game.awaitingStrongholdConquest ? clone(game.awaitingStrongholdConquest) : null,
       awaitingNobleChoice: game.awaitingNobleChoice ? game.awaitingNobleChoice.slice() : null,
       endTriggered: !!game.endTriggered,
       finalTurnsLeft: game.finalTurnsLeft,
@@ -4615,13 +7644,20 @@ Object.assign(I18N.de, {
     var compact = {
       schema: SCHEMA,
       table: cloneOr(gamedatas.table, {}),
+      ruleset: normalizeRuleset(gamedatas.ruleset || gamedatas.source_state && gamedatas.source_state.ruleset),
+      module_state: cloneOr(gamedatas.module_state, gamedatas.source_state && gamedatas.source_state.module_state || {}),
       gamestate: cloneOr(gamedatas.gamestate, {}),
       players: cloneOr(gamedatas.players, {}),
       playerorder: Array.isArray(gamedatas.playerorder) ? gamedatas.playerorder.slice() : [],
       bank: cloneOr(gamedatas.bank, {}),
       market: cloneOr(gamedatas.market, {}),
+      market_slots: cloneOr(gamedatas.market_slots, gamedatas.source_state && gamedatas.source_state.market_slots || {}),
+      orient_market: cloneOr(gamedatas.orient_market, gamedatas.source_state && gamedatas.source_state.orient_market || {}),
+      deck_draw_state: cloneOr(gamedatas.deck_draw_state, gamedatas.source_state && gamedatas.source_state.deck_draw_state || createDeckDrawState()),
+      strongholds: cloneOr(gamedatas.strongholds, gamedatas.source_state && gamedatas.source_state.strongholds || { placements: {} }),
       nobles: cloneOr(gamedatas.nobles, []),
       decks_remaining: cloneOr(gamedatas.decks_remaining, {}),
+      orient_decks_remaining: cloneOr(gamedatas.orient_decks_remaining, {}),
       awaiting: cloneOr(gamedatas.awaiting, {}),
       end: cloneOr(gamedatas.end, {}),
       log: Array.isArray(gamedatas.log) ? gamedatas.log.slice() : []
@@ -4639,6 +7675,7 @@ Object.assign(I18N.de, {
       player_id: move.player_id,
       args: clone(move.args || {}),
       notification: clone(move.notification || {}),
+      events: Array.isArray(move.events) ? clone(move.events) : [],
       state_after: compactGamedatasForExport(move.state_after) || (move.state_after ? clone(move.state_after) : null)
     };
   }
@@ -4649,12 +7686,87 @@ Object.assign(I18N.de, {
 
   function compactReplayPayload(payload) {
     if (!payload || payload.schema !== SCHEMA) return null;
+    if (!rulesetSupportedByEngine(rulesetFromReplayPayload(payload))) return null;
     return {
       schema: SCHEMA,
       next_move_id: payload.next_move_id,
+      ruleset: normalizeRuleset(rulesetFromReplayPayload(payload)),
+      module_state: cloneOr(payload.module_state, payload.gamedatas && payload.gamedatas.module_state || {}),
       gamedatas: compactGamedatasForExport(payload.gamedatas),
       moves: compactMovesForExport(payload.moves)
     };
+  }
+
+  function replayPayloadLooksBgaDerived(payload) {
+    if (!payload) return false;
+    if (payload.bga_table_id) return true;
+    var label = [payload.source, payload.source_schema].map(function (value) {
+      return String(value || "");
+    }).join(" ");
+    return /boardgamearena|boardreplaylab|\bbga\b/i.test(label);
+  }
+
+  function replayPlayerOrderFromGamedatas(gamedatas) {
+    var source = gamedatas && gamedatas.source_state;
+    if (source && Array.isArray(source.players) && source.players.length) {
+      return source.players.map(function (player) {
+        return player && player.id;
+      }).filter(Boolean);
+    }
+    if (Array.isArray(gamedatas && gamedatas.playerorder) && gamedatas.playerorder.length) {
+      return gamedatas.playerorder.slice();
+    }
+    var players = gamedatas && gamedatas.players || {};
+    return Object.keys(players);
+  }
+
+  function replayPlayerIndexLookup(playerOrder) {
+    var lookup = {};
+    (playerOrder || []).forEach(function (playerId, index) {
+      lookup[String(playerId)] = index;
+    });
+    return lookup;
+  }
+
+  function replayRoundFromGamedatas(gamedatas) {
+    var source = gamedatas && gamedatas.source_state;
+    return Math.max(1, Number(source && source.round) || Number(gamedatas && gamedatas.table && gamedatas.table.round) || 1);
+  }
+
+  function writeReplayTurnProgress(gamedatas, playerOrder, playerIndex, round) {
+    if (!gamedatas || playerIndex < 0) return;
+    var playerId = playerOrder[playerIndex] || null;
+    if (gamedatas.source_state) {
+      gamedatas.source_state.current = playerIndex;
+      gamedatas.source_state.round = round;
+    }
+    gamedatas.table = gamedatas.table || {};
+    gamedatas.table.round = round;
+    if (playerId) {
+      gamedatas.table.current_player_id = playerId;
+      gamedatas.table.active_player_id = playerId;
+      gamedatas.gamestate = gamedatas.gamestate || {};
+      gamedatas.gamestate.active_player = playerId;
+    }
+  }
+
+  function normalizeBgaReplayTurnProgress(compactPayload, sourcePayload) {
+    if (!compactPayload || !Array.isArray(compactPayload.moves) || !replayPayloadLooksBgaDerived(sourcePayload)) return compactPayload;
+    var playerOrder = replayPlayerOrderFromGamedatas(compactPayload.gamedatas);
+    if (!playerOrder.length) return compactPayload;
+    var playerIndexById = replayPlayerIndexLookup(playerOrder);
+    var round = replayRoundFromGamedatas(compactPayload.gamedatas);
+    var lastPlayerIndex = null;
+    compactPayload.moves.forEach(function (move) {
+      var playerIndex = playerIndexById[String(move && move.player_id || "")];
+      if (!Number.isInteger(playerIndex)) return;
+      if (lastPlayerIndex !== null && playerIndex !== lastPlayerIndex && playerIndex < lastPlayerIndex) {
+        round += 1;
+      }
+      lastPlayerIndex = playerIndex;
+      writeReplayTurnProgress(move.state_after, playerOrder, playerIndex, round);
+    });
+    return compactPayload;
   }
 
   function compactStateForPersistence(game) {
@@ -4673,6 +7785,8 @@ Object.assign(I18N.de, {
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
+      ruleset: normalizeRuleset(game.ruleset),
+      module_state: clone(game.module_state || createModuleState(game.ruleset)),
       gamedatas: compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
@@ -4685,6 +7799,8 @@ Object.assign(I18N.de, {
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
+      ruleset: normalizeRuleset(game.ruleset),
+      module_state: clone(game.module_state || createModuleState(game.ruleset)),
       gamedatas: compactGamedatasForExport(game.initial_gamedatas) || compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
@@ -4692,13 +7808,28 @@ Object.assign(I18N.de, {
 
   function stateFromGamedatas(gamedatas) {
     if (!gamedatas || gamedatas.schema !== SCHEMA) return null;
+    if (!rulesetSupportedByEngine(gamedatas.ruleset)) return null;
     if (gamedatas.source_state && validateState(gamedatas.source_state)) {
       var restored = clone(gamedatas.source_state);
+      ensureStateRuleset(restored);
       restored.seen_cards = collectSeenCardsByTier(restored);
       restored.mode = "live";
       return restored;
     }
     return null;
+  }
+
+  function rulesetFromReplayPayload(payload) {
+    return payload && (
+      payload.ruleset ||
+      payload.gamedatas && payload.gamedatas.ruleset ||
+      payload.gamedatas && payload.gamedatas.source_state && payload.gamedatas.source_state.ruleset
+    );
+  }
+
+  function replayPayloadUnsupportedRulesetModules(payload) {
+    if (!payload || payload.schema !== SCHEMA) return [];
+    return unsupportedRulesetModules(rulesetFromReplayPayload(payload));
   }
 
   function exportFileName(kind) {
@@ -4813,14 +7944,18 @@ Object.assign(I18N.de, {
       return;
     }
     imported.mode = "live";
+    ensureStateRuleset(imported);
     closeDinoBoardSession();
     state = imported;
+    activeMarketPage = BASE_MARKET_ID;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
     clearTurnAdvanceTimer();
+    clearHandDockTransitionTimers();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     showMessage(t("msgStateImported"), "ok");
     resetDinoBoardAiForCurrentState(true);
     saveState();
@@ -4858,22 +7993,32 @@ Object.assign(I18N.de, {
   }
 
   function bgaCaptureHasExpansionHint(payload) {
+    return bgaCaptureUnsupportedExpansionFlags(payload).length > 0;
+  }
+
+  function bgaCaptureUnsupportedExpansionFlags(payload) {
     var compatibility = payload && payload.compatibility || {};
     var detection = compatibility.expansion_detection || {};
-    if (Array.isArray(detection.active)) return detection.active.length > 0;
-    return bgaActiveExpansionFlags(payload).length > 0;
+    var active = Array.isArray(detection.active) ? detection.active : bgaActiveExpansionFlags(payload);
+    return active.filter(function (entry) {
+      return !/orient|strongholds?/i.test(String(entry && entry.label || ""));
+    });
   }
 
   function bgaCompatibilityHasActiveExpansion(compatibility) {
     var detection = compatibility && compatibility.expansion_detection || {};
-    if (Array.isArray(detection.active)) return detection.active.length > 0;
+    if (Array.isArray(detection.active)) {
+      return detection.active.some(function (entry) {
+        return !/orient|strongholds?/i.test(String(entry && entry.label || ""));
+      });
+    }
     return false;
   }
 
   function bgaCaptureExpansionDetails(payload) {
     var compatibility = payload && payload.compatibility || {};
     var detection = compatibility.expansion_detection || {};
-    var active = Array.isArray(detection.active) ? detection.active : bgaActiveExpansionFlags(payload);
+    var active = bgaCaptureUnsupportedExpansionFlags(payload);
     if (active.length) {
       return active.map(function (entry) {
         return (entry.label || "Expansion") + (entry.path ? " (" + entry.path + ")" : "");
@@ -4929,6 +8074,38 @@ Object.assign(I18N.de, {
     }
     walk(payload, "");
     return active;
+  }
+
+  function bgaInitialGamedatasOrientActive(gamedatas) {
+    if (!gamedatas || !gamedatas.market) return false;
+    var flag = gamedatas.expansion_orient;
+    var flagActive = bgaExpansionValueActive(flag);
+    return flagActive || [1, 2, 3].some(function (tier) {
+      var row = gamedatas.market["orient_row_" + tier];
+      return !!(row && bgaObjectValues(row.cards).length);
+    });
+  }
+
+  function bgaExpansionValueActive(value) {
+    if (value === true) return true;
+    if (typeof value === "number") return value === 1;
+    if (typeof value === "string") return /^(true|1|yes|on|enabled|active)$/i.test(value.trim());
+    return false;
+  }
+
+  function bgaExpansionValueInactive(value) {
+    if (value === false || value === null) return true;
+    if (typeof value === "number") return value === 0 || value === 2;
+    if (typeof value === "string") return /^(false|0|2|no|off|disabled|inactive|)$/i.test(value.trim());
+    return false;
+  }
+
+  function bgaInitialGamedatasStrongholdsActive(gamedatas) {
+    if (!gamedatas || !gamedatas.market) return false;
+    var flag = gamedatas.expansion_strongholds;
+    if (bgaExpansionValueActive(flag)) return true;
+    if (bgaExpansionValueInactive(flag)) return false;
+    return Object.keys(gamedatas.market.strongholds || {}).length > 0;
   }
 
   function showBgaImportMessage(key, fromStart) {
@@ -5078,6 +8255,16 @@ Object.assign(I18N.de, {
     var points = Math.max(0, Number(fallback && fallback.points) || 0);
     var cost = normalizeCost({});
     if (db) {
+      if (Number(db.lvl) >= 11 && Number(db.lvl) <= 13) {
+        var orientCard = localOrientCardByBgaId(id);
+        if (orientCard) {
+          var mappedOrient = clone(orientCard);
+          mappedOrient.bga_id = id;
+          mappedOrient.bga_card_id = "bga-" + id;
+          mappedOrient.bga_original_id = id;
+          return mappedOrient;
+        }
+      }
       tier = Math.max(1, Math.min(3, Number(db.lvl) || tier));
       color = bgaCardTypeColor(db.type) || color;
       points = Math.max(0, Number(db.points) || 0);
@@ -5146,6 +8333,263 @@ Object.assign(I18N.de, {
     });
   }
 
+  function playerIndexForBgaId(game, bgaPlayerId) {
+    var index = game.players.findIndex(function (player) {
+      return String(player.bga_id || "") === String(bgaPlayerId || "");
+    });
+    return index >= 0 ? index : 0;
+  }
+
+  function marketSlotForBgaCardId(game, bgaCardId) {
+    var id = String(bgaCardId || "");
+    for (var marketOffset = 0; marketOffset < 2; marketOffset += 1) {
+      var marketId = marketOffset === 0 ? BASE_MARKET_ID : ORIENT_MARKET_ID;
+      var market = marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+      for (var tier = 1; tier <= 3; tier += 1) {
+        var cards = market && market[tier] || [];
+        var index = cards.findIndex(function (card) {
+          return card && String(card.bga_id || "") === id;
+        });
+        if (index >= 0) {
+          return {
+            marketId: marketId,
+            tier: tier,
+            index: index,
+            slotId: marketSlotId(game, marketId, tier, index),
+            card: cards[index]
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function strongholdPlacementCountForPlayer(game, playerIndex) {
+    var strongholds = ensureStrongholds(game);
+    return Object.keys(strongholds.placements).reduce(function (count, slotId) {
+      var holders = strongholds.placements[slotId];
+      if (!Array.isArray(holders)) return count;
+      return count + holders.filter(function (entry) {
+        return Number(entry) === Number(playerIndex);
+      }).length;
+    }, 0);
+  }
+
+  function drawStrongholdTokenForPlayer(game, playerIndex, excludeTokenId) {
+    var strongholds = ensureStrongholds(game);
+    var exclude = String(excludeTokenId || "");
+    var tokenIds = Object.keys(strongholds.tokens).sort(function (a, b) {
+      return (Number(a) || 0) - (Number(b) || 0);
+    });
+    for (var index = 0; index < tokenIds.length; index += 1) {
+      var tokenId = tokenIds[index];
+      if (tokenId === exclude) continue;
+      var token = strongholds.tokens[tokenId];
+      if (!token || Number(token.player_index) !== Number(playerIndex)) continue;
+      if (token.slot_id) continue;
+      if (token.location && token.location !== "draw") continue;
+      return token;
+    }
+    return null;
+  }
+
+  function synthesizeStrongholdToken(game, template) {
+    var strongholds = ensureStrongholds(game);
+    var playerIndex = Number(template && template.player_index) || 0;
+    var suffix = 1;
+    var tokenId = "synthetic:" + playerIndex + ":" + suffix;
+    while (strongholds.tokens[tokenId]) {
+      suffix += 1;
+      tokenId = "synthetic:" + playerIndex + ":" + suffix;
+    }
+    var token = Object.assign({}, template || {}, {
+      id: tokenId,
+      bga_id: tokenId,
+      player_index: playerIndex,
+      bga_player_id: template && template.bga_player_id || "",
+      player_id: template && template.player_id || (game.players[playerIndex] ? game.players[playerIndex].id : ""),
+      token_number: suffix,
+      location: "draw",
+      slot_id: null,
+      card_bga_id: ""
+    });
+    strongholds.tokens[tokenId] = token;
+    return token;
+  }
+
+  function tokenForRepeatedStrongholdDestination(game, token, destinationSlotId) {
+    if (!token || !destinationSlotId || token.slot_id !== destinationSlotId) return token;
+    var playerIndex = Number(token.player_index);
+    if (!Number.isInteger(playerIndex)) return token;
+    if (strongholdPlacementCountForPlayer(game, playerIndex) >= 3) return token;
+    return drawStrongholdTokenForPlayer(game, playerIndex, token.id) || synthesizeStrongholdToken(game, token);
+  }
+
+  function removeStrongholdTokenFromSlot(game, tokenId) {
+    var strongholds = ensureStrongholds(game);
+    var token = strongholds.tokens[String(tokenId)];
+    if (!token) return;
+    var playerIndex = Number(token.player_index);
+    var slotIds = token.slot_id ? [token.slot_id] : Object.keys(strongholds.placements);
+    for (var slotIndex = 0; slotIndex < slotIds.length; slotIndex += 1) {
+      var slotId = slotIds[slotIndex];
+      var holders = strongholds.placements[slotId];
+      if (!Array.isArray(holders)) continue;
+      var index = Number.isInteger(playerIndex)
+        ? holders.findIndex(function (entry) { return Number(entry) === playerIndex; })
+        : holders.length - 1;
+      if (index >= 0) {
+        holders.splice(index, 1);
+        if (!holders.length) delete strongholds.placements[slotId];
+        break;
+      }
+    }
+    token.location = "draw";
+    token.slot_id = null;
+    token.card_bga_id = "";
+  }
+
+  function registerBgaStrongholdToken(game, rawToken, fallbackBgaPlayerId) {
+    var strongholds = ensureStrongholds(game);
+    var tokenId = String(rawToken && rawToken.id || "");
+    if (!tokenId) return null;
+    var bgaPlayerId = String(rawToken && rawToken.type || fallbackBgaPlayerId || "");
+    var playerIndex = playerIndexForBgaId(game, bgaPlayerId);
+    var previous = strongholds.tokens[tokenId] || {};
+    var token = Object.assign(previous, {
+      id: tokenId,
+      bga_id: tokenId,
+      bga_player_id: bgaPlayerId,
+      player_id: game.players[playerIndex] ? game.players[playerIndex].id : "",
+      player_index: playerIndex,
+      token_number: Number(rawToken && rawToken.type_arg) || 0,
+      location: String(rawToken && rawToken.location || "draw"),
+      slot_id: previous.slot_id || null,
+      card_bga_id: previous.card_bga_id || ""
+    });
+    strongholds.tokens[tokenId] = token;
+    return token;
+  }
+
+  function placeStrongholdTokenOnBgaCard(game, tokenId, destinationBgaId) {
+    var strongholds = ensureStrongholds(game);
+    var token = strongholds.tokens[String(tokenId)];
+    if (!token) return null;
+    var destination = marketSlotForBgaCardId(game, destinationBgaId);
+    if (token.slot_id) removeStrongholdTokenFromSlot(game, tokenId);
+    token.location = String(destinationBgaId || "");
+    token.card_bga_id = String(destinationBgaId || "");
+    if (!destination) {
+      token.slot_id = null;
+      return null;
+    }
+    token.slot_id = destination.slotId;
+    if (!Array.isArray(strongholds.placements[destination.slotId])) strongholds.placements[destination.slotId] = [];
+    strongholds.placements[destination.slotId].push(Number(token.player_index));
+    return destination;
+  }
+
+  function applyBgaStrongholdEvent(game, item, playerLookup) {
+    if (!item || !item.args) return null;
+    var args = item.args;
+    var actor = playerLookup[String(args.player_id || "")] || game.players[0];
+    var actorIndex = Math.max(0, game.players.indexOf(actor));
+    var tokenId = String(args.strongholdsId || "");
+    var rawToken = args.stronghold || args.strongholds || { id: tokenId, type: args.player_id, location: args.strongholdsDestination };
+    var token = ensureStrongholds(game).tokens[tokenId] || registerBgaStrongholdToken(game, rawToken, args.player_id);
+    if (!token) return null;
+    var fromSlotId = token.slot_id || null;
+    var destination = String(args.strongholdsDestination || "draw");
+    if (!destination || destination === "draw") {
+      removeStrongholdTokenFromSlot(game, tokenId);
+      return {
+        type: "remove",
+        token_id: tokenId,
+        actor_index: actorIndex,
+        player_index: Number(token.player_index),
+        from_slot_id: fromSlotId,
+        slot_id: fromSlotId,
+        removed_player_index: Number(token.player_index),
+        destination: "draw"
+      };
+    }
+    var destinationSlot = marketSlotForBgaCardId(game, destination);
+    if (destinationSlot && fromSlotId === destinationSlot.slotId) {
+      token = tokenForRepeatedStrongholdDestination(game, token, destinationSlot.slotId);
+      tokenId = String(token.id);
+      fromSlotId = token.slot_id || null;
+    }
+    var target = placeStrongholdTokenOnBgaCard(game, tokenId, destination);
+    token = ensureStrongholds(game).tokens[tokenId];
+    return {
+      type: fromSlotId ? "move" : "place",
+      token_id: tokenId,
+      actor_index: actorIndex,
+      player_index: Number(token.player_index),
+      from_slot_id: fromSlotId,
+      slot_id: target ? target.slotId : null,
+      card_id: target && target.card ? target.card.id : "",
+      card_bga_id: destination,
+      market_id: target ? target.marketId : "",
+      tier: target ? target.tier : null,
+      index: target ? target.index : null,
+      destination: destination
+    };
+  }
+
+  function applyBgaStrongholdBuyReturn(game, item, playerLookup) {
+    if (!item || !item.args) return [];
+    var args = item.args;
+    var actor = playerLookup[String(args.player_id || "")] || game.players[0];
+    var actorIndex = Math.max(0, game.players.indexOf(actor));
+    var returned = [];
+    bgaObjectValues(args.strongholdsIdList).forEach(function (rawToken) {
+      var token = registerBgaStrongholdToken(game, rawToken, rawToken && rawToken.type || args.player_id);
+      if (!token) return;
+      var locationSlot = marketSlotForBgaCardId(game, rawToken && rawToken.location);
+      var fromSlotId = token.slot_id || (locationSlot && locationSlot.slotId) || null;
+      if (fromSlotId && !token.slot_id) token.slot_id = fromSlotId;
+      removeStrongholdTokenFromSlot(game, token.id);
+      returned.push({
+        type: "return",
+        token_id: token.id,
+        actor_index: actorIndex,
+        player_index: Number(token.player_index),
+        from_slot_id: fromSlotId,
+        slot_id: fromSlotId,
+        card_bga_id: String(args.card_id || rawToken && rawToken.location || ""),
+        destination: "draw"
+      });
+    });
+    return returned;
+  }
+
+  function applyBgaStrongholdEvents(game, items, playerLookup) {
+    var effects = [];
+    (items || []).forEach(function (item) {
+      if (item && item.type === "buyCardMoveStronghold") {
+        effects = effects.concat(applyBgaStrongholdBuyReturn(game, item, playerLookup));
+      } else if (item && item.type === "moveStronghold") {
+        var effect = applyBgaStrongholdEvent(game, item, playerLookup);
+        if (effect) effects.push(effect);
+      }
+    });
+    return effects;
+  }
+
+  function initializeBgaStrongholds(game, gamedatas) {
+    var strongholdsByPlayer = gamedatas && gamedatas.market && gamedatas.market.strongholds || {};
+    Object.keys(strongholdsByPlayer).forEach(function (bgaPlayerId) {
+      var tokens = strongholdsByPlayer[bgaPlayerId] || {};
+      bgaObjectValues(tokens).forEach(function (rawToken) {
+        var token = registerBgaStrongholdToken(game, rawToken, bgaPlayerId);
+        if (token && token.location && token.location !== "draw") {
+          placeStrongholdTokenOnBgaCard(game, token.id, token.location);
+        }
+      });
+    });
+  }
+
   function buildBgaPlayerList(data, gamedatas) {
     var players = Array.isArray(data && data.players) ? data.players.slice(0, 4) : [];
     var byId = {};
@@ -5169,6 +8613,25 @@ Object.assign(I18N.de, {
       });
     });
     return players.slice(0, 4);
+  }
+
+  function createBgaReplayTurnTracker(game) {
+    return {
+      round: Math.max(1, Number(game && game.round) || 1),
+      lastPlayerIndex: null
+    };
+  }
+
+  function syncBgaReplayTurnProgress(game, player, tracker) {
+    if (!game || !player || !tracker) return;
+    var playerIndex = game.players.indexOf(player);
+    if (playerIndex < 0) return;
+    if (tracker.lastPlayerIndex !== null && playerIndex !== tracker.lastPlayerIndex && playerIndex < tracker.lastPlayerIndex) {
+      tracker.round += 1;
+    }
+    tracker.lastPlayerIndex = playerIndex;
+    game.current = playerIndex;
+    game.round = tracker.round;
   }
 
   function bgaDeckPlaceholders(tier, count) {
@@ -5218,6 +8681,15 @@ Object.assign(I18N.de, {
     if (!gamedatas || !gamedatas.market || !gamedatas.carddb) return false;
     var market = gamedatas.market || {};
     if (market.pool) game.bank = bgaPoolToBank(market.pool);
+    var orientActive = bgaInitialGamedatasOrientActive(gamedatas);
+    var strongholdsActive = bgaInitialGamedatasStrongholdsActive(gamedatas);
+    if (orientActive || strongholdsActive) {
+      game.ruleset = createRuleset({ modules: { orient: orientActive, strongholds: strongholdsActive } });
+      game.module_state = createModuleState(game.ruleset);
+      game.orient_market = emptyTieredMarket();
+      game.orient_decks = emptyTieredMarket();
+      if (orientActive && activeMarketPage === BASE_MARKET_ID) activeMarketPage = ORIENT_MARKET_ID;
+    }
     [1, 2, 3].forEach(function (tier) {
       var row = market["row_" + tier] || {};
       var cards = bgaObjectValues(row.cards).map(function (entry) {
@@ -5228,13 +8700,28 @@ Object.assign(I18N.de, {
       game.market[tier] = cards;
       rememberSeenCards(game, cards);
       game.decks[tier] = bgaDeckPlaceholders(tier, Number(row.count) || 0);
+      if (orientEnabledForRuleset(game.ruleset)) {
+        var orientRow = market["orient_row_" + tier] || {};
+        var orientCards = bgaObjectValues(orientRow.cards).map(function (entry) {
+          return bgaCardFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, { tier: tier });
+        }).filter(function (card) {
+          return card && card.bga_id && card.bga_id !== "unknown";
+        });
+        game.orient_market[tier] = orientCards;
+        game.orient_decks[tier] = bgaDeckPlaceholders(tier, Number(orientRow.count) || 0).map(function (card) {
+          card.module = ORIENT_MARKET_ID;
+          return card;
+        });
+      }
     });
+    if (orientEnabledForRuleset(game.ruleset)) setOrientDecksInitialized(game);
     game.bga_deck_unknown = true;
     game.nobles = bgaObjectValues(market.nobles).map(function (entry) {
       return bgaNobleFromDb(bgaRawCardTypeId(entry, entry && entry.type), gamedatas, {});
     }).filter(function (noble) {
       return noble && noble.bga_id && noble.bga_id !== "unknown";
     });
+    if (strongholdsActive) initializeBgaStrongholds(game, gamedatas);
     var activePlayer = gamedatas.gamestate && gamedatas.gamestate.active_player;
     if (activePlayer !== undefined && activePlayer !== null) {
       var activeIndex = game.players.findIndex(function (player) {
@@ -5246,52 +8733,144 @@ Object.assign(I18N.de, {
     return true;
   }
 
-  function decrementBgaDeck(game, tier) {
-    if (game.decks[tier] && game.decks[tier].length) game.decks[tier].pop();
+  function decrementBgaDeck(game, tier, marketId) {
+    var decks = marketId === ORIENT_MARKET_ID ? game.orient_decks : game.decks;
+    if (decks && decks[tier] && decks[tier].length) decks[tier].pop();
   }
 
   function removeBgaMarketCard(game, card) {
     var tier = Math.max(1, Math.min(3, Number(card && card.tier) || 1));
-    var cards = game.market[tier] || [];
+    var marketId = card && card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var market = marketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    var cards = market && market[tier] || [];
     var index = cards.findIndex(function (entry) {
       return entry && card && ((entry.bga_id && entry.bga_id === card.bga_id) || entry.id === card.id);
     });
     if (index >= 0) {
       cards[index] = null;
-      return { tier: tier, index: index };
+      return { tier: tier, index: index, marketId: marketId };
     }
     return null;
   }
 
-  function revealBgaMarketCard(game, items, tier, gamedatas, slot) {
-    var reveal = (items || []).find(function (entry) {
-      return entry && entry.type === "revealCard" && entry.args && entry.args.card;
+  function bgaMarketRefFromCardLocation(card, fallbackTier) {
+    var location = String(card && card.location || "");
+    var match = location.match(/^(market|orient)_(\d+)$/i);
+    var marketId = match && match[1].toLowerCase() === "orient" ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var tier = Math.max(1, Math.min(3, Number(match && match[2] || fallbackTier) || 1));
+    var rawIndex = Number(card && card.location_arg);
+    return {
+      marketId: marketId,
+      tier: tier,
+      index: Number.isInteger(rawIndex) && rawIndex >= 0 ? rawIndex : null
+    };
+  }
+
+  function findBgaRevealCardItem(items, slot, usedRevealItems) {
+    var reveals = (items || []).filter(function (entry) {
+      return entry && entry.type === "revealCard" && entry.args && entry.args.card && !(usedRevealItems && usedRevealItems.has(entry));
     });
-    if (!reveal) {
-      if (slot && game.market[slot.tier] && !game.market[slot.tier][slot.index]) game.market[slot.tier].splice(slot.index, 1);
-      return null;
-    }
+    if (!slot) return reveals[0] || null;
+    return reveals.find(function (entry) {
+      var ref = bgaMarketRefFromCardLocation(entry.args.card, slot.tier);
+      return ref.marketId === slot.marketId && ref.tier === slot.tier && ref.index === slot.index;
+    }) || reveals.find(function (entry) {
+      var ref = bgaMarketRefFromCardLocation(entry.args.card, slot.tier);
+      return ref.marketId === slot.marketId && ref.tier === slot.tier;
+    }) || reveals[0] || null;
+  }
+
+  function revealBgaMarketCard(game, items, tier, gamedatas, slot, usedRevealItems) {
+    var reveal = findBgaRevealCardItem(items, slot, usedRevealItems);
+    if (!reveal) return null;
+    if (usedRevealItems) usedRevealItems.add(reveal);
     var revealCard = bgaCardFromNotification(reveal, items || [], { tier: tier }, gamedatas);
-    if (!revealCard || !revealCard.bga_id || revealCard.bga_id === "unknown") {
-      if (slot && game.market[slot.tier] && !game.market[slot.tier][slot.index]) game.market[slot.tier].splice(slot.index, 1);
-      return null;
-    }
+    if (!revealCard || !revealCard.bga_id || revealCard.bga_id === "unknown") return null;
     var targetTier = Math.max(1, Math.min(3, Number(revealCard.tier || tier) || 1));
-    var exists = (game.market[targetTier] || []).some(function (entry) {
+    var targetMarketId = revealCard.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var targetMarket = targetMarketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+    var exists = (targetMarket[targetTier] || []).some(function (entry) {
       return entry && entry.bga_id === revealCard.bga_id;
     });
     if (!exists) {
-      if (slot && slot.tier === targetTier && Number.isInteger(slot.index) && game.market[targetTier]) {
-        game.market[targetTier][slot.index] = revealCard;
+      if (slot && slot.marketId === targetMarketId && slot.tier === targetTier && Number.isInteger(slot.index) && targetMarket[targetTier]) {
+        targetMarket[targetTier][slot.index] = revealCard;
       } else {
-        var emptyIndex = (game.market[targetTier] || []).findIndex(function (entry) { return !entry; });
-        if (emptyIndex >= 0) game.market[targetTier][emptyIndex] = revealCard;
-        else game.market[targetTier].push(revealCard);
+        var emptyIndex = (targetMarket[targetTier] || []).findIndex(function (entry) { return !entry; });
+        if (emptyIndex >= 0) targetMarket[targetTier][emptyIndex] = revealCard;
+        else targetMarket[targetTier].push(revealCard);
       }
       rememberSeenCard(game, revealCard);
     }
-    decrementBgaDeck(game, targetTier);
+    decrementBgaDeck(game, targetTier, targetMarketId);
     return revealCard;
+  }
+
+  function applyBgaRevealCards(game, items, gamedatas, usedRevealItems) {
+    (items || []).forEach(function (entry) {
+      if (!entry || entry.type !== "revealCard" || !entry.args || !entry.args.card) return;
+      if (usedRevealItems && usedRevealItems.has(entry)) return;
+      var card = bgaCardFromNotification(entry, items || [], { card: entry.args.card }, gamedatas);
+      if (!card || !card.bga_id || card.bga_id === "unknown") return;
+      var targetTier = Math.max(1, Math.min(3, Number(card.tier) || 1));
+      var targetMarketId = card.module === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+      var targetMarket = targetMarketId === ORIENT_MARKET_ID ? game.orient_market : game.market;
+      var cards = targetMarket[targetTier] || [];
+      if (cards.some(function (existing) { return existing && existing.bga_id === card.bga_id; })) return;
+      var emptyIndex = cards.findIndex(function (existing) { return !existing; });
+      var rawIndex = Number(entry.args.card.location_arg);
+      if (emptyIndex >= 0) cards[emptyIndex] = card;
+      else if (Number.isInteger(rawIndex) && rawIndex >= 0 && !cards[rawIndex]) cards[rawIndex] = card;
+      else cards.push(card);
+      targetMarket[targetTier] = cards;
+      rememberSeenCard(game, card);
+      decrementBgaDeck(game, targetTier, targetMarketId);
+      if (usedRevealItems) usedRevealItems.add(entry);
+    });
+  }
+
+  function orientFreeSourceCard(acquiredCards, tier) {
+    for (var index = acquiredCards.length - 1; index >= 0; index -= 1) {
+      var card = acquiredCards[index];
+      if (orientCardAbilities(card, "take_level_free").some(function (ability) {
+        return Number(ability.free_tier) === Number(tier);
+      })) {
+        return card;
+      }
+    }
+    return acquiredCards[0] || null;
+  }
+
+  function acquireBgaBuyCard(game, player, buyItem, items, gamedatas, usedRevealItems) {
+    var buyCard = bgaCardFromNotification(buyItem, items, { player_id: buyItem && buyItem.args && buyItem.args.player_id }, gamedatas);
+    rememberSeenCard(game, buyCard);
+    var fromHand = /hand/i.test(String(buyItem && buyItem.args && buyItem.args.card && buyItem.args.card.location || ""));
+    var buySlot = null;
+    var strongholdsReturned = [];
+    if (fromHand) {
+      var reservedIndex = player.reserved.findIndex(function (card) {
+        return card.bga_id && card.bga_id === buyCard.bga_id || card.id === buyCard.id;
+      });
+      if (reservedIndex >= 0) {
+        buyCard.reserved_from = player.reserved[reservedIndex].reserved_from;
+        player.reserved.splice(reservedIndex, 1);
+      } else {
+        buyCard.reserved_from = "deck";
+      }
+    } else {
+      buySlot = removeBgaMarketCard(game, buyCard);
+      if (buySlot) strongholdsReturned = clearStrongholdsAtSlot(game, marketSlotId(game, buySlot.marketId, buySlot.tier, buySlot.index));
+      revealBgaMarketCard(game, items, buyCard.tier, gamedatas, buySlot, usedRevealItems);
+    }
+    var purchasedCard = purchaseRecordCard(buyCard);
+    applyCardBonuses(player, purchasedCard);
+    player.purchased.push(purchasedCard);
+    return {
+      card: purchasedCard,
+      fromHand: fromHand,
+      slot: buySlot,
+      strongholdsReturned: strongholdsReturned
+    };
   }
 
   function groupBgaPacketsByMove(logs) {
@@ -5313,11 +8892,13 @@ Object.assign(I18N.de, {
     var items = group.items || [];
     var publicReserve = items.find(function (entry) { return entry.type === "reserveCard" && (entry.log || entry.args && entry.args.player_name); });
     var privateReserve = items.find(function (entry) { return entry.type === "reserveCard" && entry.args && entry.args.card; });
-    var buy = items.find(function (entry) { return entry.type === "buyCard"; });
+    var buyItems = items.filter(function (entry) { return entry.type === "buyCard"; });
+    var buy = buyItems[0];
     var claim = items.find(function (entry) { return entry.type === "claimNoble"; });
     var end = items.find(function (entry) { return entry.type === "simpleNode" && /end of game/i.test(entry.log || ""); });
     var coins = items.filter(function (entry) { return entry.type === "coins"; });
-    var primary = buy || publicReserve || privateReserve || claim || coins[0] || end;
+    var strongholdPrimary = items.find(function (entry) { return entry.type === "moveStronghold" || entry.type === "buyCardMoveStronghold"; });
+    var primary = buy || publicReserve || privateReserve || claim || coins[0] || end || strongholdPrimary;
     if (!primary) return null;
     var primaryArgs = primary.args || {};
     var externalId = String(primaryArgs.player_id || "");
@@ -5326,40 +8907,52 @@ Object.assign(I18N.de, {
     if (!player) return null;
     game.current = Math.max(0, game.players.indexOf(player));
     applyBgaCoinGaps(game, player, coins);
+    var strongholdEffects = applyBgaStrongholdEvents(game, items, playerLookup);
 
     if (buy) {
-      var buyCard = bgaCardFromNotification(buy, items, { player_id: externalId }, gamedatas);
-      rememberSeenCard(game, buyCard);
-      var fromHand = /hand/i.test(String(buy.args && buy.args.card && buy.args.card.location || ""));
-      if (fromHand) {
-        var reservedIndex = player.reserved.findIndex(function (card) {
-          return card.bga_id && card.bga_id === buyCard.bga_id || card.id === buyCard.id;
+      var usedRevealItems = new Set();
+      var primaryPurchase = acquireBgaBuyCard(game, player, buy, items, gamedatas, usedRevealItems);
+      var buyCard = primaryPurchase.card;
+      var acquiredCards = [buyCard];
+      var orientEffects = [];
+      buyItems.slice(1).forEach(function (freeBuy) {
+        var freePurchase = acquireBgaBuyCard(game, player, freeBuy, items, gamedatas, usedRevealItems);
+        var sourceCard = orientFreeSourceCard(acquiredCards, freePurchase.card.tier);
+        acquiredCards.push(freePurchase.card);
+        orientEffects.push({
+          type: "free_card",
+          source_card_id: sourceCard && sourceCard.id || buyCard.id,
+          card_id: freePurchase.card.id,
+          tier: freePurchase.card.tier,
+          market_id: freePurchase.slot ? freePurchase.slot.marketId : freePurchase.card.module || BASE_MARKET_ID,
+          market_slot_id: freePurchase.slot ? marketSlotId(game, freePurchase.slot.marketId, freePurchase.slot.tier, freePurchase.slot.index) : null,
+          strongholds_returned: freePurchase.strongholdsReturned,
+          card: clone(freePurchase.card)
         });
-        if (reservedIndex >= 0) {
-          buyCard.reserved_from = player.reserved[reservedIndex].reserved_from;
-          player.reserved.splice(reservedIndex, 1);
-        } else {
-          buyCard.reserved_from = "deck";
-        }
-      } else {
-        var buySlot = removeBgaMarketCard(game, buyCard);
-        revealBgaMarketCard(game, items, buyCard.tier, gamedatas, buySlot);
-      }
-      if (COLORS.indexOf(buyCard.color) >= 0) player.bonuses[buyCard.color] += 1;
-      player.purchased.push(buyCard);
+      });
+      applyBgaRevealCards(game, items, gamedatas, usedRevealItems);
       var claimedAfterBuy = applyBgaClaimNoble(game, player, claim, gamedatas);
+      var args = {
+        card_id: buyCard.id,
+        card: buyCard,
+        tier: buyCard.tier,
+        reserved_from: buyCard.reserved_from || "market",
+        payment: { tokens: bgaCoinsFromGap(coins, -1), gold_as: emptyCounts(false) },
+        noble_id: claimedAfterBuy && claimedAfterBuy.id,
+        noble: claimedAfterBuy
+      };
+      if (primaryPurchase.slot) {
+        args.market_id = primaryPurchase.slot.marketId;
+        args.market_index = primaryPurchase.slot.index;
+        args.market_slot_id = marketSlotId(game, primaryPurchase.slot.marketId, primaryPurchase.slot.tier, primaryPurchase.slot.index);
+      }
+      if (primaryPurchase.strongholdsReturned.length) args.strongholds_returned = primaryPurchase.strongholdsReturned;
+      if (strongholdEffects.length) args.stronghold_effects = strongholdEffects;
+      if (orientEffects.length) args.orient_effects = orientEffects;
       return {
-        type: fromHand ? "buyReserved" : "buyMarket",
+        type: primaryPurchase.fromHand ? "buyReserved" : "buyMarket",
         player: player,
-        args: {
-          card_id: buyCard.id,
-          card: buyCard,
-          tier: buyCard.tier,
-          reserved_from: buyCard.reserved_from || "market",
-          payment: { tokens: bgaCoinsFromGap(coins, -1), gold_as: emptyCounts(false) },
-          noble_id: claimedAfterBuy && claimedAfterBuy.id,
-          noble: claimedAfterBuy
-        }
+        args: args
       };
     }
 
@@ -5375,8 +8968,12 @@ Object.assign(I18N.de, {
         decrementBgaDeck(game, reserveCard.tier);
       } else {
         var reserveSlot = removeBgaMarketCard(game, reserveCard);
-        revealBgaMarketCard(game, items, reserveCard.tier, gamedatas, reserveSlot);
+        if (reserveSlot) clearStrongholdsAtSlot(game, marketSlotId(game, reserveSlot.marketId, reserveSlot.tier, reserveSlot.index));
+        var usedReserveRevealItems = new Set();
+        revealBgaMarketCard(game, items, reserveCard.tier, gamedatas, reserveSlot, usedReserveRevealItems);
+        applyBgaRevealCards(game, items, gamedatas, usedReserveRevealItems);
       }
+      if (fromDeck) applyBgaRevealCards(game, items, gamedatas);
       return {
         type: fromDeck ? "reserveDeck" : "reserveMarket",
         player: player,
@@ -5384,17 +8981,31 @@ Object.assign(I18N.de, {
           card_id: reserveCard.id,
           card: reserveCard,
           tier: reserveCard.tier,
-          took_gold: (bgaCoinsFromGap(coins, 1).gold || 0) > 0
+          took_gold: (bgaCoinsFromGap(coins, 1).gold || 0) > 0,
+          stronghold_effects: strongholdEffects
         }
       };
     }
 
     if (claim) {
       var noble = applyBgaClaimNoble(game, player, claim, gamedatas);
+      applyBgaRevealCards(game, items, gamedatas);
       return { type: "chooseNoble", player: player, args: { noble_id: noble && noble.id, noble: noble } };
     }
 
+    if (strongholdPrimary && strongholdEffects.length) {
+      applyBgaRevealCards(game, items, gamedatas);
+      return {
+        type: "strongholdMove",
+        player: player,
+        args: {
+          stronghold_effects: strongholdEffects
+        }
+      };
+    }
+
     if (coins.length) {
+      applyBgaRevealCards(game, items, gamedatas);
       var gained = bgaCoinsFromGap(coins, 1);
       var returned = bgaCoinsFromGap(coins, -1);
       var gainedColors = bgaTokenListFromCounts(gained);
@@ -5428,13 +9039,15 @@ Object.assign(I18N.de, {
     if (!initialBgaGamedatas) return null;
     var bgaPlayers = buildBgaPlayerList(data, initialBgaGamedatas);
     if (bgaPlayers.length < 2) return null;
+    var orientActive = bgaInitialGamedatasOrientActive(initialBgaGamedatas);
+    var strongholdsActive = bgaInitialGamedatasStrongholdsActive(initialBgaGamedatas);
     var game = createGame(bgaPlayers.length, bgaPlayers.map(function (player, index) {
       return player.name || "BGA Player " + (index + 1);
     }), bgaPlayers.map(function () {
       return { enabled: false, mode: null, level: "balanced" };
-    }));
+    }), { modules: { orient: orientActive, strongholds: strongholdsActive } });
     game.table_seed = 0;
-    game.log = ["Imported base-game BGA replay capture " + (payload.table_id || "") + "."];
+    game.log = ["Imported BGA replay capture " + (payload.table_id || "") + "."];
     game.moves = [];
     game.next_move_id = 1;
 
@@ -5447,11 +9060,13 @@ Object.assign(I18N.de, {
     });
     applyBgaInitialGamedatas(game, initialBgaGamedatas);
     game.initial_gamedatas = toGamedatas(game, { includeSourceState: true });
+    var turnTracker = createBgaReplayTurnTracker(game);
 
     groupBgaPacketsByMove(data.logs).forEach(function (group) {
       var converted = applyBgaMoveGroup(game, group, playerLookup, initialBgaGamedatas);
       if (!converted) return;
       var actor = converted.player;
+      syncBgaReplayTurnProgress(game, actor, turnTracker);
       var move = {
         move_id: game.next_move_id,
         type: converted.type,
@@ -5473,9 +9088,18 @@ Object.assign(I18N.de, {
     return {
       schema: SCHEMA,
       next_move_id: game.next_move_id,
+      ruleset: normalizeRuleset(game.ruleset),
       gamedatas: game.initial_gamedatas,
       moves: compactMovesForExport(game.moves),
       bga_table_id: payload.table_id || "",
+      compatibility: {
+        base_game_only: !orientActive && !strongholdsActive,
+        orient_supported: orientActive,
+        strongholds_supported: strongholdsActive,
+        active_expansion_flags: bgaActiveExpansionFlags(payload).filter(function (entry) {
+          return !/orient|strongholds?/i.test(String(entry && entry.label || ""));
+        })
+      },
       source: payload.source || "boardgamearena"
     };
   }
@@ -5628,7 +9252,15 @@ Object.assign(I18N.de, {
       render();
       return;
     }
-    var compactPayload = compactReplayPayload(payload);
+    var unsupportedModules = replayPayloadUnsupportedRulesetModules(payload);
+    if (unsupportedModules.length) {
+      var unsupportedMessage = t("msgRulesetUnsupported", { modules: unsupportedModules.join(", ") });
+      if (fromStart) showStartMessage(unsupportedMessage);
+      else showMessage(unsupportedMessage);
+      render();
+      return;
+    }
+    var compactPayload = normalizeBgaReplayTurnProgress(compactReplayPayload(payload), payload);
     if (!compactPayload || !compactPayload.gamedatas || !Array.isArray(compactPayload.moves)) {
       if (fromStart) showStartMessage(t("msgLoadReplayExpected"));
       else showMessage(t("msgLoadReplayExpected"));
@@ -5648,16 +9280,40 @@ Object.assign(I18N.de, {
     replayData = compactPayload;
     replayIndex = -1;
     clearTurnAdvanceTimer();
+    clearHandDockTransitionTimers();
     clearReplayStepTimer();
     setReplayAutoplay(false, true);
     state = initial;
     state.mode = "replay";
+    activeMarketPage = BASE_MARKET_ID;
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     showStartMessage("");
     showMessage(t("msgReplayLoaded"), "ok");
     render();
     scrollToGameTable();
+  }
+
+  function replayUrlFromQuery() {
+    if (!window.URLSearchParams) return "";
+    return GemTableRules.replayUrlFromQuery(window.location.search || "", window.location.origin);
+  }
+
+  function loadReplayFromQuery() {
+    var replayUrl = replayUrlFromQuery();
+    if (!replayUrl) return;
+    setStartMode("replay");
+    showStartMessage(t("msgBgaServerQueued", { table: "cache" }), "ok");
+    fetch(replayUrl, { cache: "no-store" }).then(function (response) {
+      if (!response.ok) throw new Error(String(response.status));
+      return response.json();
+    }).then(function (payload) {
+      loadReplayPayload(payload, "", true);
+    }).catch(function (error) {
+      showStartMessage(t("msgBgaServerFailed", { message: error && error.message || "unknown error" }));
+      render();
+    });
   }
 
   function stepReplay(delta) {
@@ -5704,6 +9360,7 @@ Object.assign(I18N.de, {
       state = stateFromGamedatas(replayData.moves[replayIndex].state_after);
     }
     state.mode = "replay";
+    if (activeMarketPage === ORIENT_MARKET_ID && !orientEnabledForRuleset(state.ruleset)) activeMarketPage = BASE_MARKET_ID;
     var moveText = replayIndex === -1 ? t("msgInitialReplayPosition") : t("msgReplayAtMove", { move: replayData.moves[replayIndex].move_id, type: replayData.moves[replayIndex].type });
     showMessage(moveText, "ok");
     render();
@@ -5756,6 +9413,7 @@ Object.assign(I18N.de, {
     clearReplayStepTimer();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     showMessage(state ? t("msgReturnedLiveTable") : "");
     resetDinoBoardAiForCurrentState(false);
     render();
@@ -5782,6 +9440,7 @@ Object.assign(I18N.de, {
     clearReplayStepTimer();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
     if (el.bgaFileStatus) el.bgaFileStatus.textContent = t("fileIoHint");
     showMessage(t("msgContinueFromReplay"), "ok");
     resetDinoBoardAiForCurrentState(true);
@@ -5820,14 +9479,24 @@ Object.assign(I18N.de, {
       var level = normalizeAiLevel(aiLevels[index] && aiLevels[index].value);
       return { enabled: input.checked, mode: level, level: level, selected_order: Number(input.dataset.aiSelectedOrder) || null };
     });
+    var rulesetOptions = {
+      modules: {
+        orient: !!(el.rulesetOrient && el.rulesetOrient.checked),
+        strongholds: !!(el.rulesetStrongholds && el.rulesetStrongholds.checked)
+      }
+    };
     closeDinoBoardSession();
-    state = createGame(count, names, aiSettings);
+    state = createGame(count, names, aiSettings, rulesetOptions);
+    activeMarketPage = BASE_MARKET_ID;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
     clearTurnAdvanceTimer();
+    clearHandDockTransitionTimers();
     pendingTake = [];
     pendingPayment = null;
+    pendingOrientAction = null;
+    pendingOrientAction = null;
     showStartMessage("");
     showMessage(t("msgGameStarted"), "ok");
     if (el.bankPanel) el.bankPanel.open = true;
@@ -5843,14 +9512,19 @@ Object.assign(I18N.de, {
       aiTurnTimer = null;
     }
     clearTurnAdvanceTimer();
+    clearHandDockTransitionTimers();
     closeDinoBoardSession();
     state = null;
     liveStateBeforeReplay = null;
     replayData = null;
     replayIndex = -1;
     clearTurnAdvanceTimer();
+    clearHandDockTransitionTimers();
     pendingTake = [];
     pendingPayment = null;
+    activeMarketPage = BASE_MARKET_ID;
+    if (el.rulesetOrient) el.rulesetOrient.checked = false;
+    if (el.rulesetStrongholds) el.rulesetStrongholds.checked = false;
     messageText = "";
     messageKind = "";
     clearSavedState();
@@ -5865,8 +9539,10 @@ Object.assign(I18N.de, {
     var actions = [];
     [1, 2, 3].forEach(function (tier) {
       state.market[tier].forEach(function (card, index) {
+        var slotId = marketSlotId(state, BASE_MARKET_ID, tier, index);
+        if (!strongholdAccessStatus(slotId, state.current).ok) return;
         var payment = autoPaymentPlan(player, card);
-        if (paymentIsLegal(player, card, payment)) {
+        if (orientAbilityBuyStatus(card).ok && paymentIsLegal(player, card, payment)) {
           actions.push({
             type: "buy",
             context: { type: "buyMarket", player: player, card: card, tier: tier, index: index },
@@ -5874,10 +9550,26 @@ Object.assign(I18N.de, {
           });
         }
       });
+      if (orientEnabledForRuleset(state.ruleset)) {
+        (state.orient_market[tier] || []).forEach(function (card, index) {
+          if (!card || orientCardNeedsManualChoice(card)) return;
+          var slotId = marketSlotId(state, ORIENT_MARKET_ID, tier, index);
+          if (!strongholdAccessStatus(slotId, state.current).ok) return;
+          var payment = autoPaymentPlan(player, card);
+          if (orientAbilityBuyStatus(card, player).ok && paymentIsLegal(player, card, payment)) {
+            actions.push({
+              type: "buy",
+              context: { type: "buyMarket", player: player, card: card, tier: tier, index: index, market_id: ORIENT_MARKET_ID },
+              payment: payment
+            });
+          }
+        });
+      }
     });
     player.reserved.forEach(function (card, index) {
+      if (orientCardNeedsManualChoice(card)) return;
       var payment = autoPaymentPlan(player, card);
-      if (paymentIsLegal(player, card, payment)) {
+      if (orientAbilityBuyStatus(card, player).ok && paymentIsLegal(player, card, payment)) {
         actions.push({
           type: "buy",
           context: { type: "buyReserved", player: player, card: card, index: index },
@@ -5950,6 +9642,7 @@ Object.assign(I18N.de, {
       if (!marketCard) throw new Error("AI selected an empty market slot.");
       var marketContext = { type: "buyMarket", player: player, card: marketCard, tier: action.tier, index: action.index };
       var marketPayment = autoPaymentPlan(player, marketCard);
+      if (!orientAbilityBuyStatus(marketCard).ok) throw new Error("AI selected an Orient card with a pending ability choice.");
       if (!paymentIsLegal(player, marketCard, marketPayment)) throw new Error("AI selected an unaffordable market card.");
       completePurchase(marketContext, marketPayment, null, { ai: true });
       return;
@@ -5959,6 +9652,7 @@ Object.assign(I18N.de, {
       if (!reservedCard) throw new Error("AI selected an empty reserved slot.");
       var reservedContext = { type: "buyReserved", player: player, card: reservedCard, index: action.index };
       var reservedPayment = autoPaymentPlan(player, reservedCard);
+      if (!orientAbilityBuyStatus(reservedCard).ok) throw new Error("AI selected an Orient card with a pending ability choice.");
       if (!paymentIsLegal(player, reservedCard, reservedPayment)) throw new Error("AI selected an unaffordable reserved card.");
       completePurchase(reservedContext, reservedPayment, null, { ai: true });
       return;
@@ -6017,10 +9711,14 @@ Object.assign(I18N.de, {
 
   function scheduleDinoBoardAiTurn() {
     if (aiTurnTimer || aiTurnInProgress) return;
-    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment || state.awaitingOrientAction) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (dinoboardAi && dinoboardAi.disabled) return;
+    if (state.awaitingStrongholdAction || state.awaitingStrongholdConquest) {
+      scheduleRandomAiTurn();
+      return;
+    }
     if (activeAiProviderName() !== "dinoboard") {
       scheduleRandomAiTurn();
       return;
@@ -6064,6 +9762,14 @@ Object.assign(I18N.de, {
         if (choices.length) chooseNoble(randomChoice(choices));
         return;
       }
+      if (state.awaitingStrongholdAction) {
+        runRandomStrongholdAction();
+        return;
+      }
+      if (state.awaitingStrongholdConquest) {
+        skipStrongholdConquest();
+        return;
+      }
       if (!canAct()) return;
       var buyActions = legalRandomAiBuyActions(player);
       var takeActions = legalRandomAiTakeActions();
@@ -6088,7 +9794,7 @@ Object.assign(I18N.de, {
 
   function scheduleRandomAiTurn() {
     if (aiTurnTimer) return;
-    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment || state.awaitingOrientAction) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (!state.aiThinking) {
@@ -6160,6 +9866,7 @@ Object.assign(I18N.de, {
       syncTopDockOffset();
       syncMobileTopStick();
       updateBoardProgress();
+      scheduleMarketOrientWrapSync();
       closeTapPreviews();
       closeBonusPreviews();
     });
@@ -6169,6 +9876,27 @@ Object.assign(I18N.de, {
         syncMobileTopStick();
         updateBoardProgress();
       });
+    }
+    if (el.marketTabs) {
+      el.marketTabs.addEventListener("click", function (event) {
+        var button = event.target.closest("[data-market-page]");
+        if (!button || button.disabled) return;
+        switchMarketPage(button.dataset.marketPage);
+      });
+    }
+    if (el.handoffContinue) {
+      el.handoffContinue.addEventListener("click", completeTurnTransition);
+    }
+    if (el.market) {
+      el.market.addEventListener("touchstart", handleMarketSwipeStart, { passive: true });
+      el.market.addEventListener("touchmove", handleMarketSwipeMove, { passive: true });
+      el.market.addEventListener("touchend", handleMarketSwipeEnd, { passive: true });
+      el.market.addEventListener("touchcancel", handleMarketSwipeCancel, { passive: true });
+      el.market.addEventListener("pointerdown", handleMarketSwipeStart);
+      el.market.addEventListener("pointermove", handleMarketSwipeMove);
+      el.market.addEventListener("pointerup", handleMarketSwipeEnd);
+      el.market.addEventListener("pointercancel", handleMarketSwipeCancel);
+      el.market.addEventListener("pointerleave", handleMarketSwipeCancel);
     }
     el.languageSelect.addEventListener("change", function () {
       currentLocale = I18N[el.languageSelect.value] ? el.languageSelect.value : "en";
@@ -6223,9 +9951,12 @@ Object.assign(I18N.de, {
         return;
       }
       closeDinoBoardSession();
+      ensureStateRuleset(saved);
       state = saved;
+      activeMarketPage = BASE_MARKET_ID;
       pendingTake = [];
       pendingPayment = null;
+      pendingOrientAction = saved.awaitingOrientAction || null;
       showMessage(t("msgSavedResumed"), "ok");
       resetDinoBoardAiForCurrentState(true);
       render();
@@ -6256,32 +9987,112 @@ Object.assign(I18N.de, {
     el.clearPayment.addEventListener("click", clearPaymentSelection);
     el.cancelPayment.addEventListener("click", cancelPayment);
     el.paymentOptions.addEventListener("click", function (event) {
+      var tokenChoice = event.target.closest("[data-payment-token-color]");
+      var virtualCard = event.target.closest("[data-payment-toggle-virtual-card]");
       var addColor = event.target.closest("[data-payment-add-color]");
       var removeColor = event.target.closest("[data-payment-remove-color]");
       var addGold = event.target.closest("[data-payment-add-gold]");
       var removeGold = event.target.closest("[data-payment-remove-gold]");
-      if (addColor) adjustPayment("colored", addColor.dataset.paymentAddColor, 1);
+      var addVirtual = event.target.closest("[data-payment-add-virtual]");
+      var removeVirtual = event.target.closest("[data-payment-remove-virtual]");
+      var discardCard = event.target.closest("[data-payment-toggle-discard-card]");
+      if (tokenChoice) cyclePaymentToken(tokenChoice.dataset.paymentTokenColor);
+      else if (virtualCard) togglePaymentVirtualCard(virtualCard.dataset.paymentToggleVirtualCard);
+      else if (addColor) adjustPayment("colored", addColor.dataset.paymentAddColor, 1);
       else if (removeColor) adjustPayment("colored", removeColor.dataset.paymentRemoveColor, -1);
       else if (addGold) adjustPayment("gold", addGold.dataset.paymentAddGold, 1);
       else if (removeGold) adjustPayment("gold", removeGold.dataset.paymentRemoveGold, -1);
+      else if (addVirtual) adjustPayment("virtual", addVirtual.dataset.paymentAddVirtual, 1);
+      else if (removeVirtual) adjustPayment("virtual", removeVirtual.dataset.paymentRemoveVirtual, -1);
+      else if (discardCard) togglePaymentDiscardCard(discardCard.dataset.paymentToggleDiscardCard);
     });
+    if (el.orientActionOptions) {
+      el.orientActionOptions.addEventListener("click", function (event) {
+        var copyCard = event.target.closest("[data-orient-copy-card]");
+        var freeCard = event.target.closest("[data-orient-free-card]");
+        if (copyCard) resolveOrientCopy(copyCard.dataset.orientCopyCard);
+        else if (freeCard) resolveOrientFreeCard(freeCard.dataset.orientFreeCard, freeCard);
+      });
+    }
+    if (el.strongholdActionOptions) {
+      el.strongholdActionOptions.addEventListener("click", function (event) {
+        var place = event.target.closest("[data-stronghold-place]");
+        var move = event.target.closest("[data-stronghold-move]");
+        var source = event.target.closest("[data-stronghold-source]");
+        var remove = event.target.closest("[data-stronghold-remove]");
+        var skip = event.target.closest("[data-stronghold-skip]");
+        var conquestBuy = event.target.closest("[data-stronghold-conquest-buy]");
+        var conquestSkip = event.target.closest("[data-stronghold-conquest-skip]");
+        if (place) resolveStrongholdPlace(place.dataset.strongholdPlace, place);
+        else if (move) resolveStrongholdMove(move.dataset.strongholdMove, move);
+        else if (source) resolveStrongholdCardClick(source.dataset.strongholdSource, source);
+        else if (remove) resolveStrongholdRemove(remove.dataset.strongholdRemove, remove);
+        else if (conquestBuy) beginStrongholdConquestPayment(conquestBuy.dataset.strongholdConquestBuy, conquestBuy);
+        else if (conquestSkip) skipStrongholdConquest();
+      });
+    }
     el.bankTokens.addEventListener("click", function (event) {
       var button = event.target.closest("[data-bank-color]");
       if (button) selectTake(button.dataset.bankColor);
     });
     el.market.addEventListener("click", function (event) {
+      if (state && state.awaitingStrongholdConquest) {
+        var conquestTarget = event.target.closest("[data-stronghold-target]");
+        if (conquestTarget || event.target.closest(".dev-card") || event.target.closest("[data-buy-market], [data-reserve-market], [data-reserve-deck]")) {
+          event.preventDefault();
+          if (el.activeHandPanel) el.activeHandPanel.open = true;
+          showMessage(t("strongholdConquestBody"), "ok");
+          render();
+          return;
+        }
+      }
+      if (state && state.awaitingStrongholdAction) {
+        var strongholdTarget = event.target.closest("[data-stronghold-target]");
+        if (strongholdTarget) {
+          event.preventDefault();
+          resolveStrongholdCardClick(strongholdTarget.dataset.strongholdTarget, strongholdTarget);
+          return;
+        }
+      }
+      if (state && state.awaitingOrientAction) {
+        var orientFreeTarget = event.target.closest("[data-orient-free-card]");
+        if (orientFreeTarget) {
+          event.preventDefault();
+          resolveOrientFreeCard(orientFreeTarget.dataset.orientFreeCard, orientFreeTarget);
+          return;
+        }
+        var orientBlockedTarget = event.target.closest(".orient-choice-disabled");
+        if (orientBlockedTarget) {
+          event.preventDefault();
+          showMessage(orientBlockedTarget.dataset.orientChoiceReason || t("strongholdBlocked"));
+          render();
+          return;
+        }
+        if (event.target.closest(".dev-card")) {
+          var task = orientCurrentTask();
+          if (task && task.type === "free_card") showMessage(t("msgOrientChooseFree", { tier: task.tier }), "ok");
+          event.preventDefault();
+          return;
+        }
+      }
       var reserveMarketButton = event.target.closest("[data-reserve-market]");
       var reserveDeckButton = event.target.closest("[data-reserve-deck]");
       var buyMarketButton = event.target.closest("[data-buy-market]");
       if (reserveMarketButton) {
         reserveMarket(reserveMarketButton.dataset.reserveMarket, reserveMarketButton);
       } else if (reserveDeckButton) {
-        reserveDeck(Number(reserveDeckButton.dataset.reserveDeck), reserveDeckButton);
+        reserveDeck(reserveDeckButton.dataset.reserveDeck, reserveDeckButton);
       } else if (buyMarketButton) {
         buyMarket(buyMarketButton.dataset.buyMarket, buyMarketButton);
       }
     });
     el.players.addEventListener("click", function (event) {
+      var orientCopyTarget = event.target.closest("[data-orient-copy-card]");
+      if (orientCopyTarget && state && state.awaitingOrientAction) {
+        event.preventDefault();
+        resolveOrientCopy(orientCopyTarget.dataset.orientCopyCard);
+        return;
+      }
       var bonusPreview = event.target.closest("[data-bonus-preview-toggle]");
       if (bonusPreview) {
         var bonusOpen = bonusPreview.classList.contains("preview-open");
@@ -6291,11 +10102,22 @@ Object.assign(I18N.de, {
         event.stopPropagation();
         return;
       }
+      var noblePreview = event.target.closest("[data-noble-preview-toggle]");
+      if (noblePreview) {
+        var nobleOpen = noblePreview.classList.contains("preview-open");
+        closeTapPreviews(noblePreview, true);
+        closeBonusPreviews();
+        noblePreview.classList.toggle("preview-open", !nobleOpen);
+        if (!nobleOpen) holdTapPreviewOpen();
+        event.stopPropagation();
+        return;
+      }
       var reservePreview = event.target.closest("[data-reserve-preview-toggle]");
       if (reservePreview && reservePreviewTapMode()) {
         var alreadyOpen = reservePreview.classList.contains("preview-open");
         closeTapPreviews(reservePreview);
         reservePreview.classList.toggle("preview-open", !alreadyOpen);
+        if (!alreadyOpen) holdTapPreviewOpen();
         event.stopPropagation();
         return;
       }
@@ -6303,7 +10125,7 @@ Object.assign(I18N.de, {
       if (button) buyReserved(button.dataset.buyReserved, button);
     });
     document.addEventListener("click", function () {
-      if (reservePreviewTapMode()) closeTapPreviews();
+      closeTapPreviews(null, true);
       closeBonusPreviews();
     });
     [el.logSafeMode, el.logFullMode].forEach(function (button) {
@@ -6319,6 +10141,7 @@ Object.assign(I18N.de, {
         var alreadyOpen = preview.classList.contains("preview-open");
         closeTapPreviews(preview);
         preview.classList.toggle("preview-open", !alreadyOpen);
+        if (!alreadyOpen) holdTapPreviewOpen();
         event.stopPropagation();
       }
     });
@@ -6340,6 +10163,12 @@ Object.assign(I18N.de, {
       if (button) buyReserved(button.dataset.buyReserved, button);
     });
     el.activeBonusRow.addEventListener("click", function (event) {
+      var orientCopyTarget = event.target.closest("[data-orient-copy-card]");
+      if (orientCopyTarget && state && state.awaitingOrientAction) {
+        event.preventDefault();
+        resolveOrientCopy(orientCopyTarget.dataset.orientCopyCard);
+        return;
+      }
       var bonusPreview = event.target.closest("[data-bonus-preview-toggle]");
       if (!bonusPreview) return;
       var bonusOpen = bonusPreview.classList.contains("preview-open");
@@ -6436,6 +10265,8 @@ Object.assign(I18N.de, {
       "start-message",
       "player-count",
       "player-name-fields",
+      "ruleset-orient",
+      "ruleset-strongholds",
       "resume-game",
       "clear-save",
       "game-panel",
@@ -6450,6 +10281,7 @@ Object.assign(I18N.de, {
       "handoff-body",
       "handoff-action",
       "handoff-countdown",
+      "handoff-continue",
       "message",
       "discard-panel",
       "discard-tokens",
@@ -6466,18 +10298,30 @@ Object.assign(I18N.de, {
       "confirm-payment",
       "clear-payment",
       "cancel-payment",
+      "orient-action-panel",
+      "orient-action-title",
+      "orient-action-summary",
+      "orient-action-options",
+      "stronghold-action-panel",
+      "stronghold-action-title",
+      "stronghold-action-summary",
+      "stronghold-action-options",
       "take-summary",
       "bank-tokens",
       "bank-panel",
       "confirm-take",
       "clear-take",
       "nobles",
+      "market-tabs",
+      "market-tab-base",
+      "market-tab-orient",
       "market",
       "players",
       "active-hand-panel",
       "active-hand-meta",
       "active-token-row",
       "active-bonus-row",
+      "active-virtual-gold",
       "active-reserved",
       "log-safe-mode",
       "log-full-mode",
@@ -6513,8 +10357,9 @@ Object.assign(I18N.de, {
     window.__gemTableDebug = {
       createGame: createGame,
       getState: function () { return state; },
-      startGame: function (count, names, aiSettings) {
-        state = createGame(count, names || [], aiSettings || []);
+      startGame: function (count, names, aiSettings, options) {
+        state = createGame(count, names || [], aiSettings || [], options || {});
+        activeMarketPage = BASE_MARKET_ID;
         pendingTake = [];
         pendingPayment = null;
         render();
@@ -6522,7 +10367,9 @@ Object.assign(I18N.de, {
       },
       setState: function (nextState) {
         if (validateState(nextState)) {
+          ensureStateRuleset(nextState);
           state = nextState;
+          activeMarketPage = BASE_MARKET_ID;
           pendingPayment = null;
           render();
         }
@@ -6554,6 +10401,7 @@ Object.assign(I18N.de, {
     renderNameFields();
     wireEvents();
     render();
+    loadReplayFromQuery();
 
     installDebugHooks();
   }

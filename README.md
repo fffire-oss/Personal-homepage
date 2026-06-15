@@ -4,23 +4,16 @@ Static personal homepage for ZephyrLabs projects.
 
 ## What It Contains
 
-- `index.html`: minimal ZephyrLabs landing page with project links and a short todo list.
-- `splendor-table.html`: Gem Table, an unofficial base-game Splendor-style local table.
-- `splendor-table.js`: local game logic, replay import/export, BGA-style action logs, hot-seat play, and random AI fallback.
-- `splendor-table.css`: Gem Table layout and interaction styling.
-
-## Current Project Focus
-
-- Gem Table local multiplayer and replay workflows.
-- Base-game BGA replay capture adaptation.
-- Future AI-assisted Gem Table play.
-- Future expansion support once rule data and BGA capture data are mapped cleanly.
-- Automation tooling experiments, including trading workflow research.
-
-## Related Work
-
-- [BoardReplayLab](https://github.com/Haro-stack/BoardReplayLab): public crawler/converter project for downloading BGA replay JSON data and converting supported captures for Gem Table.
-- [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard): upstream board-game AI framework reference used by the Gem Table Smart AI deployment.
+- `index.html`: landing page for Geminus, Algo Trade, Journal, and related local tools.
+- `journal.html`: public Obsidian-style Journal graph built from sanitized vault summaries.
+- `journal-admin.html`: node-management console for editing or adding Journal graph nodes through local drafts or the optional backend.
+- `journal-data.json`: public-safe knowledge graph data distilled from the vault.
+- `journal-backend/`: no-dependency same-origin API for adding public graph nodes without exposing credentials in browser code.
+- `gemtable/`: Gem Table, an unofficial Splendor-style local table with its own HTML, CSS, app script, and rules module.
+- `styles.css`: homepage styles, including the former targeted fixes.
+- `shared/effects.js`: reusable liquid background, sticky-card behavior, card focus dimming, footer reveal, and canvas helpers.
+- `homepage-effects.js`: homepage-only visuals for the logo, AI chip, market globe, and Journal graph.
+- `docs/vault-audit.md`: summary of the Obsidian vault privacy and content curation pass.
 
 ## Local Preview
 
@@ -34,17 +27,72 @@ python -m http.server 8000
 
 Then visit `http://localhost:8000`.
 
-## Deployment Notes
+## Local-Only Site Config
 
-The homepage is designed as static HTML/CSS/JS. The production domain may also run a separate private BGA replay API behind `/api/bga/replay`; that runtime is intentionally not part of this public homepage repository and should be deployed separately.
+The public repository ships only generic defaults in `site-config.json`. Production-only public display data, such as optional external links and registration footer text, should live in `site-config.local.json` in the deployed site root.
 
-Gem Table Smart AI uses [DinoBoard](https://github.com/Zhiqi-Wang/DinoBoard) behind the same-origin `/api/dinoboard` reverse proxy. The server-side AI runtime is separate from this static homepage:
+`site-config.local.json` is ignored by git, but it is still fetched by the browser when present. Only put information in it that is acceptable for website visitors to read directly. Optional homepage links render only when both `title` and a non-placeholder HTTP(S) `url` are set.
 
-- Homepage static files are served from `<site-root>`; production should continue syncing this repository's `main` branch after the PR is merged.
-- DinoBoard is deployed separately at `<dinoboard-root>`.
-- The DinoBoard FastAPI process runs privately on `127.0.0.1:8001` through `dinoboard-ai.service`.
-- Caddy exposes only the same-origin route `/api/dinoboard/*` and proxies it to `127.0.0.1:8001`.
-- Before ICP approval, test through `https://<your-domain>`; after the domain is available, keep the same reverse-proxy handler under the domain site.
-- AI abuse protection is implemented in DinoBoard FastAPI rate limits plus a `fail2ban` jail that watches `RATE_LIMIT` journal lines.
+If the server auto-syncs this repository into the site root and may remove untracked files, keep the real local config outside the repo, then map `/site-config.local.json` to that server-owned file in the web server. The frontend always reads `/site-config.local.json` first and falls back to `site-config.json`.
 
-See [DinoBoard AI deployment](docs/dinoboard-ai-deployment.md) for the exact systemd unit, Caddy block, runtime dependency install, rate limits, fail2ban rules, and AI strength tiers.
+Use `site-config.local.example.json` as the shape:
+
+```json
+{
+  "homepage": {
+    "links": {
+      "geminusReplay": {
+        "title": "",
+        "description": "",
+        "url": ""
+      },
+      "geminusHud": {
+        "title": "",
+        "description": "",
+        "url": ""
+      },
+      "marketTrainer": {
+        "title": "",
+        "description": "",
+        "url": ""
+      }
+    },
+    "footer": {
+      "registrationText": "Registration number",
+      "registrationUrl": "https://beian.miit.gov.cn/"
+    }
+  }
+}
+```
+
+Backend services, if used, should be deployed separately behind same-origin APIs. Do not commit production network addresses, cookies, SSH paths, account names, service templates, API tokens, private note stores, or other private deployment details.
+
+## Journal Backend Preview
+
+The Journal graph works as a static page from `journal-data.json`. To test node editing locally:
+
+```sh
+set JOURNAL_ADMIN_TOKEN=replace-with-a-long-random-value
+node journal-backend/server.js
+```
+
+Then visit `http://localhost:8787/journal.html` or `http://localhost:8787/journal-admin.html`.
+
+The admin page can load an existing node with `journal-admin.html?node=geminus`. Without a backend token it stores browser-local override drafts; with `JOURNAL_ADMIN_TOKEN` it upserts the node through `/api/journal/nodes`.
+
+The backend also exposes read-only `/api/journal/graph` for the Journal page, `/api/journal/graph/stream` for the homepage's node-by-node vault reveal, and writable `/api/journal/nodes` for adding or updating one public node at a time. The homepage waits for page art assets to finish decoding before it streams the full public vault into the orbit graph.
+
+## Private Vault Writer and Sync
+
+`journal-admin.html` also includes a private Vault Writer when served through `journal-backend/server.js`. It can write Markdown notes, upload vault resources, and trigger Git sync from the backend. The browser never receives GitHub credentials; configure the backend host with Git/Git Credential Manager, SSH keys, or a server-only token.
+
+Optional environment variables:
+
+```sh
+set JOURNAL_VAULT_PATH=<outside-repo>\zephyrlabs-vault
+set JOURNAL_VAULT_GIT_REMOTE=git@github.com:<owner>/<private-vault-repo>.git
+set JOURNAL_VAULT_GIT_BRANCH=main
+set JOURNAL_VAULT_GIT_AUTO_SYNC=1
+```
+
+`JOURNAL_VAULT_GIT_AUTO_SYNC=0` keeps the writer local until the admin uses Sync Now. Keep the vault path and GitHub credentials outside this public repository.

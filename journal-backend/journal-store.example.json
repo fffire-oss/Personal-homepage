@@ -1,0 +1,20 @@
+{
+  "nodes": [
+    {
+      "id": "example-public-note",
+      "title": "Example Public Note",
+      "category": "public",
+      "kind": "note",
+      "status": "public",
+      "summary": "A short public-safe summary that can be merged into the Journal graph.",
+      "source": "journal-backend"
+    }
+  ],
+  "links": [
+    {
+      "source": "example-public-note",
+      "target": "zephyrlabs-journal",
+      "kind": "related"
+    }
+  ]
+}

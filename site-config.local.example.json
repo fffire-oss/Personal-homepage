@@ -1,0 +1,25 @@
+{
+  "homepage": {
+    "links": {
+      "geminusReplay": {
+        "title": "",
+        "description": "",
+        "url": ""
+      },
+      "geminusHud": {
+        "title": "",
+        "description": "",
+        "url": ""
+      },
+      "marketTrainer": {
+        "title": "",
+        "description": "",
+        "url": ""
+      }
+    },
+    "footer": {
+      "registrationText": "Registration number",
+      "registrationUrl": "https://beian.miit.gov.cn/"
+    }
+  }
+}

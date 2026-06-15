@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ZephyrLabs Journal admin console for adding public knowledge graph nodes."
+    />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Journal Admin | ZephyrLabs</title>
+    <link rel="stylesheet" href="styles.css?v=journal-observatory-v1" />
+    <link rel="stylesheet" href="journal.css?v=journal-observatory-v1" />
+  </head>
+  <body class="journal-page admin-page">
+    <nav class="site-nav journal-nav" aria-label="Journal admin navigation">
+      <a class="topbar-brand journal-home-link" href="./index.html" aria-label="Back to ZephyrLabs home">
+        <span class="dock-mark"><img src="assets/zl-mark-small.png" alt="" loading="eager" decoding="async" /></span>
+        <span>ZephyrLabs</span>
+      </a>
+      <div class="nav-panel" aria-label="Journal sections">
+        <a href="journal.html"><strong>Journal</strong><span>Knowledge graph</span></a>
+        <a href="journal-admin.html" aria-current="page"><strong>Admin</strong><span>Node console</span></a>
+      </div>
+    </nav>
+
+    <main class="journal-console admin-console" aria-labelledby="admin-title">
+      <header class="journal-heading">
+        <div>
+          <span class="journal-kicker">Journal Backend</span>
+          <h1 id="admin-title">Node Console</h1>
+        </div>
+        <p>
+          Edit existing public nodes or add new ones. The backend can persist changes when
+          deployed; otherwise this console stores local override drafts for export.
+        </p>
+      </header>
+
+      <section class="admin-layout" aria-label="Node editor">
+        <form class="node-form" data-admin-form>
+          <label>
+            <span>Existing node</span>
+            <select name="existing" data-existing-node>
+              <option value="">New node</option>
+            </select>
+          </label>
+          <label>
+            <span>Admin token</span>
+            <input name="token" type="password" autocomplete="off" data-admin-token />
+          </label>
+          <label>
+            <span>Node id</span>
+            <input name="id" type="text" maxlength="80" placeholder="auto-from-title" />
+          </label>
+          <label>
+            <span>Title</span>
+            <input name="title" type="text" required maxlength="80" />
+          </label>
+          <label>
+            <span>Category</span>
+            <select name="category" required>
+              <option value="core">Core</option>
+              <option value="ai">AI</option>
+              <option value="research">Research</option>
+              <option value="reflection">Reflection</option>
+              <option value="practice">Practice</option>
+              <option value="language">Language</option>
+              <option value="public">Public</option>
+            </select>
+          </label>
+          <label>
+            <span>Kind</span>
+            <input name="kind" type="text" value="note" maxlength="40" />
+          </label>
+          <label>
+            <span>Summary</span>
+            <textarea name="summary" rows="5" required maxlength="420"></textarea>
+          </label>
+          <label>
+            <span>Note body</span>
+            <textarea name="body" rows="9" maxlength="2400" placeholder="One paragraph per line. Keep it public-safe and concrete."></textarea>
+          </label>
+          <label>
+            <span>Linked node ids</span>
+            <input name="links" type="text" placeholder="journal, research" />
+          </label>
+          <div class="admin-actions">
+            <button type="submit">Save to API</button>
+            <button type="button" data-save-draft>Save Override Draft</button>
+            <button type="button" data-export-drafts>Export Drafts</button>
+            <button type="button" data-clear-form>New Node</button>
+          </div>
+          <p class="admin-message" data-admin-message aria-live="polite"></p>
+        </form>
+
+        <aside class="draft-panel" aria-labelledby="draft-title">
+          <span class="journal-kicker">Editor</span>
+          <h2 id="draft-title">Local Overrides</h2>
+          <p class="draft-note">Overrides replace matching base nodes in this browser and can be exported into the backend store.</p>
+          <div class="draft-list" data-draft-list></div>
+        </aside>
+      </section>
+
+      <section id="vault-writer" class="admin-layout vault-layout" aria-label="Private vault writer">
+        <form class="node-form vault-form" data-vault-form>
+          <div class="vault-heading">
+            <span class="journal-kicker">Private Vault</span>
+            <h2>Vault Writer</h2>
+          </div>
+          <label>
+            <span>Admin token</span>
+            <input name="token" type="password" autocomplete="off" data-admin-token />
+          </label>
+          <label>
+            <span>Vault path</span>
+            <input name="path" type="text" maxlength="220" placeholder="Public/new-note.md" required />
+          </label>
+          <label>
+            <span>Markdown</span>
+            <textarea name="content" rows="16" maxlength="300000" placeholder="Write the private vault note here." required></textarea>
+          </label>
+          <div class="admin-actions">
+            <button type="button" data-build-vault-note>Use Node Form</button>
+            <button type="submit">Save Vault File</button>
+            <button type="button" data-vault-sync>Sync Now</button>
+            <button type="button" data-vault-clear>New File</button>
+          </div>
+          <p class="admin-message" data-vault-message aria-live="polite"></p>
+        </form>
+
+        <aside class="draft-panel vault-panel" aria-labelledby="vault-panel-title">
+          <span class="journal-kicker">Sync</span>
+          <h2 id="vault-panel-title">Vault Repository</h2>
+          <dl class="vault-status" data-vault-status>
+            <div>
+              <dt>Remote</dt>
+              <dd data-vault-remote>Unknown</dd>
+            </div>
+            <div>
+              <dt>Branch</dt>
+              <dd data-vault-branch>Unknown</dd>
+            </div>
+            <div>
+              <dt>Auto Sync</dt>
+              <dd data-vault-auto-sync>Unknown</dd>
+            </div>
+            <div>
+              <dt>Last Sync</dt>
+              <dd data-vault-last-sync>Not loaded</dd>
+            </div>
+          </dl>
+
+          <form class="vault-asset-form" data-vault-asset-form>
+            <label>
+              <span>Resource path</span>
+              <input name="path" type="text" maxlength="220" placeholder="Resources/image.png" />
+            </label>
+            <label>
+              <span>Resource file</span>
+              <input name="asset" type="file" />
+            </label>
+            <div class="admin-actions">
+              <button type="submit">Upload Resource</button>
+              <button type="button" data-refresh-vault>Refresh</button>
+            </div>
+          </form>
+
+          <div class="vault-file-list" data-vault-file-list></div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="journal.js?v=journal-observatory-intro-v1"></script>
+  </body>
+</html>

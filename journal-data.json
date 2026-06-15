@@ -1,0 +1,449 @@
+{
+  "version": 1,
+  "title": "ZephyrLabs Journal Graph",
+  "source": "ZephyrLabs Knowledge Map - Website Ready",
+  "updated": "2026-06-14",
+  "curation": {
+    "visibility": "public summaries only",
+    "excluded": [
+      "Obsidian workspace state",
+      "templates",
+      "private integration notes",
+      "raw daily notes"
+    ],
+    "privacyReview": "No emails, tokens, local filesystem paths, deployment paths, IP addresses, Bilibili links, or profile URLs were published from the vault."
+  },
+  "categories": [
+    { "id": "core", "label": "Core", "color": "#f5f8fb" },
+    { "id": "ai", "label": "AI", "color": "#ff7f6f" },
+    { "id": "research", "label": "Research", "color": "#ffc65a" },
+    { "id": "reflection", "label": "Reflection", "color": "#9db9ff" },
+    { "id": "practice", "label": "Practice", "color": "#7fe8ff" },
+    { "id": "language", "label": "Language", "color": "#6ee7b7" },
+    { "id": "public", "label": "Public", "color": "#d8b4fe" }
+  ],
+  "nodes": [
+    {
+      "id": "zephyrlabs-journal",
+      "title": "ZephyrLabs Journal",
+      "category": "core",
+      "kind": "map",
+      "status": "public",
+      "summary": "A curated public atlas connecting reinforcement learning, quantitative research, reflective practice, language work, and field notes.",
+      "body": [
+        "This public layer is a controlled export from the vault, not a dump of the whole Obsidian workspace. It keeps the visible map focused on projects, methods, and learning threads that can be useful to readers without exposing raw daily notes.",
+        "The current atlas has four concrete anchors: Geminus for self-play reinforcement learning, Research for validation and market-system thinking, Journal for weekly synthesis and public writing, and Practice for language and snowboard learning loops."
+      ],
+      "source": "99 Public/Public Home.md",
+      "route": "journal.html"
+    },
+    {
+      "id": "geminus",
+      "title": "Geminus",
+      "category": "ai",
+      "kind": "project",
+      "status": "draft",
+      "summary": "A self-play reinforcement-learning project focused on policy learning, value estimation, replay data, and honest evaluation loops.",
+      "body": [
+        "Geminus is the AI project node. Public notes should explain the training loop, replay data flow, policy and value model roles, and how evaluation prevents a model from looking stronger than it is.",
+        "The publishable material is system-level: diagrams, training-loop decisions, evaluation philosophy, selected experiment notes, and failure notes that changed the design. Raw logs, private datasets, and unstable implementation details stay private."
+      ],
+      "source": "99 Public/Projects/Geminus Project Page.md"
+    },
+    {
+      "id": "ai",
+      "title": "AI",
+      "category": "ai",
+      "kind": "constellation",
+      "status": "distilled",
+      "summary": "Agent-building notes that connect reinforcement learning concepts to practical game-playing systems and evaluation habits.",
+      "body": [
+        "The AI constellation groups the concepts needed to build game-playing agents: reinforcement learning, self-play, search, policy networks, value networks, and evaluation loops.",
+        "Its bridge to Research is methodological. The same discipline that protects market backtests from leakage also protects agent training from overfitting to weak opponents or misleading scoreboards."
+      ],
+      "source": "AI/AI.md"
+    },
+    {
+      "id": "reinforcement-learning",
+      "title": "Reinforcement Learning",
+      "category": "ai",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "A working frame for agents that learn from environment feedback through policies, value estimates, exploration, and repeated evaluation.",
+      "body": [
+        "This node is the general RL vocabulary behind Geminus: state, action, reward, policy, value, exploration, and feedback. It should stay practical and tie each concept back to what can be measured in an actual training run.",
+        "For public writing, the useful angle is not textbook breadth. The useful angle is how an agent changes after self-play, which metrics reveal real improvement, and which metrics can be gamed."
+      ],
+      "source": "AI/Reinforcement Learning.md"
+    },
+    {
+      "id": "self-play-mcts",
+      "title": "Self-Play and MCTS",
+      "category": "ai",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "The training loop where an agent generates its own opponents, searches candidate moves, and turns the resulting games into learning data.",
+      "body": [
+        "Self-play is the data engine: the agent produces games against versions of itself, then turns decisions and outcomes into training examples. MCTS adds search so the agent can test candidate futures instead of only following its current policy.",
+        "The open questions worth documenting are opponent diversity, replay sampling, search budget, temperature schedules, and how to detect when self-play is reinforcing a blind spot."
+      ],
+      "source": "AI/Self-Play & MCTS.md"
+    },
+    {
+      "id": "policy-value-networks",
+      "title": "Policy and Value Networks",
+      "category": "ai",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "A split between choosing actions and evaluating positions, used to keep search, training, and diagnostics interpretable.",
+      "body": [
+        "The policy head answers which actions deserve attention. The value head estimates whether a position is promising. Keeping these roles distinct makes search easier to debug and model outputs easier to inspect.",
+        "Concrete public notes should show how policy confidence, value calibration, and final game outcomes disagree, because those disagreements are where training bugs and strategic blind spots become visible."
+      ],
+      "source": "AI/Policy & Value Networks.md"
+    },
+    {
+      "id": "research",
+      "title": "Research",
+      "category": "research",
+      "kind": "constellation",
+      "status": "distilled",
+      "summary": "A public research thread for validation, algorithms, market-system thinking, and lessons that can be shared without exposing private strategy details.",
+      "body": [
+        "The Research constellation is about process rather than private edge. It covers hypothesis formation, validation, failure analysis, and the habit of treating every attractive result as suspect until it survives checks.",
+        "Public notes should be useful without leaking strategy: explain how to structure experiments, where backtests go wrong, how to compare alternatives, and what evidence would change the decision."
+      ],
+      "source": "Research/Research.md"
+    },
+    {
+      "id": "algorithmic-trading",
+      "title": "Algorithmic Trading",
+      "category": "research",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "Systems thinking for market research: define hypotheses, test them carefully, and separate execution discipline from attractive backtest stories.",
+      "body": [
+        "Algorithmic trading is represented here as a research system: define a hypothesis, specify the data window, test the mechanism, estimate costs, and decide what would falsify the idea.",
+        "The publishable angle avoids live strategy details. It focuses on method, research hygiene, validation traps, and why execution discipline matters even when the signal story sounds coherent."
+      ],
+      "source": "Research/Algorithmic Trading.md"
+    },
+    {
+      "id": "factor-research",
+      "title": "Factor Research",
+      "category": "research",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "Signals are treated as hypotheses that need stability checks, out-of-sample review, and clear failure criteria before they are trusted.",
+      "body": [
+        "A factor is not a magic label; it is a claim about why some assets or situations should behave differently from others. This node tracks how to test that claim without letting the test design choose the answer.",
+        "Concrete notes should record the intended mechanism, the validation window, robustness checks, decay assumptions, and what would make the factor untrustworthy."
+      ],
+      "source": "Research/Factor Research.md"
+    },
+    {
+      "id": "backtesting-validation",
+      "title": "Backtesting and Validation",
+      "category": "research",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "A shared evaluation harness for research and agents: protect against leakage, overfitting, fragile metrics, and untested assumptions.",
+      "body": [
+        "Backtesting and validation is the bridge between trading research and RL evaluation. In both cases, a score is only useful if the test setup prevents leakage, overfitting, and cherry-picked comparisons.",
+        "The concrete checklist is: separate train and evaluation periods, keep baselines visible, measure costs or constraints, inspect failure cases, and write down the conditions under which the result should no longer be trusted."
+      ],
+      "source": "Research/Backtesting & Validation.md"
+    },
+    {
+      "id": "paper-notes",
+      "title": "Paper Notes",
+      "category": "research",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "Research reading is reduced to durable takeaways, reusable methods, and open questions instead of broad literature dumping.",
+      "body": [
+        "Paper notes should not become a citation warehouse. Each note should keep one method, one result worth remembering, one limitation, and one follow-up question.",
+        "The useful output is reusable: a metric to try, a failure mode to avoid, a comparison method, or a way to explain a concept more clearly in Geminus or Research."
+      ],
+      "source": "Research/Paper Notes.md"
+    },
+    {
+      "id": "journal",
+      "title": "Journal",
+      "category": "reflection",
+      "kind": "constellation",
+      "status": "distilled",
+      "summary": "A reflective hub for weekly reviews, project notes, and decisions that become public only after they are distilled.",
+      "body": [
+        "Journal is the working memory of the vault. Raw entries can be messy, but public Journal nodes should extract decisions, progress patterns, blockers, and lessons that someone else can understand.",
+        "The key rule is distillation before publication: a daily note becomes public only when it has a clear point, a specific context, and a useful connection to a project or learning thread."
+      ],
+      "source": "Journal/Journal.md"
+    },
+    {
+      "id": "journal-feed",
+      "title": "Journal Feed",
+      "category": "public",
+      "kind": "index",
+      "status": "draft",
+      "summary": "A public feed for lab pulse updates, field notes, and short reflections, limited to distilled entries rather than raw diary material.",
+      "body": [
+        "The feed is the public stream. It should contain lab pulse updates, field notes, and short reflections, but only after they have been compressed into a title, one-line summary, three bullets, and related constellation.",
+        "Good feed entries answer what changed, why it matters, and what comes next. They should not expose raw schedules, private locations, personal accounts, or operational credentials."
+      ],
+      "source": "99 Public/Journal/Journal Feed.md"
+    },
+    {
+      "id": "weekly-review",
+      "title": "Weekly Review",
+      "category": "reflection",
+      "kind": "practice",
+      "status": "distilled",
+      "summary": "A review cadence for turning scattered work into decisions: what moved, what stalled, and what should change next week.",
+      "body": [
+        "Weekly review turns scattered work into operational clarity. It should record progress, blockers, energy patterns, abandoned assumptions, and the next concrete adjustment.",
+        "The public version should be selective: one project movement, one learning insight, one decision, and one thing that will not be carried into the next week."
+      ],
+      "source": "Journal/Weekly Review.md"
+    },
+    {
+      "id": "intentions-2026",
+      "title": "2026 Intentions",
+      "category": "reflection",
+      "kind": "practice",
+      "status": "distilled",
+      "summary": "A compact focus map for the year, centered on stronger systems, clearer research practice, and more consistent writing output.",
+      "body": [
+        "The 2026 intentions node is a focus map, not a list of wishes. It points attention toward stronger AI systems, more reliable research practice, and a habit of publishing distilled notes.",
+        "A useful public update should connect each intention to evidence: experiments completed, notes published, skills practiced, and systems made easier to repeat."
+      ],
+      "source": "Journal/2026 Intentions.md"
+    },
+    {
+      "id": "keeping-a-journal",
+      "title": "On Keeping a Journal",
+      "category": "reflection",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "Journaling is treated as operational memory: capture first, extract patterns later, and publish only what has been made useful.",
+      "body": [
+        "This node defines the journal method. Capture should be fast and private; review should extract patterns; publication should keep only the part that became clear enough to help future work.",
+        "The concrete workflow is capture, tag lightly, review weekly, promote useful fragments, and rewrite them into public notes with enough context to stand alone."
+      ],
+      "source": "Journal/On Keeping a Journal.md"
+    },
+    {
+      "id": "philosophy",
+      "title": "Philosophy",
+      "category": "reflection",
+      "kind": "constellation",
+      "status": "distilled",
+      "summary": "A thinking layer for epistemology, meaning, and self-control, used to make research and practice less reactive.",
+      "body": [
+        "Philosophy is not decorative in this vault. It supports better judgment: what counts as evidence, which outcomes are controllable, and how to continue work when results are uncertain.",
+        "The public notes should connect directly to practice. Epistemology informs validation, stoicism informs process discipline, and absurdism keeps long projects from needing a tidy narrative too early."
+      ],
+      "source": "Philosophy/Philosophy.md"
+    },
+    {
+      "id": "epistemology",
+      "title": "Epistemology",
+      "category": "reflection",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "A note about how claims become justified, linked directly to experiment design, validation, and honest model evaluation.",
+      "body": [
+        "Epistemology asks what would make a claim believable. In this vault, that question is applied to model scores, backtest results, learning progress, and personal assumptions.",
+        "A concrete note should name the claim, the evidence, the alternative explanations, and the test that would weaken or overturn the belief."
+      ],
+      "source": "Philosophy/Epistemology - How We Know.md"
+    },
+    {
+      "id": "stoicism",
+      "title": "Stoicism",
+      "category": "reflection",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "A practical filter for separating controllable process from uncontrollable outcomes in research, trading, training, and sport.",
+      "body": [
+        "Stoicism is used as a process filter: separate controllable actions from uncontrollable outcomes, then judge the work by preparation, execution, and review quality.",
+        "It links to trading, RL, and snowboard practice because all three can punish good process with bad short-term outcomes. The note should help keep evaluation calm and specific."
+      ],
+      "source": "Philosophy/Stoicism - Control & Acceptance.md"
+    },
+    {
+      "id": "absurdism",
+      "title": "Absurdism and Meaning",
+      "category": "reflection",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "A lens for continuing serious work without needing every project, experiment, or season to resolve into a clean narrative.",
+      "body": [
+        "Absurdism and meaning is a pressure-release node for long projects. It accepts that progress can be partial, ambiguous, and still worth continuing.",
+        "The practical use is to keep publishing honest notes: failed experiments, unresolved questions, and imperfect seasons can still become useful evidence."
+      ],
+      "source": "Philosophy/Absurdism & Meaning.md"
+    },
+    {
+      "id": "snowboard",
+      "title": "Snowboard",
+      "category": "practice",
+      "kind": "constellation",
+      "status": "distilled",
+      "summary": "Physical practice notes that track riding technique, season experience, and the discipline of learning by feedback.",
+      "body": [
+        "Snowboard is the physical practice constellation. It records technique, conditions, season logs, and what bodily feedback teaches faster than abstract planning.",
+        "Its link to Journal is important: field notes become useful when they capture what changed in balance, edge pressure, line choice, fear, fatigue, or terrain judgment."
+      ],
+      "source": "Snowboard/Snowboard.md"
+    },
+    {
+      "id": "carving-fundamentals",
+      "title": "Carving Fundamentals",
+      "category": "practice",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "Technique notes around edge control, body position, turn shape, and deliberate practice on snow.",
+      "body": [
+        "Carving fundamentals focuses on repeatable technique: edge engagement, pressure timing, upper-body discipline, turn shape, and how to diagnose chatter or skidding.",
+        "The note should stay concrete with drills, observed failure modes, and the conditions where a cue worked or stopped working."
+      ],
+      "source": "Snowboard/Carving Fundamentals.md"
+    },
+    {
+      "id": "powder-days",
+      "title": "Powder Days",
+      "category": "practice",
+      "kind": "note",
+      "status": "distilled",
+      "summary": "Field notes from deep-snow riding, kept for terrain judgment, rhythm, and what different conditions teach.",
+      "body": [
+        "Powder days are field notes about rhythm, float, terrain choice, speed control, and reading snow conditions.",
+        "Public entries should avoid private itinerary details and instead keep the learning signal: what condition changed the ride, what decision mattered, and what to try next time."
+      ],
+      "source": "Snowboard/Powder Days.md"
+    },
+    {
+      "id": "season-log-2026",
+      "title": "Season Log 2026",
+      "category": "practice",
+      "kind": "log",
+      "status": "distilled",
+      "summary": "A public-safe season record focused on learning themes and progress signals rather than raw personal itinerary detail.",
+      "body": [
+        "The season log is a public-safe summary of progression, not a location diary. It should aggregate sessions into themes: confidence, terrain, technique, recovery, and decision quality.",
+        "Useful entries compare before and after: what felt unstable earlier, what improved, and which cue or condition explains the change."
+      ],
+      "source": "Snowboard/Season Log 2026.md"
+    },
+    {
+      "id": "language",
+      "title": "Language",
+      "category": "language",
+      "kind": "constellation",
+      "status": "distilled",
+      "summary": "Language study notes for writing, Japanese practice, and repeatable learning methods.",
+      "body": [
+        "Language is the study system for English writing, Japanese learning, and methods that make review sustainable.",
+        "It connects to public writing because clearer language makes research notes more useful. The node should track practice routines, feedback loops, and examples of better phrasing."
+      ],
+      "source": "Language/Language.md"
+    },
+    {
+      "id": "english-writing",
+      "title": "English Writing",
+      "category": "language",
+      "kind": "practice",
+      "status": "distilled",
+      "summary": "Writing practice aimed at clearer technical explanations, tighter public notes, and better project communication.",
+      "body": [
+        "English writing is a craft node for making technical and reflective notes easier to read. It should record rewritten examples, style decisions, and patterns that reduce vague phrasing.",
+        "The concrete goal is better public artifacts: project pages, research summaries, release notes, and Journal entries that explain the decision instead of only naming the topic."
+      ],
+      "source": "Language/English Writing.md"
+    },
+    {
+      "id": "japanese-study",
+      "title": "Japanese Study",
+      "category": "language",
+      "kind": "practice",
+      "status": "distilled",
+      "summary": "A language-learning track that separates vocabulary, listening, reading, and durable review routines.",
+      "body": [
+        "Japanese study separates input, recall, reading, listening, and review. This keeps the routine diagnosable instead of treating all practice time as the same.",
+        "Concrete entries should capture what material was studied, which recall failed, which context helped, and how the next review should change."
+      ],
+      "source": "Language/Japanese Study.md"
+    },
+    {
+      "id": "language-learning-method",
+      "title": "Language Learning Method",
+      "category": "language",
+      "kind": "method",
+      "status": "distilled",
+      "summary": "A method note for turning repetition, feedback, and active recall into a maintainable language routine.",
+      "body": [
+        "The method node turns language study into a repeatable system: spaced review, active recall, real input, short output, and correction.",
+        "A useful public note should include the routine, the friction point, and the adjustment, because the method matters only if it survives normal weeks."
+      ],
+      "source": "Language/Language Learning Method.md"
+    },
+    {
+      "id": "about-zephyrlabs",
+      "title": "About ZephyrLabs",
+      "category": "public",
+      "kind": "about",
+      "status": "evergreen",
+      "summary": "A public description of ZephyrLabs as a personal research lab for intelligent systems, quantitative research, and knowledge infrastructure.",
+      "body": [
+        "ZephyrLabs is presented as a personal research lab with three current centers: intelligent systems, quantitative research, and knowledge infrastructure.",
+        "The About node should stay concise and factual. It explains what the lab builds, why the vault exists, and how private working notes become public artifacts."
+      ],
+      "source": "99 Public/About ZephyrLabs.md"
+    }
+  ],
+  "links": [
+    { "source": "zephyrlabs-journal", "target": "geminus", "kind": "project" },
+    { "source": "zephyrlabs-journal", "target": "ai", "kind": "constellation" },
+    { "source": "zephyrlabs-journal", "target": "research", "kind": "constellation" },
+    { "source": "zephyrlabs-journal", "target": "journal", "kind": "constellation" },
+    { "source": "zephyrlabs-journal", "target": "philosophy", "kind": "constellation" },
+    { "source": "zephyrlabs-journal", "target": "snowboard", "kind": "constellation" },
+    { "source": "zephyrlabs-journal", "target": "language", "kind": "constellation" },
+    { "source": "zephyrlabs-journal", "target": "about-zephyrlabs", "kind": "public" },
+    { "source": "ai", "target": "geminus", "kind": "applies" },
+    { "source": "ai", "target": "reinforcement-learning", "kind": "contains" },
+    { "source": "ai", "target": "self-play-mcts", "kind": "contains" },
+    { "source": "ai", "target": "policy-value-networks", "kind": "contains" },
+    { "source": "reinforcement-learning", "target": "self-play-mcts", "kind": "method" },
+    { "source": "reinforcement-learning", "target": "policy-value-networks", "kind": "model" },
+    { "source": "geminus", "target": "self-play-mcts", "kind": "uses" },
+    { "source": "geminus", "target": "backtesting-validation", "kind": "evaluated-by" },
+    { "source": "research", "target": "algorithmic-trading", "kind": "contains" },
+    { "source": "research", "target": "factor-research", "kind": "contains" },
+    { "source": "research", "target": "backtesting-validation", "kind": "contains" },
+    { "source": "research", "target": "paper-notes", "kind": "contains" },
+    { "source": "algorithmic-trading", "target": "factor-research", "kind": "method" },
+    { "source": "algorithmic-trading", "target": "backtesting-validation", "kind": "requires" },
+    { "source": "backtesting-validation", "target": "epistemology", "kind": "grounded-in" },
+    { "source": "journal", "target": "journal-feed", "kind": "publishes" },
+    { "source": "journal", "target": "weekly-review", "kind": "contains" },
+    { "source": "journal", "target": "intentions-2026", "kind": "contains" },
+    { "source": "journal", "target": "keeping-a-journal", "kind": "contains" },
+    { "source": "journal", "target": "research", "kind": "feeds" },
+    { "source": "journal", "target": "ai", "kind": "feeds" },
+    { "source": "philosophy", "target": "epistemology", "kind": "contains" },
+    { "source": "philosophy", "target": "stoicism", "kind": "contains" },
+    { "source": "philosophy", "target": "absurdism", "kind": "contains" },
+    { "source": "stoicism", "target": "weekly-review", "kind": "practice" },
+    { "source": "snowboard", "target": "carving-fundamentals", "kind": "contains" },
+    { "source": "snowboard", "target": "powder-days", "kind": "contains" },
+    { "source": "snowboard", "target": "season-log-2026", "kind": "contains" },
+    { "source": "snowboard", "target": "journal", "kind": "logged-in" },
+    { "source": "language", "target": "english-writing", "kind": "contains" },
+    { "source": "language", "target": "japanese-study", "kind": "contains" },
+    { "source": "language", "target": "language-learning-method", "kind": "contains" },
+    { "source": "english-writing", "target": "journal-feed", "kind": "publishes-to" },
+    { "source": "about-zephyrlabs", "target": "zephyrlabs-journal", "kind": "describes" }
+  ]
+}

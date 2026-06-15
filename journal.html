@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ZephyrLabs Journal graph, a public Obsidian-style knowledge map for research notes and project writing."
+    />
+    <title>Journal Graph | ZephyrLabs</title>
+    <link rel="stylesheet" href="styles.css?v=journal-observatory-v1" />
+    <link rel="stylesheet" href="journal.css?v=journal-observatory-v1" />
+  </head>
+  <body class="journal-page">
+    <canvas id="orbit-field" class="orbit-field" aria-hidden="true"></canvas>
+
+    <nav class="site-nav journal-nav" aria-label="Journal navigation">
+      <a class="topbar-brand journal-home-link" href="./index.html" aria-label="Back to ZephyrLabs home">
+        <span class="dock-mark"><img src="assets/zl-mark-small.png" alt="" loading="eager" decoding="async" /></span>
+        <span>ZephyrLabs</span>
+      </a>
+      <div class="nav-panel" aria-label="Journal sections">
+        <a href="index.html#journal"><strong>Home</strong><span>Project index</span></a>
+        <a href="journal.html" aria-current="page"><strong>Journal</strong><span>Knowledge graph</span></a>
+      </div>
+    </nav>
+
+    <main class="journal-console" aria-labelledby="journal-title">
+      <header class="journal-heading">
+        <div>
+          <span class="journal-kicker">Obsidian Journal</span>
+          <h1 id="journal-title">Knowledge Graph</h1>
+        </div>
+        <p>
+          A curated vault view for concrete project notes, research threads, learning logs,
+          and public-safe writing. Select a node to open the note reader.
+        </p>
+      </header>
+
+      <section class="journal-workbench" aria-label="Knowledge graph workbench">
+        <div class="graph-toolbar" aria-label="Graph controls">
+          <label class="graph-search">
+            <span>Search</span>
+            <input id="journal-search" type="search" autocomplete="off" placeholder="Research, Geminus, Journal" />
+          </label>
+          <label class="graph-select">
+            <span>Constellation</span>
+            <select id="journal-category">
+              <option value="">All</option>
+            </select>
+          </label>
+          <button id="journal-reset" type="button">Reset</button>
+        </div>
+
+        <div class="graph-layout">
+          <section class="graph-surface" aria-labelledby="graph-title">
+            <div class="graph-status" aria-live="polite" data-graph-status>Loading graph</div>
+            <h2 id="graph-title">Knowledge Constellation</h2>
+            <canvas id="journal-graph" aria-label="Interactive knowledge graph"></canvas>
+          </section>
+
+          <aside class="node-inspector" aria-labelledby="node-title">
+            <span class="inspector-kicker" data-node-category>Core</span>
+            <h2 id="node-title" data-node-title>ZephyrLabs Journal</h2>
+            <p data-node-summary>Loading the public graph.</p>
+            <div class="node-body" data-node-body></div>
+            <dl class="node-meta">
+              <div>
+                <dt>Kind</dt>
+                <dd data-node-kind>map</dd>
+              </div>
+              <div>
+                <dt>Status</dt>
+                <dd data-node-status>public</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd data-node-source>public data</dd>
+              </div>
+            </dl>
+            <div class="node-actions">
+              <button type="button" data-copy-node-id>Copy id</button>
+            </div>
+            <h3 class="node-subtitle">Linked Notes</h3>
+            <div class="node-links" data-node-links></div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="journal-index" aria-labelledby="journal-index-title">
+        <div class="section-heading">
+          <span class="journal-kicker">Public Layer</span>
+          <h2 id="journal-index-title">Distilled Notes</h2>
+        </div>
+        <div class="note-grid" data-note-grid></div>
+      </section>
+    </main>
+
+    <script src="shared/effects.js?v=shared-effects-v1"></script>
+    <script src="journal.js?v=journal-observatory-intro-v1"></script>
+  </body>
+</html>

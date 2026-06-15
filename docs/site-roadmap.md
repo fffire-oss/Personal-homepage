@@ -9,9 +9,13 @@
 ```text
 index.html
 styles.css
-splendor-table.html
-splendor-table.css
-splendor-table.js
+shared/effects.js
+homepage-effects.js
+gemtable/
+  index.html
+  styles.css
+  app.js
+  modules/rules.js
 ```
 
 优点：

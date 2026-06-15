@@ -5,54 +5,149 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="ZephyrLabs personal homepage for Gem Table, BGA replay tooling, and current project notes."
+      content="ZephyrLabs personal homepage for Geminus, Algo Trade, and Obsidian-ready research notes."
     />
     <title>ZephyrLabs</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="preload" as="image" href="assets/ai-chip-cinematic.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="assets/algo-globe-cinematic.png" fetchpriority="high" />
+    <link rel="stylesheet" href="styles.css?v=stage-art-gate-v1" />
   </head>
-  <body>
+  <body id="top" class="art-preload">
+    <canvas id="orbit-field" class="orbit-field" aria-hidden="true"></canvas>
+    <canvas id="world-canvas" class="world-canvas" aria-hidden="true"></canvas>
+
+    <nav class="site-nav" aria-label="Primary navigation" data-site-nav>
+      <a class="topbar-brand" href="#top" aria-label="Back to top" data-return-top>
+        <span class="dock-mark"><img data-deferred-src="assets/zl-mark-small.png?v=stage-art-gate-v1" alt="" loading="lazy" decoding="async" fetchpriority="low" /></span>
+        <span>ZephyrLabs</span>
+      </a>
+      <div class="nav-panel" id="site-nav-panel" aria-label="Project sections">
+        <a href="#geminus"><strong>Geminus</strong><span>RL system</span></a>
+        <a href="#algo-trade"><strong>Algo Trade</strong><span>Quant globe</span></a>
+        <a href="#journal"><strong>Journal</strong><span>Knowledge graph</span></a>
+      </div>
+      <div class="topbar-actions">
+        <a class="topbar-cta" href="#projects">Enter Lab <span>›</span></a>
+      </div>
+    </nav>
+
     <main class="home-shell" aria-labelledby="site-title">
-      <header class="hero">
-        <a class="brand-mark" href="/" aria-label="ZephyrLabs home">ZL</a>
-        <p class="eyebrow">Personal lab</p>
-        <h1 id="site-title">ZephyrLabs</h1>
-        <p class="summary">
-          A quiet workspace for web game tables, BGA replay tooling, and small automation experiments.
-        </p>
+      <header class="hero site-hero cinematic-hero" id="hero">
+        <section class="stage-shell" aria-hidden="true">
+          <canvas id="zl-stage-canvas" class="zl-stage-canvas"></canvas>
+          <img class="zl-halo" data-stage-src="assets/zl-hologram-halo.png?v=stage-art-gate-v1" alt="" loading="lazy" decoding="async" fetchpriority="low" />
+          <img class="zl-matte" data-stage-src="assets/zl-hologram-pass.png?v=stage-art-gate-v1" alt="" loading="lazy" decoding="async" fetchpriority="low" />
+        </section>
+
+        <section class="hero-copy" aria-labelledby="site-title">
+          <h1 id="site-title" data-text="ZephyrLabs">ZephyrLabs</h1>
+          <p class="summary">Where intelligent systems, quantitative research,<br class="desktop-break" /> and knowledge converge.</p>
+          <div class="hero-meta project-chips" aria-label="Project pillars">
+            <a href="#geminus">
+              <span class="chip-icon cube" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m12 3 7 4v10l-7 4-7-4V7l7-4Z" /><path d="M12 12 5 7" /><path d="m12 12 7-5" /><path d="M12 12v9" /></svg>
+              </span>Geminus · <em>RL system</em><b>›</b>
+            </a>
+            <a href="#algo-trade">
+              <span class="chip-icon globe" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" /><path d="M3.8 12h16.4" /><path d="M12 3.5c2.4 2.2 3.4 5 3.4 8.5s-1 6.3-3.4 8.5" /><path d="M12 3.5C9.6 5.7 8.6 8.5 8.6 12s1 6.3 3.4 8.5" /></svg>
+              </span>Algo Trade · <em>Quant globe</em><b>›</b>
+            </a>
+            <a href="#journal">
+              <span class="chip-icon book" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M5 5.5h5.2c1 0 1.8.8 1.8 1.8v12.2c0-1.1-.9-2-2-2H5V5.5Z" /><path d="M19 5.5h-5.2c-1 0-1.8.8-1.8 1.8v12.2c0-1.1.9-2 2-2h5V5.5Z" /><path d="M8 9h1.7" /><path d="M14.3 9H16" /><path d="M8 12h1.7" /><path d="M14.3 12H16" /></svg>
+              </span>Journal · <em>Knowledge graph</em><b>›</b>
+            </a>
+          </div>
+          <a class="scroll-cue" href="#projects" aria-label="Scroll to projects"><span>Scroll to explore</span><i></i></a>
+        </section>
       </header>
 
-      <section class="projects" aria-labelledby="projects-title">
-        <h2 id="projects-title">Projects</h2>
-        <div class="project-list">
-          <a class="project-card gem-card" href="splendor-table.html">
-            <span class="project-kind">Playable table</span>
-            <strong>Gem Table</strong>
-            <span>Unofficial base-game gem table with local multiplayer, replay import/export, and BGA-style action logs.</span>
-          </a>
+      <section class="projects" id="projects" aria-label="Projects">
+        <div class="project-scroll" aria-label="Project categories">
+          <article class="project-card-section geminus-section" id="geminus" style="--card-accent:#31d7ff;--card-accent-b:#37e89b">
+            <div class="project-card-frame cinematic-card" data-scene="geminus">
+              <div class="card-visual ai-visual cinematic-visual" aria-hidden="true" data-ai-visual>
+                <img class="visual-poster ai-poster" src="assets/ai-chip-cinematic.png" alt="" loading="eager" decoding="async" />
+                <canvas class="ai-circuit-canvas" data-ai-circuit-canvas></canvas>
+                <div class="visual-vignette"></div>
+              </div>
 
-          <a
-            class="project-card crawler-card"
-            href="https://github.com/Haro-stack/BoardReplayLab"
-            target="_blank"
-            rel="noreferrer"
-          >
-            <span class="project-kind">Replay tool</span>
-            <strong>BoardReplayLab</strong>
-            <span>A crawler and converter for downloading BGA replay JSON data. Current target: Splendor base game, no expansion.</span>
-          </a>
+              <div class="card-content cinematic-content">
+                <span class="card-kicker">Reinforcement Learning</span>
+                <h3>Geminus</h3>
+                <p>A reinforcement-learning framework for a Splendor AI model, built around self-play, replay data, policy training, and local evaluation.</p>
+                <div class="card-modules">
+                  <a href="gemtable/"><strong>Gem Table</strong><span>Professional game table</span></a>
+                  <a data-site-link="geminusReplay" target="_blank" rel="noreferrer" hidden><strong>Replay tooling</strong><span>External project</span></a>
+                  <a data-site-link="geminusHud" target="_blank" rel="noreferrer" hidden><strong>Decision overlay</strong><span>External project</span></a>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="project-card-section algo-section" id="algo-trade" style="--card-accent:#ffbf45;--card-accent-b:#8fc7ff">
+            <div class="project-card-frame cinematic-card" data-scene="algo">
+              <div class="card-visual market-visual cinematic-visual" aria-hidden="true" data-market-visual>
+                <img class="visual-poster market-poster" src="assets/algo-globe-cinematic.png" alt="" loading="eager" decoding="async" />
+                <canvas class="market-scene-canvas" data-market-canvas></canvas>
+                <div class="market-hud clock-only">
+                  <span class="local-clock" data-local-clock>GMT+8 10:39</span>
+                </div>
+                <div class="visual-vignette"></div>
+              </div>
+
+              <div class="card-content cinematic-content">
+                <span class="card-kicker">Algorithmic Trading</span>
+                <h3>Algo<br />Trade</h3>
+                <p>Global market simulation, advanced backtesting, factor research, and execution training. Built for systematic traders.</p>
+                <div class="card-modules single-module">
+                  <a data-site-link="marketTrainer" target="_blank" rel="noreferrer" hidden><strong>Market trainer</strong><span>Historical replay trainer</span></a>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="project-card-section journal-section" id="journal" style="--card-accent:#ff6b5d;--card-accent-b:#31d7ff">
+            <div class="project-card-frame cinematic-card" data-scene="journal">
+              <div class="card-visual media-visual cinematic-visual" aria-hidden="true" data-journal-visual>
+                <div class="obsidian-orb-stage" data-journal-stage>
+                  <canvas class="obsidian-graph-canvas" data-journal-canvas></canvas>
+                </div>
+                <div class="visual-vignette"></div>
+              </div>
+
+              <div class="card-content cinematic-content">
+                <span class="card-kicker">Research Notes</span>
+                <h3>Journal</h3>
+                <p>A public Obsidian-style knowledge graph distilled from the vault, connecting research, AI, language, philosophy, snowboard notes, and Journal writing.</p>
+                <div class="card-modules single-module">
+                  <a href="journal.html"><strong>Knowledge Graph</strong><span>Curated Journal map</span></a>
+                </div>
+              </div>
+            </div>
+          </article>
         </div>
       </section>
 
-      <section class="todo" aria-labelledby="todo-title">
+      <section class="todo" id="todo" aria-labelledby="todo-title">
         <h2 id="todo-title">Todo</h2>
         <ul>
-          <li>Connect Gem Table to AI-assisted play.</li>
-          <li>Harden BGA base-game replay conversion.</li>
-          <li>Add expansion support after rule and data mapping are complete.</li>
-          <li>Develop automation tooling for trading workflows.</li>
-          <li>Work toward the CASI snowboard instructor pathway.</li>
+          <li>Train an extremely strong Splendor AI. In progress.</li>
+          <li>Build a factor-capture quantitative trading model with backtesting validation and live-trading capability.</li>
+          <li>Publish a curated Obsidian knowledge graph and distilled public notes.</li>
         </ul>
       </section>
     </main>
+
+    <footer class="site-footer" aria-label="Site registration" data-site-footer hidden>
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer" data-site-registration></a>
+    </footer>
+
+    <script src="shared/effects.js?v=water-yfix-v2"></script>
+    <script src="site-config.js?v=privacy-config-v1"></script>
+    <script src="cinematic-stage.js?v=stage-art-gate-v1"></script>
+    <script src="homepage-effects.js?v=stage-art-gate-v1"></script>
+    <script src="homepage-fixes.js?v=art-ready-effects-v1"></script>
   </body>
 </html>
