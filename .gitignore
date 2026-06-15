@@ -10,9 +10,6 @@ server/node_modules/
 bga-replays/
 *.log
 site-config.local.json
-journal-backend/journal-store.json
-journal-backend/journal-store.json.tmp
-journal-backend/vault-private/
 *.pem
 *.key
 *.p12

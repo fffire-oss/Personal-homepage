@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="ZephyrLabs Video Hub for match analysis and project notes."
+    />
+    <title>Video Hub | ZephyrLabs</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <canvas id="orbit-field" class="orbit-field" aria-hidden="true"></canvas>
+    <main class="home-shell video-shell" aria-labelledby="video-hub-title">
+      <header class="hero compact-hero">
+        <div class="hero-tools">
+          <a class="brand-mark" href="index.html" aria-label="ZephyrLabs home">ZL</a>
+          <a class="home-pill" href="index.html" aria-label="Back to ZephyrLabs homepage">Home</a>
+        </div>
+        <p id="video-eyebrow" class="eyebrow">Video index</p>
+        <div class="video-title-row">
+          <h1 id="video-hub-title">Video Hub</h1>
+          <a
+            id="video-profile-link"
+            class="video-emblem-link"
+            href="#"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Creator profile"
+          >
+            <span class="video-emblem" aria-hidden="true">
+              <span class="video-face">
+                <span class="video-eye left"></span>
+                <span class="video-eye right"></span>
+                <span class="video-mouth"></span>
+              </span>
+            </span>
+          </a>
+        </div>
+        <p id="video-summary" class="summary">
+          Match commentary, replay notes, and project updates for Gem Table and AI training.
+        </p>
+      </header>
+
+      <section class="video-feature" aria-labelledby="featured-video-title">
+        <div class="section-heading">
+          <h2 id="featured-video-title">Featured video</h2>
+          <a id="featured-video-link" href="#" target="_blank" rel="noreferrer" hidden>Open video</a>
+        </div>
+        <p id="featured-video-description" class="video-description">
+          The production link is supplied by local server configuration.
+        </p>
+        <div class="video-frame">
+          <div id="video-placeholder" class="video-placeholder">
+            Video link is configured on the server.
+          </div>
+          <iframe
+            id="featured-video-frame"
+            title="Featured video"
+            loading="lazy"
+            allowfullscreen
+            hidden
+          ></iframe>
+        </div>
+      </section>
+    </main>
+    <script src="shared/effects.js?v=shared-effects-v1"></script>
+    <script>
+      window.ZephyrEffects && window.ZephyrEffects.setupLiquidBackground();
+    </script>
+    <script src="video-config.js"></script>
+  </body>
+</html>

@@ -66,8 +66,6 @@
   --topbar-width: min(1080px, calc(100vw - 40px));
 }
 
-[hidden] { display: none !important; }
-
 * { box-sizing: border-box; }
 html { min-height: 100%; background: var(--bg); scroll-behavior: smooth; }
 body {
@@ -361,11 +359,6 @@ body.returning-top .site-nav {
     brightness(var(--stage-brightness))
     drop-shadow(0 28px 90px rgba(0,0,0,0.72));
   pointer-events: none;
-}
-
-body:not(.stage-art-ready) .stage-shell {
-  opacity: 0 !important;
-  visibility: hidden;
 }
 
 .zl-stage-canvas,
@@ -1071,59 +1064,6 @@ h1 {
   user-select: none;
 }
 
-body.art-preload {
-  background: #000;
-}
-
-body.art-preload::before,
-body.art-preload::after {
-  opacity: 0;
-}
-
-body.art-preload .home-shell {
-  pointer-events: none;
-}
-
-body.art-preload .site-hero {
-  opacity: 1;
-  transform: none;
-}
-
-body.art-preload .site-nav,
-body.art-preload .hero-copy,
-body.art-preload .stage-shell,
-body.art-preload .projects,
-body.art-preload .todo,
-body.art-preload .site-footer,
-body.art-preload .world-canvas {
-  opacity: 0 !important;
-  visibility: hidden;
-  pointer-events: none !important;
-}
-
-body.art-preload .orbit-field {
-  opacity: 1;
-  visibility: visible;
-}
-
-body.art-preload .visual-poster,
-body.art-preload .zl-halo,
-body.art-preload .zl-matte,
-body.art-preload .zl-stage-canvas,
-body.art-preload .ai-circuit-canvas,
-body.art-preload .market-scene-canvas,
-body.art-preload .obsidian-graph-canvas,
-body.art-preload .ai-flow-canvas,
-body.art-preload .real-earth-canvas {
-  opacity: 0 !important;
-  visibility: hidden;
-}
-
-body.art-preload .cinematic-visual,
-body.art-preload .stage-shell {
-  background: #000;
-}
-
 .ai-poster {
   opacity: 0.92;
   filter: saturate(0.96) contrast(1.08) brightness(0.86);
@@ -1306,112 +1246,6 @@ body.art-preload .stage-shell {
   background-size: auto, 28px 28px;
   box-shadow: inset 0 0 92px rgba(0,0,0,0.55), 0 0 70px rgba(49,215,255,0.08);
   overflow: hidden;
-  opacity: 0.58;
-  transform: translateY(10px) scale(0.985);
-  transition:
-    opacity 620ms var(--ease-out),
-    transform 760ms var(--ease-out),
-    box-shadow 760ms var(--ease-out);
-}
-
-.obsidian-orb-stage[data-transfer="priming"],
-.obsidian-orb-stage[data-transfer="active"],
-.obsidian-orb-stage[data-transfer="complete"] {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  box-shadow: inset 0 0 92px rgba(0,0,0,0.55), 0 0 92px rgba(49,215,255,0.12);
-}
-
-.obsidian-orb-stage::after {
-  content: "";
-  position: absolute;
-  inset: -16% auto -16% -34%;
-  width: 28%;
-  min-width: 90px;
-  pointer-events: none;
-  transform: skewX(-15deg);
-  background: linear-gradient(90deg, transparent, rgba(118, 255, 222, 0.12), rgba(255,255,255,0.18), transparent);
-  mix-blend-mode: screen;
-  opacity: 0;
-}
-
-.obsidian-orb-stage[data-transfer="priming"]::after,
-.obsidian-orb-stage[data-transfer="active"]::after {
-  animation: journalVaultSweep 2.8s cubic-bezier(0.2, 0.72, 0.2, 1) 1;
-}
-
-@keyframes journalVaultSweep {
-  0% {
-    transform: translateX(0) skewX(-15deg);
-    opacity: 0;
-  }
-
-  12% {
-    opacity: 0.72;
-  }
-
-  100% {
-    transform: translateX(560%) skewX(-15deg);
-    opacity: 0;
-  }
-}
-
-.obsidian-node-label {
-  position: absolute;
-  z-index: 8;
-  left: 0;
-  top: 0;
-  max-width: calc(100% - 32px);
-  min-height: 38px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 14px;
-  border: 1px solid rgba(var(--label-rgb, 104, 255, 205), 0.72);
-  border-radius: 11px;
-  color: rgba(248, 252, 255, 0.96);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)),
-    rgba(2, 7, 13, 0.84);
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.03) inset,
-    0 0 28px rgba(var(--label-rgb, 104, 255, 205), calc(0.16 + var(--label-depth, 0.5) * 0.12)),
-    0 16px 34px rgba(0,0,0,0.38);
-  backdrop-filter: blur(13px) saturate(1.12);
-  font-family: Inter, "Segoe UI", Arial, sans-serif;
-  font-size: 13px;
-  font-stretch: normal;
-  font-style: normal;
-  font-weight: 720;
-  letter-spacing: 0;
-  line-height: 1;
-  text-rendering: geometricPrecision;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(-50%) scale(0.94);
-  transform-origin: left center;
-  transition:
-    opacity 160ms ease,
-    transform 220ms var(--ease-out),
-    border-color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.obsidian-node-label[data-anchor="left"] {
-  transform: translate(-100%, -50%) scale(0.94);
-  transform-origin: right center;
-}
-
-.obsidian-node-label[data-visible="true"] {
-  opacity: 1;
-  transform: translateY(-50%) scale(1);
-}
-
-.obsidian-node-label[data-visible="true"][data-anchor="left"] {
-  transform: translate(-100%, -50%) scale(1);
 }
 .graph-node {
   position: absolute;
@@ -1435,7 +1269,11 @@ body.art-preload .stage-shell {
   pointer-events: none;
   transition: opacity 180ms ease, transform 180ms ease;
 }
-/* Canvas hit-testing draws the active node badge; DOM badges stay hidden. */
+.obsidian-orb-stage:hover .graph-node,
+.obsidian-orb-stage:focus-within .graph-node,
+.media-visual.is-hovered .graph-node {
+  opacity: calc(0.28 + var(--z, 0.5) * 0.72);
+}
 
 .todo {
   max-width: 900px;
@@ -1701,6 +1539,16 @@ body.is-page-bottom .site-footer { opacity: 1; transform: translateX(-50%) trans
   transition: opacity 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 
+.obsidian-graph-visual:hover .graph-node,
+.obsidian-graph-visual:focus-within .graph-node,
+.obsidian-orb-stage:hover .graph-node,
+.obsidian-orb-stage:focus-within .graph-node,
+.media-visual:hover .graph-node,
+.media-visual.is-hovered .graph-node,
+.media-visual:focus-within .graph-node {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(calc(0.9 + var(--z, 0.5) * 0.18));
+}
 
 /* Todo should follow the container width, not a fixed card width. */
 .todo {

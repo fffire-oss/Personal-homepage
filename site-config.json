@@ -5,5 +5,18 @@
       "registrationText": "",
       "registrationUrl": "https://beian.miit.gov.cn/"
     }
+  },
+  "videoHub": {
+    "eyebrow": "Video index",
+    "title": "Video Hub",
+    "summary": "Match commentary, replay notes, and project updates for Gem Table and AI training.",
+    "profileLabel": "Creator profile",
+    "profileUrl": "",
+    "featuredTitle": "Featured video",
+    "featuredDescription": "The production link is supplied by local server configuration.",
+    "featuredLinkLabel": "Open video",
+    "featuredUrl": "",
+    "embedUrl": "",
+    "embedTitle": "Featured video"
   }
 }

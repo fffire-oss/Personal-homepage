@@ -35,27 +35,6 @@
     return smooth * visibility;
   });
 
-  function onArtReady(callback) {
-    const body = document.body;
-    if (!body || body.classList.contains("art-ready") || !body.classList.contains("art-preload")) {
-      window.requestAnimationFrame(callback);
-      return;
-    }
-
-    let done = false;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      observer.disconnect();
-      window.requestAnimationFrame(callback);
-    };
-    const observer = new MutationObserver(() => {
-      if (body.classList.contains("art-ready") || !body.classList.contains("art-preload")) finish();
-    });
-    observer.observe(body, { attributes: true, attributeFilter: ["class"] });
-    window.setTimeout(finish, 10500);
-  }
-
   function installCardFocusDimming() {
     if (Effects.setupCardFocusDimming) {
       Effects.setupCardFocusDimming({ prefersReducedMotion: reduceMotion });
@@ -569,10 +548,8 @@
 
   function init() {
     installCardFocusDimming();
-    onArtReady(() => {
-      installAiFlowPatch();
-      installRealEarthGlobe();
-    });
+    installAiFlowPatch();
+    installRealEarthGlobe();
   }
 
   if (document.readyState === "loading") {

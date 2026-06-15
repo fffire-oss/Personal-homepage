@@ -30,30 +30,26 @@
     scroll: 0,
     spotlight: prefersReducedMotion ? 1 : 0
   };
-  const artReadyPromise = waitForCriticalArtReady();
-  window.ZephyrArtReady = artReadyPromise;
 
-  setupIntroDirector(artReadyPromise);
+  setupIntroDirector();
   setupSiteNav();
   setupReturnTop();
   setupSkyNebulaFeed();
   if (Effects.setupStickyCards) Effects.setupStickyCards({ prefersReducedMotion });
   if (Effects.setupFooterReveal) Effects.setupFooterReveal();
   setupLogoFluid();
-  setupAiCircuitVisual(artReadyPromise);
-  setupMarketGlobe(artReadyPromise);
-  setupObsidianSphere(artReadyPromise);
-  setupArtPreloadReveal(artReadyPromise);
+  setupAiCircuitVisual();
+  setupMarketGlobe();
+  setupObsidianSphere();
   if (Effects.setupLiquidBackground) {
     Effects.setupLiquidBackground({ selector: "#orbit-field", motion: introMotion, prefersReducedMotion });
   }
 
-  function setupIntroDirector(artReady) {
+  function setupIntroDirector() {
     const root = document.documentElement;
     const body = document.body;
     const projects = document.querySelector(".projects");
-    let start = performance.now();
-    let started = false;
+    const start = performance.now();
     let ticking = false;
     let timer = 0;
     let settled = false;
@@ -62,7 +58,7 @@
     body.classList.add("intro-directed");
 
     function settleBrand() {
-      if (!started || settled) return;
+      if (settled) return;
       settled = true;
       body.classList.add("brand-settled", "logo-docked", "intro-complete");
       root.style.setProperty("--logo-dock", "1.000");
@@ -156,7 +152,6 @@
     }
 
     function schedule() {
-      if (!started) return;
       if (ticking) return;
       ticking = true;
       window.setTimeout(update, 0);
@@ -169,28 +164,19 @@
       }
     }
 
-    function begin() {
-      if (started) return;
-      started = true;
-      start = performance.now();
-      update(start);
-      timer = window.setTimeout(loop, 16);
-      window.setTimeout(settleBrand, prefersReducedMotion ? 0 : 4600);
-    }
-
+    window.setTimeout(settleBrand, prefersReducedMotion ? 0 : 4600);
     window.addEventListener("scroll", () => {
-      if (!started) return;
       const viewport = Math.max(1, window.innerHeight || 1);
       if ((window.scrollY || window.pageYOffset || 0) > Math.min(320, viewport * 0.3)) settleBrand();
       schedule();
     }, { passive: true });
     window.addEventListener("resize", schedule);
+    update(performance.now());
+    timer = window.setTimeout(loop, 16);
     document.addEventListener("visibilitychange", () => {
-      if (!started) return;
       if (document.hidden) clearTimeout(timer);
       else if (!timelineComplete) timer = window.setTimeout(loop, 16);
     });
-    (artReady || Promise.resolve()).then(() => window.requestAnimationFrame(begin));
   }
 
   function setupSiteNav() {
@@ -248,7 +234,6 @@
     const root = document.documentElement;
     const body = document.body;
     const endpoint = "https://images-api.nasa.gov/search?q=Carina%20Nebula&media_type=image&page_size=8";
-    const params = new URLSearchParams(window.location.search);
 
     function setSkyState(state) {
       body.classList.toggle("sky-feed-live", state === "live");
@@ -330,78 +315,7 @@
       }
     }
 
-    setSkyState("local");
-    if (!params.has("live-sky")) return;
-    const schedule = window.requestIdleCallback || ((callback) => window.setTimeout(callback, 900));
-    window.addEventListener("load", () => schedule(loadSkyImage), { once: true });
-  }
-
-  function waitForCriticalArtReady() {
-    const domReady = document.readyState === "loading"
-      ? new Promise((resolve) => document.addEventListener("DOMContentLoaded", resolve, { once: true }))
-      : Promise.resolve();
-
-    function waitImage(image) {
-      if (!image) return Promise.resolve();
-      if (image.complete && image.naturalWidth > 0) {
-        return image.decode ? image.decode().catch(() => {}) : Promise.resolve();
-      }
-      return new Promise((resolve, reject) => {
-        const done = () => {
-          image.removeEventListener("load", done);
-          image.removeEventListener("error", fail);
-          if (!image.naturalWidth) {
-            reject(new Error("Critical art image has no dimensions"));
-            return;
-          }
-          if (image.decode) image.decode().catch(() => {}).then(resolve);
-          else resolve();
-        };
-        const fail = () => {
-          image.removeEventListener("load", done);
-          image.removeEventListener("error", fail);
-          reject(new Error("Critical art image failed to load"));
-        };
-        image.addEventListener("load", done, { once: true });
-        image.addEventListener("error", fail, { once: true });
-      });
-    }
-
-    return domReady.then(() => {
-      const images = Array.from(document.querySelectorAll([
-        ".ai-poster",
-        ".market-poster"
-      ].join(",")));
-      const fontReady = document.fonts && document.fonts.ready ? document.fonts.ready.catch(() => {}) : Promise.resolve();
-      const decoded = Promise.all(images.map(waitImage)).then(() => undefined, () => new Promise(() => {}));
-      const timeout = new Promise((resolve) => window.setTimeout(() => resolve({ timedOut: true }), 12000));
-      return Promise.race([
-        Promise.all([decoded, fontReady]).then(() => ({ timedOut: false })),
-        timeout
-      ]);
-    });
-  }
-
-  function setupArtPreloadReveal(artReady) {
-    const body = document.body;
-    if (!body.classList.contains("art-preload")) return;
-    let released = false;
-    function loadDeferredImages() {
-      document.querySelectorAll("img[data-deferred-src]").forEach((image) => {
-        if (!image.getAttribute("src")) image.setAttribute("src", image.dataset.deferredSrc);
-      });
-    }
-    function release() {
-      if (released) return;
-      released = true;
-      body.classList.remove("art-preload");
-      body.classList.add("art-ready");
-      loadDeferredImages();
-    }
-    artReady.then((result) => {
-      if (result && result.timedOut) body.classList.add("art-timeout");
-      requestAnimationFrame(() => requestAnimationFrame(release));
-    });
+    loadSkyImage();
   }
 
   function setupLogoFluid() {
@@ -513,7 +427,7 @@
     draw();
   }
 
-  function setupAiCircuitVisual(artReady) {
+  function setupAiCircuitVisual() {
     const visual = document.querySelector("[data-ai-visual]");
     const canvas = visual && visual.querySelector("[data-ai-circuit-canvas]");
     if (!visual || !canvas) return;
@@ -640,19 +554,15 @@
       raf = requestAnimationFrame(draw);
     }
 
-    function start() {
-      resize();
-      if (!document.hidden) raf = requestAnimationFrame(draw);
-    }
-
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) cancelAnimationFrame(raf); else { last = 0; raf = requestAnimationFrame(draw); }
     });
-    artReady.then(start);
+    resize();
+    raf = requestAnimationFrame(draw);
   }
 
-  function setupMarketGlobe(artReady) {
+  function setupMarketGlobe() {
     const visual = document.querySelector("[data-market-visual]");
     const canvas = visual && visual.querySelector("[data-market-canvas]");
     if (!visual || !canvas) return;
@@ -1010,247 +920,37 @@
       raf = requestAnimationFrame(draw);
     }
 
-    function start() {
-      resize();
-      if (!document.hidden) raf = requestAnimationFrame(draw);
-    }
-
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) cancelAnimationFrame(raf); else { lastTextureKey = ""; raf = requestAnimationFrame(draw); }
     });
-    artReady.then(start);
+    resize();
+    raf = requestAnimationFrame(draw);
   }
 
-  function setupObsidianSphere(artReady) {
+  function setupObsidianSphere() {
     const visual = document.querySelector("[data-journal-visual]");
     const stage = document.querySelector("[data-journal-stage]");
     const canvas = stage && stage.querySelector("[data-journal-canvas]");
     if (!visual || !stage || !canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const hoverLabel = document.createElement("div");
-    hoverLabel.className = "obsidian-node-label";
-    hoverLabel.setAttribute("aria-hidden", "true");
-    stage.appendChild(hoverLabel);
     const setHovered = (hovered) => visual.classList.toggle("is-hovered", hovered);
     visual.addEventListener("pointerenter", () => setHovered(true));
     visual.addEventListener("pointerleave", () => setHovered(false));
     visual.addEventListener("focusin", () => setHovered(true));
     visual.addEventListener("focusout", () => setHovered(false));
     let width = 1, height = 1, ratio = 1, raf = 0;
-    let transferTimer = 0;
-    let graphTotal = 0;
-    let streamComplete = false;
-    let hoveredId = "";
-    let screenNodes = [];
-    let activatedAt = 0;
-    let activationStarted = false;
-    let activationObserver = null;
-    const streamDelay = prefersReducedMotion ? 0 : 190;
-    const nodes = [];
-    const journalStars = makeJournalStars(176);
-    let edges = [];
-    let graphLinks = [];
-    let categories = new Map([
-      ["core", { color: "#f5f8fb" }],
-      ["ai", { color: "#ffb4a7" }],
-      ["research", { color: "#f3f6ff" }],
-      ["reflection", { color: "#dde8ff" }],
-      ["practice", { color: "#e0f8ff" }],
-      ["language", { color: "#d9fbff" }],
-      ["public", { color: "#eee9ff" }]
-    ]);
-    stage.dataset.transfer = "waiting";
-    stage.dataset.revealedNodes = "0";
-    stage.dataset.totalNodes = "0";
-
-    function delay(ms) {
-      return new Promise((resolve) => window.setTimeout(resolve, ms));
-    }
-
-    function makeJournalStars(count) {
-      function fract(value) {
-        return value - Math.floor(value);
-      }
-      function rand(seed) {
-        return fract(Math.sin(seed * 12.9898) * 43758.5453);
-      }
-      return Array.from({ length: count }, (_, i) => {
-        const angle = rand(i + 9) * Math.PI * 2;
-        const radius = Math.pow(rand(i + 21), 0.72);
-        return {
-          x: 0.5 + Math.cos(angle) * radius * 0.47,
-          y: 0.5 + Math.sin(angle) * radius * 0.43,
-          z: rand(i + 37),
-          phase: rand(i + 51) * Math.PI * 2,
-          delay: rand(i + 67) * 2100,
-          drift: 4 + rand(i + 83) * 18,
-          speed: 0.000045 + rand(i + 99) * 0.00012,
-          size: 0.45 + Math.pow(rand(i + 111), 2) * 1.85,
-          warm: rand(i + 127) > 0.82
-        };
-      }).sort((a, b) => a.delay - b.delay);
-    }
-
-    function parseColor(value, fallback) {
-      const raw = String(value || "").replace("#", "");
-      if (!/^[0-9a-f]{6}$/i.test(raw)) return fallback;
-      const n = parseInt(raw, 16);
-      return [n >> 16 & 255, n >> 8 & 255, n & 255];
-    }
-
-    function categoryColor(node) {
-      const category = categories.get(node.category) || categories.get("public") || {};
-      return parseColor(category.color, [238, 244, 255]);
-    }
-
-    function orderedNodes(items) {
-      const priority = new Map([
-        ["zephyrlabs-journal", 0],
-        ["research", 1],
-        ["philosophy", 2],
-        ["geminus", 3],
-        ["snowboard", 4],
-        ["ai", 5],
-        ["language", 6]
-      ]);
-      return items.slice().sort((a, b) => {
-        const pa = priority.has(a.id) ? priority.get(a.id) : 20;
-        const pb = priority.has(b.id) ? priority.get(b.id) : 20;
-        return pa - pb || String(a.title || a.id).localeCompare(String(b.title || b.id));
-      });
-    }
-
-    function positionFor(node, index, total) {
-      if (node.id === "zephyrlabs-journal") return [0, 0, 1];
-      const rank = Math.max(0, index - 1);
-      const count = Math.max(1, total - 1);
-      const y = 1 - ((rank + 0.5) / count) * 2;
-      const ring = Math.sqrt(Math.max(0, 1 - y * y));
-      const angle = rank * 2.399963229728653;
-      const boost = node.kind === "constellation" ? 0.72 : node.kind === "project" ? 0.84 : 0.96;
-      return [Math.cos(angle) * ring * boost, y * boost, Math.sin(angle) * ring * boost];
-    }
-
-    function refreshEdges() {
-      const ids = new Set(nodes.map((node) => node.id));
-      edges = graphLinks
-        .filter((link) => ids.has(link.source) && ids.has(link.target))
-        .map((link) => [link.source, link.target]);
-    }
-
-    function addGraphNode(rawNode) {
-      if (!rawNode || !rawNode.id || nodes.some((node) => node.id === rawNode.id)) return;
-      const index = nodes.length;
-      const node = {
-        id: rawNode.id,
-        title: rawNode.id === "zephyrlabs-journal" ? "Journal" : rawNode.title || rawNode.id,
-        category: rawNode.category || "public",
-        kind: rawNode.kind || "note",
-        c: categoryColor(rawNode),
-        p: positionFor(rawNode, index, graphTotal || index + 1),
-        addedAt: performance.now(),
-        size: rawNode.kind === "constellation" ? 1.22 : rawNode.kind === "project" ? 1.12 : 0.88
-      };
-      nodes.push(node);
-      refreshEdges();
-      stage.dataset.totalNodes = String(graphTotal || nodes.length);
-      stage.dataset.transferredNodes = String(nodes.length);
-    }
-
-    function applyMeta(meta) {
-      if (Array.isArray(meta.categories)) categories = new Map(meta.categories.map((item) => [item.id, item]));
-      if (Array.isArray(meta.links)) graphLinks = meta.links;
-      graphTotal = Number(meta.totalNodes) || graphTotal || 0;
-      stage.dataset.totalNodes = String(graphTotal);
-    }
-
-    async function loadStreamedGraph() {
-      stage.dataset.transfer = "active";
-      try {
-        const response = await fetch("/api/journal/graph/stream", { cache: "no-store" });
-        if (!response.ok || !response.body) throw new Error("stream unavailable");
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        while (true) {
-          const chunk = await reader.read();
-          if (chunk.done) break;
-          buffer += decoder.decode(chunk.value, { stream: true });
-          const lines = buffer.split(/\r?\n/);
-          buffer = lines.pop() || "";
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            const event = JSON.parse(line);
-            if (event.type === "meta") applyMeta(event);
-            if (event.type === "node") {
-              addGraphNode(event.node);
-              if (streamDelay) await delay(streamDelay);
-            }
-          }
-        }
-      } catch (_error) {
-        const response = await fetch("journal-data.json", { cache: "force-cache" });
-        if (!response.ok) return;
-        const data = await response.json();
-        const ordered = orderedNodes(Array.isArray(data.nodes) ? data.nodes : []);
-        applyMeta({
-          totalNodes: ordered.length,
-          categories: data.categories || [],
-          links: data.links || []
-        });
-        for (const node of ordered) {
-          addGraphNode(node);
-          if (streamDelay) await delay(streamDelay);
-        }
-      } finally {
-        streamComplete = true;
-      }
-    }
-
-    function keepTransferMoving() {
-      if (document.hidden) return;
-      cancelAnimationFrame(raf);
-      draw(performance.now());
-      if (stage.dataset.transfer !== "complete") {
-        transferTimer = window.setTimeout(keepTransferMoving, 180);
-      }
-    }
-
-    function beginRenderAfterArtReady() {
-      if (stage.dataset.transfer !== "waiting") return;
-      activationStarted = true;
-      activatedAt = performance.now();
-      stage.dataset.transfer = "priming";
-      stage.dataset.starfield = "active";
-      keepTransferMoving();
-      window.setTimeout(loadStreamedGraph, prefersReducedMotion ? 80 : 620);
-      if (activationObserver) activationObserver.disconnect();
-    }
-
-    function armJournalReveal() {
-      const section = visual.closest(".project-card-section") || visual;
-      const shouldStart = () => {
-        const rect = section.getBoundingClientRect();
-        const viewport = window.innerHeight || 1;
-        return rect.top < viewport * 0.82 && rect.bottom > viewport * 0.1;
-      };
-      const check = () => {
-        if (stage.dataset.transfer !== "waiting") return;
-        if (shouldStart()) beginRenderAfterArtReady();
-      };
-      if ("IntersectionObserver" in window) {
-        activationObserver = new IntersectionObserver((entries) => {
-          if (entries.some((entry) => entry.isIntersecting)) beginRenderAfterArtReady();
-        }, { rootMargin: "-10% 0px -18% 0px", threshold: 0.08 });
-        activationObserver.observe(section);
-      } else {
-        window.addEventListener("scroll", check, { passive: true });
-        window.addEventListener("resize", check);
-      }
-      check();
-    }
+    const labels = Array.from(stage.querySelectorAll(".graph-node"));
+    const nodes = [
+      { id: "journal", label: labels.find((el) => el.dataset.topic === "journal"), p: [0, 0, 1], c: [255, 255, 255] },
+      { id: "philosophy", label: labels.find((el) => el.dataset.topic === "philosophy"), p: [-0.62, -0.12, 0.56], c: [184, 210, 255] },
+      { id: "snowboard", label: labels.find((el) => el.dataset.topic === "snowboard"), p: [0.58, -0.22, 0.52], c: [196, 220, 255] },
+      { id: "language", label: labels.find((el) => el.dataset.topic === "language"), p: [0.46, 0.58, 0.24], c: [141, 232, 255] },
+      { id: "ai", label: labels.find((el) => el.dataset.topic === "ai"), p: [-0.42, 0.56, 0.36], c: [255, 148, 124] },
+      { id: "research", label: labels.find((el) => el.dataset.topic === "research"), p: [0.06, -0.66, 0.48], c: [214, 190, 255] }
+    ];
+    const edges = [[0,1],[0,2],[0,3],[0,4],[0,5],[1,4],[2,5],[3,4],[3,5]];
 
     function resize() {
       const size = fitCanvas(canvas, stage, 1.7);
@@ -1277,135 +977,22 @@
       const [x, y, z] = rotate(point, t);
       const s = 0.74 + z * 0.22;
       const r = Math.min(width, height) * 0.32;
-      return {
-        x: width * 0.5 + x * r * s,
-        y: height * 0.5 + y * r * s,
-        z: clamp((z + 1) / 2, 0, 1)
-      };
-    }
-
-    function revealFor(node, now) {
-      if (prefersReducedMotion) return 1;
-      const value = (now - node.addedAt) / 1380;
-      return easeInOut(value);
-    }
-
-    function edgeRevealFor(a, b, now) {
-      if (prefersReducedMotion) return 1;
-      const value = (now - Math.max(a.node.addedAt, b.node.addedAt) - 260) / 920;
-      return easeInOut(value);
-    }
-
-    function journalIntro(now) {
-      if (!activationStarted || !activatedAt) return 0;
-      if (prefersReducedMotion) return 1;
-      return easeInOut((now - activatedAt) / 2400);
-    }
-
-    function starReveal(star, now) {
-      if (!activationStarted || !activatedAt) return 0;
-      if (prefersReducedMotion) return 1;
-      return easeInOut((now - activatedAt - star.delay) / 1450);
-    }
-
-    function drawJournalStarfield(now, intro) {
-      if (intro <= 0.001) return;
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-      journalStars.forEach((star, index) => {
-        const reveal = starReveal(star, now);
-        if (reveal <= 0.01) return;
-        const wave = Math.sin(now * star.speed + star.phase);
-        const cross = Math.cos(now * star.speed * 0.73 + star.phase * 1.6);
-        const x = star.x * width + wave * star.drift * (0.18 + star.z * 0.82);
-        const y = star.y * height + cross * star.drift * 0.54;
-        const twinkle = 0.62 + 0.38 * Math.sin(now * (0.001 + star.speed * 11) + star.phase);
-        const alpha = reveal * intro * (0.08 + star.z * 0.32) * twinkle;
-        const size = star.size * (0.7 + reveal * 0.3);
-        const color = star.warm ? "255,218,168" : "206,241,255";
-        const halo = ctx.createRadialGradient(x, y, 0, x, y, size * (7 + star.z * 6));
-        halo.addColorStop(0, "rgba(" + color + "," + (alpha * 0.9) + ")");
-        halo.addColorStop(0.32, "rgba(" + color + "," + (alpha * 0.2) + ")");
-        halo.addColorStop(1, "rgba(" + color + ",0)");
-        ctx.fillStyle = halo;
-        ctx.beginPath();
-        ctx.arc(x, y, size * (7 + star.z * 6), 0, Math.PI * 2);
-        ctx.fill();
-        if (index % 9 === 0 && reveal > 0.55) {
-          ctx.strokeStyle = "rgba(" + color + "," + (alpha * 0.22) + ")";
-          ctx.lineWidth = 0.7;
-          ctx.beginPath();
-          ctx.moveTo(x - size * 5, y);
-          ctx.lineTo(x + size * 5, y);
-          ctx.moveTo(x, y - size * 4);
-          ctx.lineTo(x, y + size * 4);
-          ctx.stroke();
-        }
-      });
-      ctx.restore();
-    }
-
-    function updateHoverLabel(point) {
-      if (!point || !point.node) {
-        hoverLabel.removeAttribute("data-visible");
-        hoverLabel.removeAttribute("data-anchor");
-        return;
-      }
-      const color = point.node.c || [238, 244, 255];
-      const anchorLeft = point.x > width * 0.58;
-      const x = clamp(point.x + (anchorLeft ? -18 : 18), 18, width - 18);
-      const y = clamp(point.y - 2, 20, height - 20);
-      hoverLabel.textContent = point.node.title;
-      hoverLabel.style.left = x.toFixed(1) + "px";
-      hoverLabel.style.top = y.toFixed(1) + "px";
-      hoverLabel.style.setProperty("--label-rgb", color.join(","));
-      hoverLabel.style.setProperty("--label-depth", point.z.toFixed(3));
-      hoverLabel.dataset.anchor = anchorLeft ? "left" : "right";
-      hoverLabel.dataset.visible = "true";
-    }
-
-    function drawArrivalPulse(point, visibleReveal, now) {
-      if (prefersReducedMotion) return;
-      const age = clamp((now - point.node.addedAt) / 1050, 0, 1);
-      if (age >= 1 || visibleReveal <= 0.02) return;
-      const color = point.node.c;
-      const pulse = easeInOut(age);
-      const radius = 12 + point.z * 18 + pulse * 34;
-      ctx.save();
-      ctx.globalCompositeOperation = "screen";
-      ctx.strokeStyle = "rgba(" + color.join(",") + "," + ((1 - pulse) * 0.32 * visibleReveal) + ")";
-      ctx.lineWidth = 1.1 + (1 - pulse) * 1.4;
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
-      ctx.stroke();
-      const ray = 22 + pulse * 28;
-      ctx.strokeStyle = "rgba(255,255,255," + ((1 - pulse) * 0.16 * visibleReveal) + ")";
-      ctx.beginPath();
-      ctx.moveTo(point.x - ray, point.y);
-      ctx.lineTo(point.x + ray, point.y);
-      ctx.moveTo(point.x, point.y - ray * 0.72);
-      ctx.lineTo(point.x, point.y + ray * 0.72);
-      ctx.stroke();
-      ctx.restore();
+      return { x: width * 0.5 + x * r * s, y: height * 0.5 + y * r * s, z: clamp((z + 1) / 2, 0, 1) };
     }
 
     function draw(now) {
       ctx.clearRect(0, 0, width, height);
       const cx = width * 0.5, cy = height * 0.5;
       const radius = Math.min(width, height) * 0.34;
-      const intro = journalIntro(now);
-      drawJournalStarfield(now, intro);
       ctx.save();
       ctx.globalCompositeOperation = "screen";
-
       const glow = ctx.createRadialGradient(cx, cy, radius * 0.08, cx, cy, radius * 1.35);
-      glow.addColorStop(0, "rgba(105,152,255," + (0.04 + intro * 0.11) + ")");
-      glow.addColorStop(0.45, "rgba(49,215,255," + (0.02 + intro * 0.055) + ")");
+      glow.addColorStop(0, "rgba(105,152,255,0.13)");
+      glow.addColorStop(0.45, "rgba(49,215,255,0.06)");
       glow.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = glow;
       ctx.beginPath(); ctx.arc(cx, cy, radius * 1.35, 0, Math.PI * 2); ctx.fill();
-
-      ctx.strokeStyle = "rgba(183,211,255," + (0.035 + intro * 0.095) + ")";
+      ctx.strokeStyle = "rgba(183,211,255,0.12)";
       ctx.lineWidth = 1;
       for (let i = -3; i <= 3; i += 1) {
         const yy = cy + i * radius * 0.18;
@@ -1414,104 +1001,41 @@
       for (let i = 0; i < 6; i += 1) {
         ctx.save(); ctx.translate(cx, cy); ctx.rotate(i * Math.PI / 6 + now * 0.00008); ctx.scale(0.32, 1); ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
-
-      const projected = nodes.map((node) => ({ node, reveal: revealFor(node, now), ...project(node.p, now) }));
-      const revealedCount = projected.filter((point) => point.reveal * intro > 0.06).length;
-      stage.dataset.revealedNodes = String(revealedCount);
-      if (streamComplete && revealedCount >= nodes.length && nodes.length >= graphTotal) stage.dataset.transfer = "complete";
-
+      const projected = nodes.map((node) => ({ node, ...project(node.p, now) }));
       edges.forEach(([a, b]) => {
-        const pa = projected.find((point) => point.node.id === a);
-        const pb = projected.find((point) => point.node.id === b);
-        if (!pa || !pb) return;
-        const reveal = Math.min(pa.reveal, pb.reveal, edgeRevealFor(pa, pb, now));
-        if (reveal <= 0.02) return;
-        const alpha = (0.06 + Math.min(pa.z, pb.z) * 0.22) * reveal * intro;
+        const pa = projected[a], pb = projected[b];
+        const alpha = 0.06 + Math.min(pa.z, pb.z) * 0.22;
         ctx.strokeStyle = "rgba(166,197,255," + alpha + ")";
-        ctx.lineWidth = (0.9 + Math.min(pa.z, pb.z) * 0.7) * (0.65 + reveal * 0.35);
+        ctx.lineWidth = 0.9 + Math.min(pa.z, pb.z) * 0.7;
         ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
       });
-
       projected.sort((a, b) => a.z - b.z).forEach((p) => {
-        const visibleReveal = p.reveal * intro;
-        if (visibleReveal <= 0.01) return;
         const color = p.node.c;
-        const scaleIn = 0.48 + visibleReveal * 0.52;
-        const r = (2.1 + p.z * 4.1) * p.node.size * scaleIn;
-        p.radius = r;
-        p.hitRadius = Math.max(16, r + 12);
-        const haloRadius = 20 + p.z * 19;
-        drawArrivalPulse(p, visibleReveal, now);
-        const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, haloRadius);
-        rg.addColorStop(0, "rgba(255,255,255," + ((0.42 + p.z * 0.34) * visibleReveal) + ")");
-        rg.addColorStop(0.4, "rgba(" + color.join(",") + "," + ((0.14 + p.z * 0.2) * visibleReveal) + ")");
+        const r = 2.4 + p.z * 4.8;
+        const rg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, 24 + p.z * 22);
+        rg.addColorStop(0, "rgba(255,255,255," + (0.42 + p.z * 0.34) + ")");
+        rg.addColorStop(0.4, "rgba(" + color.join(",") + "," + (0.14 + p.z * 0.2) + ")");
         rg.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(p.x, p.y, haloRadius, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "rgba(245,250,255," + ((0.38 + p.z * 0.5) * visibleReveal) + ")";
-        ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
-        if (p.node.id === hoveredId) {
-          ctx.strokeStyle = "rgba(" + color.join(",") + "," + (0.42 + p.z * 0.22) + ")";
-          ctx.lineWidth = 1.4;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, Math.max(8, r + 7), 0, Math.PI * 2);
-          ctx.stroke();
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(p.x, p.y, 24 + p.z * 22, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(245,250,255," + (0.38 + p.z * 0.5) + ")"; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.fill();
+        if (p.node.label) {
+          p.node.label.style.setProperty("--x", (p.x / width * 100).toFixed(2));
+          p.node.label.style.setProperty("--y", (p.y / height * 100).toFixed(2));
+          p.node.label.style.setProperty("--z", p.z.toFixed(3));
         }
       });
-      screenNodes = projected.filter((point) => point.reveal * intro > 0.18).sort((a, b) => b.z - a.z);
-      updateHoverLabel(screenNodes.find((point) => point.node.id === hoveredId));
       ctx.restore();
       raf = requestAnimationFrame(draw);
     }
 
-    function hitNode(event) {
-      const rect = canvas.getBoundingClientRect();
-      const x = (event.clientX - rect.left) * (width / Math.max(1, rect.width));
-      const y = (event.clientY - rect.top) * (height / Math.max(1, rect.height));
-      let best = null;
-      let bestScore = Infinity;
-      screenNodes.forEach((point) => {
-        const distance = Math.hypot(point.x - x, point.y - y);
-        const radius = point.hitRadius || 14;
-        if (distance > radius) return;
-        const score = distance / radius - point.z * 0.08;
-        if (score < bestScore) {
-          best = point.node;
-          bestScore = score;
-        }
-      });
-      return best;
-    }
-
     stage.addEventListener("pointerenter", () => visual.classList.add("is-hovered"));
     stage.addEventListener("pointerleave", () => visual.classList.remove("is-hovered"));
-    canvas.addEventListener("pointermove", (event) => {
-      const node = hitNode(event);
-      hoveredId = node ? node.id : "";
-      if (hoveredId) canvas.dataset.hoveredNode = hoveredId;
-      else delete canvas.dataset.hoveredNode;
-      if (hoveredId) stage.dataset.hoveredNode = hoveredId;
-      else delete stage.dataset.hoveredNode;
-      if (!hoveredId) updateHoverLabel(null);
-      canvas.style.cursor = node ? "pointer" : "default";
-    });
-    canvas.addEventListener("pointerleave", () => {
-      hoveredId = "";
-      delete canvas.dataset.hoveredNode;
-      delete stage.dataset.hoveredNode;
-      updateHoverLabel(null);
-      canvas.style.cursor = "default";
-    });
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        cancelAnimationFrame(raf);
-        window.clearTimeout(transferTimer);
-      } else if (stage.dataset.transfer !== "waiting") {
-        keepTransferMoving();
-      }
+      if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(draw);
     });
     resize();
-    artReady.then(() => window.setTimeout(armJournalReveal, prefersReducedMotion ? 80 : 220));
+    raf = requestAnimationFrame(draw);
   }
 
 })();

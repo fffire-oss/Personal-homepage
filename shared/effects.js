@@ -417,7 +417,7 @@
 
     function updatePointer(event) {
       const x = event.clientX / Math.max(1, width);
-      const y = event.clientY / Math.max(1, height);
+      const y = 1 - event.clientY / Math.max(1, height);
       pointer.dx = x - pointer.x;
       pointer.dy = y - pointer.y;
       pointer.px = pointer.x; pointer.py = pointer.y;

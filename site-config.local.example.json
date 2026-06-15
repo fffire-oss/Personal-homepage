@@ -2,24 +2,39 @@
   "homepage": {
     "links": {
       "geminusReplay": {
-        "title": "",
-        "description": "",
-        "url": ""
+        "title": "Replay tooling",
+        "description": "External project",
+        "url": "https://example.com/replay-tooling"
       },
       "geminusHud": {
-        "title": "",
-        "description": "",
-        "url": ""
+        "title": "Decision overlay",
+        "description": "External project",
+        "url": "https://example.com/decision-overlay"
       },
       "marketTrainer": {
-        "title": "",
-        "description": "",
-        "url": ""
+        "title": "Market trainer",
+        "description": "Historical replay trainer",
+        "url": "https://example.com/market-trainer"
+      },
+      "replayTool": {
+        "title": "Script download",
+        "description": "Replay capture helper",
+        "url": "https://example.com/replay-tool"
       }
     },
     "footer": {
       "registrationText": "Registration number",
       "registrationUrl": "https://beian.miit.gov.cn/"
     }
+  },
+  "videoHub": {
+    "profileLabel": "Creator profile",
+    "profileUrl": "https://example.com/profile",
+    "featuredTitle": "Featured video",
+    "featuredDescription": "Short description for the currently featured video.",
+    "featuredLinkLabel": "Open video",
+    "featuredUrl": "https://example.com/video",
+    "embedUrl": "https://example.com/embed/video",
+    "embedTitle": "Featured video"
   }
 }

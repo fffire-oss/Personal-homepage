@@ -12,7 +12,6 @@
   };
 
   const CONFIG_PATHS = ["/site-config.local.json", "/site-config.json"];
-  const PLACEHOLDER_HOSTS = ["example.com", "example.net", "example.org"];
 
   function mergeConfig(config) {
     const homepage = config && typeof config.homepage === "object" ? config.homepage : {};
@@ -36,16 +35,10 @@
     if (typeof value !== "string" || value.trim() === "") return "";
     try {
       const url = new URL(value, window.location.href);
-      const hostname = url.hostname.toLowerCase();
-      if (PLACEHOLDER_HOSTS.some((host) => hostname === host || hostname.endsWith("." + host))) return "";
       return url.protocol === "https:" || url.protocol === "http:" ? url.href : "";
     } catch (_error) {
       return "";
     }
-  }
-
-  function cleanText(value) {
-    return typeof value === "string" ? value.trim() : "";
   }
 
   function setLinkText(link, title, description) {
@@ -61,11 +54,9 @@
     if (!link || !value || typeof value !== "object") return;
 
     const url = safeHttpUrl(value.url);
-    const title = cleanText(value.title);
-    const description = cleanText(value.description);
-    if (!url || !title) return;
+    if (!url) return;
 
-    setLinkText(link, title, description);
+    setLinkText(link, value.title, value.description);
     link.href = url;
     link.hidden = false;
   }
