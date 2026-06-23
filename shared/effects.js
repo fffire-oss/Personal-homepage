@@ -1,8 +1,95 @@
 (function () {
   "use strict";
 
+  let cachedPerformanceProfile = null;
+
+  function motionModeFrom(value) {
+    const mode = String(value || "").trim().toLowerCase();
+    if (["full", "high", "cinematic", "max"].includes(mode)) return "full";
+    if (["lite", "light", "low", "reduce", "reduced", "balanced"].includes(mode)) return "lite";
+    if (["still", "static", "off", "none", "minimal"].includes(mode)) return "still";
+    return "";
+  }
+
   function prefersReducedMotion() {
-    return new URLSearchParams(window.location.search).has("reduced-motion");
+    const params = new URLSearchParams(window.location.search);
+    const media = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    return params.has("reduced-motion") || motionModeFrom(params.get("motion")) === "still" || !!media;
+  }
+
+  function storedMotionMode() {
+    try {
+      return motionModeFrom(window.localStorage && window.localStorage.getItem("zephyrlabs.motion"));
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function selectedMotionMode(params) {
+    return motionModeFrom(params.get("motion")) || motionModeFrom(params.get("perf")) || storedMotionMode();
+  }
+
+  function applyPerformanceProfile(profile) {
+    const root = document.documentElement;
+    if (root) {
+      root.dataset.motionMode = profile.mode;
+      root.style.setProperty("--motion-frame-ms", String(Math.round(profile.frameMs || 16)));
+    }
+    if (document.body) {
+      document.body.classList.toggle("motion-full", profile.mode === "full");
+      document.body.classList.toggle("motion-lite", profile.mode === "lite");
+      document.body.classList.toggle("motion-still", profile.mode === "still");
+    }
+  }
+
+  function getPerformanceProfile(refresh) {
+    if (cachedPerformanceProfile && !refresh) return cachedPerformanceProfile;
+
+    const params = new URLSearchParams(window.location.search);
+    const explicit = selectedMotionMode(params);
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || {};
+    const dpr = window.devicePixelRatio || 1;
+    const cores = Number(navigator.hardwareConcurrency) || 0;
+    const memory = Number(navigator.deviceMemory) || 0;
+    const viewportWidth = Math.max(1, window.innerWidth || document.documentElement.clientWidth || 1);
+    const viewportArea = viewportWidth * Math.max(1, window.innerHeight || document.documentElement.clientHeight || 1);
+    const reducedMotion = prefersReducedMotion();
+    const lowMemory = memory > 0 && memory <= 4;
+    const lowCores = cores > 0 && cores <= 4;
+    const smallScreen = viewportWidth <= 760;
+    const denseLowPower = dpr >= 1.75 && (lowCores || lowMemory || viewportArea < 540000);
+    const saveData = !!connection.saveData;
+    const lowPower = saveData || lowMemory || lowCores || smallScreen || denseLowPower;
+    const mode = explicit || (reducedMotion ? "still" : (lowPower ? "lite" : "full"));
+    const isStill = mode === "still" || reducedMotion;
+    const isLite = mode === "lite" || (lowPower && mode !== "full");
+    const frameMs = isStill ? Infinity : (isLite ? 1000 / 24 : 1000 / 45);
+
+    cachedPerformanceProfile = {
+      mode: isStill ? "still" : (isLite ? "lite" : "full"),
+      explicit: !!explicit,
+      isLite,
+      isStill,
+      lowPower,
+      reducedMotion,
+      saveData,
+      cores,
+      memory,
+      dpr,
+      frameMs,
+      maxDpr: isStill ? 1 : (isLite ? 1 : 1.45),
+      webglDpr: isLite ? 1 : 1.35,
+      particleScale: isStill ? 0.22 : (isLite ? 0.42 : 1),
+      textureScale: isStill ? 0.5 : (isLite ? 0.68 : 1),
+      starScale: isStill ? 0.28 : (isLite ? 0.45 : 1)
+    };
+    applyPerformanceProfile(cachedPerformanceProfile);
+    return cachedPerformanceProfile;
+  }
+
+  function shouldDrawFrame(lastFrame, now, frameMs) {
+    if (!Number.isFinite(frameMs) || !lastFrame) return true;
+    return now - lastFrame >= frameMs;
   }
 
   function clamp(value, min, max) {
@@ -11,7 +98,8 @@
 
   function fitCanvas(canvas, host, maxRatio) {
     const rect = host.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, maxRatio || 2);
+    const profile = getPerformanceProfile();
+    const ratio = Math.min(window.devicePixelRatio || 1, maxRatio || 2, profile.maxDpr || 2);
     const width = Math.max(1, Math.floor(rect.width));
     const height = Math.max(1, Math.floor(rect.height));
     const targetW = Math.max(1, Math.floor(width * ratio));
@@ -163,14 +251,20 @@
       ? document.querySelector(settings.canvas)
       : settings.canvas || document.querySelector(settings.selector || "#orbit-field");
     const motion = settings.motion || { open: 1, scroll: 0, spotlight: 1 };
-    const reduce = "prefersReducedMotion" in settings ? !!settings.prefersReducedMotion : prefersReducedMotion();
-    if (!setupRaymarchPortal(canvas, motion, reduce)) setupFluidFallback(canvas);
+    const profile = getPerformanceProfile();
+    const reduce = ("prefersReducedMotion" in settings ? !!settings.prefersReducedMotion : prefersReducedMotion()) || profile.isStill;
+    if (profile.isLite || reduce) {
+      setupFluidFallback(canvas, profile, reduce);
+      return;
+    }
+    if (!setupRaymarchPortal(canvas, motion, reduce, profile)) setupFluidFallback(canvas, profile, reduce);
   }
 
-  function setupRaymarchPortal(canvas, motion, reduce) {
+  function setupRaymarchPortal(canvas, motion, reduce, performanceProfile) {
     if (!canvas) return false;
     const introMotion = motion || { open: 1, scroll: 0, spotlight: 1 };
-    const prefersReducedMotion = !!reduce;
+    const profile = performanceProfile || getPerformanceProfile();
+    const prefersReducedMotion = !!reduce || profile.isStill;
     const gl = canvas.getContext("webgl2", { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: false });
     if (!gl) return false;
     const ext = gl.getExtension("EXT_color_buffer_float");
@@ -392,11 +486,11 @@
       return { tex, fbo, w, h };
     }
 
-    let width = 1, height = 1, ratio = 1, simW = 1, simH = 1, read = null, write = null, raf = 0, frame = 0;
+    let width = 1, height = 1, ratio = 1, simW = 1, simH = 1, read = null, write = null, raf = 0, frame = 0, lastFrame = 0;
     const pointer = { x: 0.62, y: 0.34, px: 0.62, py: 0.34, dx: 0, dy: 0, strength: 0, movedAt: 0 };
 
     function resize() {
-      ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      ratio = Math.min(window.devicePixelRatio || 1, profile.webglDpr || 1.35, 1.5);
       width = Math.max(1, Math.floor(window.innerWidth));
       height = Math.max(1, Math.floor(window.innerHeight));
       canvas.width = Math.floor(width * ratio);
@@ -404,7 +498,7 @@
       canvas.style.width = width + "px";
       canvas.style.height = height + "px";
       gl.viewport(0, 0, canvas.width, canvas.height);
-      const nextW = width > 980 ? 256 : 180;
+      const nextW = width > 980 ? 224 : 160;
       const nextH = Math.max(112, Math.floor(nextW * height / Math.max(1, width)));
       if (!read || nextW !== simW || nextH !== simH) {
         simW = nextW; simH = nextH;
@@ -475,38 +569,56 @@
     }
 
     function tick(now) {
+      if (!shouldDrawFrame(lastFrame, now, profile.frameMs)) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      lastFrame = now;
       simulate(now);
       render(now);
       if (!prefersReducedMotion) raf = requestAnimationFrame(tick);
     }
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) cancelAnimationFrame(raf); else raf = requestAnimationFrame(tick);
+      if (document.hidden) {
+        cancelAnimationFrame(raf);
+      } else {
+        lastFrame = 0;
+        raf = requestAnimationFrame(tick);
+      }
     });
     resize();
     raf = requestAnimationFrame(tick);
     return true;
   }
 
-  function setupFluidFallback(canvas) {
+  function setupFluidFallback(canvas, performanceProfile, reduce) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    let width = 1, height = 1, ratio = 1, raf = 0;
+    const profile = performanceProfile || getPerformanceProfile();
+    const still = !!reduce || profile.isStill;
+    let width = 1, height = 1, ratio = 1, raf = 0, lastFrame = 0;
     function resize() {
-      ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      ratio = Math.min(window.devicePixelRatio || 1, profile.maxDpr || 1.2, 1.5);
       width = window.innerWidth; height = window.innerHeight;
       canvas.width = Math.floor(width * ratio); canvas.height = Math.floor(height * ratio);
       canvas.style.width = width + "px"; canvas.style.height = height + "px";
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
     function draw(now) {
+      if (!shouldDrawFrame(lastFrame, now, profile.frameMs)) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastFrame = now;
       ctx.clearRect(0,0,width,height);
       const g = ctx.createRadialGradient(width*0.5,height*0.48,0,width*0.5,height*0.48,Math.max(width,height)*0.72);
       g.addColorStop(0,"rgba(49,215,255,0.09)"); g.addColorStop(0.45,"rgba(10,34,48,0.28)"); g.addColorStop(1,"rgba(0,0,0,1)");
       ctx.fillStyle = g; ctx.fillRect(0,0,width,height);
       ctx.strokeStyle = "rgba(137,238,255,0.05)"; ctx.lineWidth = 1;
-      for (let i=0;i<9;i+=1) { ctx.beginPath(); ctx.ellipse(width*0.5,height*0.72, width*(0.18+i*0.06), height*(0.04+i*0.018), Math.sin(now*0.0001+i)*0.1, 0, Math.PI*2); ctx.stroke(); }
-      raf = requestAnimationFrame(draw);
+      const rings = profile.isLite || still ? 5 : 9;
+      for (let i=0;i<rings;i+=1) { ctx.beginPath(); ctx.ellipse(width*0.5,height*0.72, width*(0.18+i*0.06), height*(0.04+i*0.018), Math.sin(now*0.0001+i)*0.1, 0, Math.PI*2); ctx.stroke(); }
+      if (!still) raf = requestAnimationFrame(draw);
     }
     window.addEventListener("resize", resize); resize(); raf = requestAnimationFrame(draw);
   }
@@ -516,7 +628,9 @@
     clamp,
     easeInOut,
     fitCanvas,
+    getPerformanceProfile,
     prefersReducedMotion,
+    shouldDrawFrame,
     setupCardFocusDimming,
     setupFooterReveal,
     setupLiquidBackground,

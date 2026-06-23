@@ -2,9 +2,17 @@
   "use strict";
 
   const params = new URLSearchParams(window.location.search);
+  const Effects = window.ZephyrEffects || {};
+  const performanceProfile = Effects.getPerformanceProfile
+    ? Effects.getPerformanceProfile()
+    : { isLite: false, isStill: false, maxDpr: 1.45, frameMs: 1000 / 45, particleScale: 1, starScale: 1 };
+  const shouldDrawFrame = Effects.shouldDrawFrame || ((lastFrame, now, frameMs) => !lastFrame || now - lastFrame >= frameMs);
   const freezeShot = params.get("shot");
-  const freezeTime = params.has("t") ? Number(params.get("t")) : ({ opening: 0.72, vertigo: 1.65, settled: 4.15 }[freezeShot] ?? null);
-  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches || params.has("reduced-motion");
+  const freezeTimes = { opening: 0.72, vertigo: 1.65, settled: 4.15 };
+  const freezeTime = params.has("t")
+    ? Number(params.get("t"))
+    : (Object.prototype.hasOwnProperty.call(freezeTimes, freezeShot) ? freezeTimes[freezeShot] : null);
+  const reduced = performanceProfile.isStill || window.matchMedia("(prefers-reduced-motion: reduce)").matches || params.has("reduced-motion");
 
   const root = document.documentElement;
   const body = document.body;
@@ -27,8 +35,9 @@
   let height = 0;
   let ratio = 1;
   let start = performance.now();
-  const stars = makeStars(160);
-  const particles = makeParticles(180);
+  let lastFrame = 0;
+  const stars = makeStars(Math.max(24, Math.round(160 * (performanceProfile.starScale || 1))));
+  const particles = makeParticles(Math.max(36, Math.round(180 * (performanceProfile.particleScale || 1))));
 
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
   function mix(a, b, t) { return a + (b - a) * t; }
@@ -59,7 +68,7 @@
   }
 
   function resize() {
-    ratio = Math.min(window.devicePixelRatio || 1, 1.65);
+    ratio = Math.min(window.devicePixelRatio || 1, performanceProfile.maxDpr || 1.45, 1.65);
     width = window.innerWidth;
     height = window.innerHeight;
     worldCanvas.width = Math.floor(width * ratio);
@@ -167,8 +176,9 @@
       worldCtx.save();
       worldCtx.globalCompositeOperation = "screen";
       const alpha = pulse(t, 0.15, 1.85) * 0.9;
-      for (let i = 0; i < 30; i++) {
-        const x0 = width * (0.12 + (i / 29) * 0.76);
+      const streakCount = performanceProfile.isLite ? 10 : 30;
+      for (let i = 0; i < streakCount; i++) {
+        const x0 = width * (0.12 + (i / Math.max(1, streakCount - 1)) * 0.76);
         const x1 = width * 0.5 + Math.sin(i * 2.1) * width * 0.08;
         const y0 = height * (0.92 + Math.sin(i) * 0.05);
         const y1 = height * (0.60 + Math.cos(i * 0.7) * 0.08);
@@ -211,7 +221,8 @@
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(1, 0.34);
-    for (let i = 0; i < 10; i++) {
+    const baseRings = performanceProfile.isLite ? 6 : 10;
+    for (let i = 0; i < baseRings; i++) {
       const r = rx * (0.22 + i * 0.095);
       ctx.lineWidth = i % 3 === 0 ? 1.2 : 0.65;
       ctx.strokeStyle = i % 3 === 0 ? `rgba(142,245,255,${0.12 * alpha})` : `rgba(26,154,255,${0.07 * alpha})`;
@@ -219,7 +230,8 @@
       ctx.arc(0, 0, r, 0, Math.PI * 2);
       ctx.stroke();
     }
-    for (let i = 0; i < 5; i++) {
+    const arcRings = performanceProfile.isLite ? 3 : 5;
+    for (let i = 0; i < arcRings; i++) {
       const r = rx * (0.42 + i * 0.15);
       const a0 = t * 0.45 + i * 1.2;
       ctx.strokeStyle = `rgba(122,244,255,${0.28 * alpha})`;
@@ -247,7 +259,8 @@
     const ringScale = 0.82 + m.vertigo * 0.2 + m.settle * 0.02;
     ctx.scale(ringScale, ringScale);
 
-    for (let layer = 0; layer < 5; layer++) {
+    const layers = performanceProfile.isLite ? 3 : 5;
+    for (let layer = 0; layer < layers; layer++) {
       const rr = r * (0.62 + layer * 0.105);
       ctx.lineWidth = layer === 1 ? 1.2 : 0.65;
       ctx.strokeStyle = layer % 2 === 0 ? `rgba(100, 229, 255,${0.10 * alpha})` : `rgba(230,250,255,${0.15 * alpha})`;
@@ -255,7 +268,7 @@
       ctx.arc(0, 0, rr, 0, Math.PI * 2 * intro);
       ctx.stroke();
 
-      const segs = 5 + layer * 2;
+      const segs = performanceProfile.isLite ? 3 + layer : 5 + layer * 2;
       for (let i = 0; i < segs; i++) {
         const a = t * (0.08 + layer * 0.02) + i * Math.PI * 2 / segs + layer * 0.31;
         const len = 0.1 + (i % 3) * 0.035;
@@ -268,8 +281,9 @@
     }
 
     // radial ticks
-    for (let i = 0; i < 96; i++) {
-      const a = i * Math.PI * 2 / 96;
+    const tickCount = performanceProfile.isLite ? 40 : 96;
+    for (let i = 0; i < tickCount; i++) {
+      const a = i * Math.PI * 2 / tickCount;
       const big = i % 8 === 0;
       const inner = r * (0.76 + (big ? 0 : 0.02));
       const outer = r * (0.79 + (big ? 0.035 : 0.015));
@@ -314,6 +328,11 @@
   }
 
   function frame(now) {
+    if (freezeTime === null && !reduced && !shouldDrawFrame(lastFrame, now, performanceProfile.frameMs || 16)) {
+      window.requestAnimationFrame(frame);
+      return;
+    }
+    lastFrame = now;
     const t = freezeTime !== null && Number.isFinite(freezeTime) ? freezeTime : (now - start) / 1000;
     applyCss(t);
     drawWorld(t);

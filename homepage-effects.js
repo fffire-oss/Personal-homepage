@@ -2,13 +2,17 @@
   "use strict";
 
   const Effects = window.ZephyrEffects || {};
-  const prefersReducedMotion = Effects.prefersReducedMotion
+  const performanceProfile = Effects.getPerformanceProfile
+    ? Effects.getPerformanceProfile()
+    : { isLite: false, isStill: false, maxDpr: 1.45, frameMs: 1000 / 45, particleScale: 1, starScale: 1, textureScale: 1 };
+  const shouldDrawFrame = Effects.shouldDrawFrame || ((lastFrame, now, frameMs) => !lastFrame || now - lastFrame >= frameMs);
+  const prefersReducedMotion = performanceProfile.isStill || (Effects.prefersReducedMotion
     ? Effects.prefersReducedMotion()
-    : new URLSearchParams(window.location.search).has("reduced-motion");
+    : new URLSearchParams(window.location.search).has("reduced-motion"));
   const clamp = Effects.clamp || ((value, min, max) => Math.min(max, Math.max(min, value)));
   const fitCanvas = Effects.fitCanvas || ((canvas, host, maxRatio) => {
     const rect = host.getBoundingClientRect();
-    const ratio = Math.min(window.devicePixelRatio || 1, maxRatio || 2);
+    const ratio = Math.min(window.devicePixelRatio || 1, maxRatio || 2, performanceProfile.maxDpr || 2);
     const width = Math.max(1, Math.floor(rect.width));
     const height = Math.max(1, Math.floor(rect.height));
     const targetW = Math.max(1, Math.floor(width * ratio));
@@ -58,6 +62,7 @@
     let timer = 0;
     let settled = false;
     let timelineComplete = prefersReducedMotion;
+    const directorInterval = prefersReducedMotion ? 80 : (performanceProfile.isLite ? 34 : 16);
 
     body.classList.add("intro-directed");
 
@@ -165,7 +170,7 @@
     function loop() {
       update(performance.now());
       if (!timelineComplete) {
-        timer = window.setTimeout(loop, 16);
+        timer = window.setTimeout(loop, directorInterval);
       }
     }
 
@@ -174,7 +179,7 @@
       started = true;
       start = performance.now();
       update(start);
-      timer = window.setTimeout(loop, 16);
+      timer = window.setTimeout(loop, directorInterval);
       window.setTimeout(settleBrand, prefersReducedMotion ? 0 : 4600);
     }
 
@@ -188,7 +193,7 @@
     document.addEventListener("visibilitychange", () => {
       if (!started) return;
       if (document.hidden) clearTimeout(timer);
-      else if (!timelineComplete) timer = window.setTimeout(loop, 16);
+      else if (!timelineComplete) timer = window.setTimeout(loop, directorInterval);
     });
     (artReady || Promise.resolve()).then(() => window.requestAnimationFrame(begin));
   }
@@ -412,11 +417,11 @@
     const host = canvas.parentElement || canvas;
     const particles = [];
     const targets = [];
-    let width = 1, height = 1, ratio = 1, frame = 0;
+    let width = 1, height = 1, ratio = 1, frame = 0, lastFrame = 0;
     const pointer = { x: 0, y: 0, active: false };
 
     function resize() {
-      const size = fitCanvas(canvas, host, 2.2);
+      const size = fitCanvas(canvas, host, performanceProfile.isLite ? 1.05 : 2.2);
       width = size.width;
       height = size.height;
       ratio = size.ratio;
@@ -437,7 +442,7 @@
       m.font = "900 " + Math.floor(width * 0.34) + "px Inter, Arial, sans-serif";
       m.fillText("ZL", width / 2, height / 2 + height * 0.02);
       const image = m.getImageData(0, 0, width, height).data;
-      const step = Math.max(3, Math.floor(width / 82));
+      const step = Math.max(performanceProfile.isLite ? 5 : 3, Math.floor(width / (performanceProfile.isLite ? 54 : 82)));
       for (let y = 0; y < height; y += step) {
         for (let x = 0; x < width; x += step) {
           if (image[(y * width + x) * 4 + 3] > 80) targets.push({ x, y });
@@ -446,7 +451,10 @@
     }
 
     function buildParticles() {
-      const count = Math.min(1600, Math.max(360, targets.length));
+      const count = Math.min(
+        performanceProfile.isLite ? 520 : 1600,
+        Math.max(performanceProfile.isLite ? 140 : 360, Math.floor(targets.length * (performanceProfile.particleScale || 1)))
+      );
       particles.length = 0;
       for (let i = 0; i < count; i += 1) {
         const target = targets[i % Math.max(1, targets.length)] || { x: width / 2, y: height / 2 };
@@ -469,8 +477,14 @@
       return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + alpha + ")";
     }
 
-    function draw() {
-      frame += prefersReducedMotion ? 0 : 1;
+    function draw(now) {
+      now = Number.isFinite(now) ? now : performance.now();
+      if (!prefersReducedMotion && !shouldDrawFrame(lastFrame, now, performanceProfile.frameMs || 16)) {
+        requestAnimationFrame(draw);
+        return;
+      }
+      lastFrame = now;
+      frame += prefersReducedMotion ? 0 : (performanceProfile.isLite ? 0.65 : 1);
       const time = frame * 0.012;
       ctx.clearRect(0, 0, width, height);
       ctx.globalCompositeOperation = "lighter";
@@ -519,7 +533,7 @@
     if (!visual || !canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    let width = 1, height = 1, ratio = 1, raf = 0, last = 0;
+    let width = 1, height = 1, ratio = 1, raf = 0, last = 0, lastDraw = 0;
     const paths = [
       [[0.08,0.24],[0.19,0.24],[0.19,0.38],[0.36,0.38]],
       [[0.02,0.50],[0.23,0.50],[0.31,0.44],[0.41,0.44]],
@@ -540,7 +554,7 @@
     ];
 
     function resize() {
-      const size = fitCanvas(canvas, visual, 1.65);
+      const size = fitCanvas(canvas, visual, performanceProfile.isLite ? 1.05 : 1.65);
       width = size.width;
       height = size.height;
       ratio = size.ratio;
@@ -610,6 +624,12 @@
     }
 
     function draw(now) {
+      now = Number.isFinite(now) ? now : performance.now();
+      if (!prefersReducedMotion && !shouldDrawFrame(lastDraw, now, performanceProfile.frameMs || 16)) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastDraw = now;
       const dt = Math.min(32, now - last || 16);
       last = now;
       const active = activation();
@@ -637,7 +657,7 @@
         if (i % 3 === 0) drawNode(end[0] * width, end[1] * height, [82, 232, 255], false);
       });
       ctx.globalCompositeOperation = "source-over";
-      raf = requestAnimationFrame(draw);
+      if (!prefersReducedMotion) raf = requestAnimationFrame(draw);
     }
 
     function start() {
@@ -647,7 +667,7 @@
 
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) cancelAnimationFrame(raf); else { last = 0; raf = requestAnimationFrame(draw); }
+      if (document.hidden) cancelAnimationFrame(raf); else { last = 0; lastDraw = 0; raf = requestAnimationFrame(draw); }
     });
     artReady.then(start);
   }
@@ -660,7 +680,7 @@
     if (!ctx) return;
     const tape = visual.querySelector("[data-market-tape]");
     const clock = visual.querySelector("[data-local-clock]");
-    let width = 1, height = 1, ratio = 1, raf = 0, lastTextureKey = "";
+    let width = 1, height = 1, ratio = 1, raf = 0, lastTextureKey = "", lastDraw = 0;
     const buffer = document.createElement("canvas");
     const bctx = buffer.getContext("2d");
     const textures = {
@@ -705,7 +725,7 @@
     }
 
     function resize() {
-      const size = fitCanvas(canvas, visual, 1.55);
+      const size = fitCanvas(canvas, visual, performanceProfile.isLite ? 1.05 : 1.55);
       width = size.width; height = size.height; ratio = size.ratio;
       ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
       lastTextureKey = "";
@@ -714,7 +734,8 @@
     function buildMarketSeries() {
       const seed = Math.floor(Date.now() / 3600000);
       const points = [];
-      for (let i = 0; i < 96; i += 1) {
+      const pointCount = performanceProfile.isLite ? 56 : 96;
+      for (let i = 0; i < pointCount; i += 1) {
         const trend = i * 0.024 + Math.sin(seed * 0.21) * i * 0.006;
         const wave = Math.sin(i * 0.21 + seed * 0.6) * 1.1 + Math.cos(i * 0.07 + seed) * 0.65;
         points.push(100 + trend + wave);
@@ -793,9 +814,14 @@
     }
 
     function buildEarthTexture(earth, now, model) {
-      const detail = Math.min(300, Math.max(184, Math.floor(earth.r * 1.22)));
+      const detail = Math.min(
+        performanceProfile.isLite ? 190 : 300,
+        Math.max(performanceProfile.isLite ? 112 : 184, Math.floor(earth.r * 1.22 * (performanceProfile.textureScale || 1)))
+      );
       const rotation = now * 0.000026 + model.localLon * 0.35;
-      const key = detail + ":" + Math.floor(rotation * 180) + ":" + Math.floor(now / 450);
+      const rotationBucket = performanceProfile.isLite ? 72 : 180;
+      const timeBucket = performanceProfile.isLite ? 1200 : 450;
+      const key = detail + ":" + Math.floor(rotation * rotationBucket) + ":" + Math.floor(now / timeBucket);
       if (key === lastTextureKey && buffer.width === detail && buffer.height === detail) return;
       lastTextureKey = key;
       buffer.width = detail;
@@ -866,7 +892,7 @@
       nebula.addColorStop(1, "rgba(0,0,0,0)");
       ctx.fillStyle = nebula;
       ctx.fillRect(0, 0, width, height);
-      const starCount = Math.max(42, Math.floor(width * height / 9000));
+      const starCount = Math.max(performanceProfile.isLite ? 24 : 42, Math.floor(width * height / (performanceProfile.isLite ? 19000 : 9000)));
       for (let i = 0; i < starCount; i += 1) {
         const x = (Math.sin(i * 127.13) * 43758.5453 % 1 + 1) % 1 * width;
         const y = (Math.sin(i * 311.7 + 19.1) * 24634.6345 % 1 + 1) % 1 * height;
@@ -1003,11 +1029,18 @@
     }
 
     function draw(now) {
+      now = Number.isFinite(now) ? now : performance.now();
+      const frameMs = performanceProfile.isLite ? Math.max(performanceProfile.frameMs || 16, 1000 / 18) : (performanceProfile.frameMs || 16);
+      if (!prefersReducedMotion && !shouldDrawFrame(lastDraw, now, frameMs)) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastDraw = now;
       const model = solarModel(new Date());
       drawSpace(model, now);
       drawEarth(now, model);
       updateReadout();
-      raf = requestAnimationFrame(draw);
+      if (!prefersReducedMotion) raf = requestAnimationFrame(draw);
     }
 
     function start() {
@@ -1017,7 +1050,7 @@
 
     window.addEventListener("resize", resize);
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) cancelAnimationFrame(raf); else { lastTextureKey = ""; raf = requestAnimationFrame(draw); }
+      if (document.hidden) cancelAnimationFrame(raf); else { lastTextureKey = ""; lastDraw = 0; raf = requestAnimationFrame(draw); }
     });
     artReady.then(start);
   }
@@ -1047,9 +1080,10 @@
     let activatedAt = 0;
     let activationStarted = false;
     let activationObserver = null;
-    const streamDelay = prefersReducedMotion ? 0 : 190;
+    let lastDraw = 0;
+    const streamDelay = prefersReducedMotion ? 0 : (performanceProfile.isLite ? 260 : 190);
     const nodes = [];
-    const journalStars = makeJournalStars(176);
+    const journalStars = makeJournalStars(Math.max(36, Math.round(176 * (performanceProfile.starScale || 1))));
     let edges = [];
     let graphLinks = [];
     let categories = new Map([
@@ -1214,7 +1248,7 @@
       cancelAnimationFrame(raf);
       draw(performance.now());
       if (stage.dataset.transfer !== "complete") {
-        transferTimer = window.setTimeout(keepTransferMoving, 180);
+        transferTimer = window.setTimeout(keepTransferMoving, performanceProfile.isLite ? 260 : 180);
       }
     }
 
@@ -1253,7 +1287,7 @@
     }
 
     function resize() {
-      const size = fitCanvas(canvas, stage, 1.7);
+      const size = fitCanvas(canvas, stage, performanceProfile.isLite ? 1.05 : 1.7);
       width = size.width;
       height = size.height;
       ratio = size.ratio;
@@ -1390,6 +1424,13 @@
     }
 
     function draw(now) {
+      now = Number.isFinite(now) ? now : performance.now();
+      const frameMs = performanceProfile.isLite ? Math.max(performanceProfile.frameMs || 16, 1000 / 18) : (performanceProfile.frameMs || 16);
+      if (!prefersReducedMotion && !shouldDrawFrame(lastDraw, now, frameMs)) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastDraw = now;
       ctx.clearRect(0, 0, width, height);
       const cx = width * 0.5, cy = height * 0.5;
       const radius = Math.min(width, height) * 0.34;
@@ -1460,7 +1501,7 @@
       screenNodes = projected.filter((point) => point.reveal * intro > 0.18).sort((a, b) => b.z - a.z);
       updateHoverLabel(screenNodes.find((point) => point.node.id === hoveredId));
       ctx.restore();
-      raf = requestAnimationFrame(draw);
+      if (!prefersReducedMotion) raf = requestAnimationFrame(draw);
     }
 
     function hitNode(event) {
@@ -1507,6 +1548,7 @@
         cancelAnimationFrame(raf);
         window.clearTimeout(transferTimer);
       } else if (stage.dataset.transfer !== "waiting") {
+        lastDraw = 0;
         keepTransferMoving();
       }
     });
