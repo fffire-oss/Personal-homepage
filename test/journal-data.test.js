@@ -7,6 +7,7 @@ const vm = require("node:vm");
 const root = path.resolve(__dirname, "..");
 const data = JSON.parse(fs.readFileSync(path.join(root, "journal-data.json"), "utf8"));
 const leakPattern = /(?:[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|(?:\d{1,3}\.){3}\d{1,3}|BEGIN (?:RSA|OPENSSH|PRIVATE) KEY|api[_ -]?key|secret|password|token|C:\\|G:\\|\/home\/|\/Users\/|\/opt\/|\/var\/www|bilibili|space\.bilibili)/i;
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
 test("journal graph has valid node and link references", () => {
   assert.ok(data.nodes.length >= 20);
@@ -20,11 +21,13 @@ test("journal graph has valid node and link references", () => {
 });
 
 test("journal graph summaries are concrete and public-safe", () => {
+  assert.equal(hasOwn(data, "source"), false, "public journal-data should not expose source metadata");
   for (const node of data.nodes) {
     assert.ok(node.summary.length >= 70, node.id + " summary is too short");
     assert.ok(Array.isArray(node.body), node.id + " is missing note body");
     assert.ok(node.body.length >= 1, node.id + " has no note body paragraphs");
     assert.ok(node.body.join(" ").length >= 150, node.id + " note body is too thin");
+    assert.equal(hasOwn(node, "source"), false, node.id + " exposes source metadata");
     assert.doesNotMatch(JSON.stringify(node), leakPattern, node.id + " contains private-looking data");
   }
 });
@@ -51,10 +54,13 @@ test("homepage streams the full vault graph after art assets are ready", () => {
 
 test("journal display page does not expose admin edit entry points", () => {
   const journal = fs.readFileSync(path.join(root, "journal.html"), "utf8");
-  const admin = fs.readFileSync(path.join(root, "journal-admin.html"), "utf8");
+  const adminPath = path.join(root, "journal-backend", "admin", "journal-admin.html");
+  const admin = fs.readFileSync(adminPath, "utf8");
 
+  assert.equal(fs.existsSync(path.join(root, "journal-admin.html")), false);
   assert.doesNotMatch(journal, /journal-admin\.html|Edit node|data-node-edit|Node console/i);
   assert.match(admin, /name="robots" content="noindex,nofollow"/i);
+  assert.match(admin, /\/admin\/journal-admin\.html/i);
 });
 
 test("homepage journal shortcuts scroll to the Journal section", () => {

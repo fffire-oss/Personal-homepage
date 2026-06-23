@@ -20,5 +20,5 @@ The vault did not contain publishable matches for common private-data patterns i
 
 - `journal.html` renders the public knowledge graph.
 - `journal-data.json` contains the sanitized graph data.
-- `journal-admin.html` provides a token-gated node console when the backend is deployed.
+- `journal-backend/admin/journal-admin.html` is a backend-only admin UI template and is not published as a public static page.
 - `journal-backend/server.js` provides a no-dependency same-origin API for appending public graph nodes.

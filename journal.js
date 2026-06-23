@@ -143,7 +143,7 @@
         status: node.status || "public",
         summary: node.summary || "",
         body: Array.isArray(node.body) ? node.body : typeof node.body === "string" && node.body.trim() ? [node.body.trim()] : previous.body || [],
-        source: node.source || "admin",
+        source: node.source || "public data",
         route: node.route || ""
       });
     }

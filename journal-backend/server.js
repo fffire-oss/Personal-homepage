@@ -15,20 +15,34 @@ const VAULT_AUTO_SYNC = process.env.JOURNAL_VAULT_GIT_AUTO_SYNC !== "0";
 const VAULT_GIT_AUTHOR_NAME = process.env.JOURNAL_VAULT_GIT_AUTHOR_NAME || "ZephyrLabs Journal Bot";
 const VAULT_GIT_AUTHOR_EMAIL = process.env.JOURNAL_VAULT_GIT_AUTHOR_EMAIL || "journal-bot@example.invalid";
 const ADMIN_TOKEN = process.env.JOURNAL_ADMIN_TOKEN || "";
+const ADMIN_UI_ENABLED = process.env.JOURNAL_ENABLE_ADMIN_UI === "1";
+const ADMIN_UI_PATH = path.join(__dirname, "admin", "journal-admin.html");
+const ADMIN_ALLOWED_ORIGIN = process.env.JOURNAL_ADMIN_ORIGIN || "";
 const PORT = Number(process.env.PORT || 8787);
 const MAX_BODY_BYTES = Number(process.env.JOURNAL_MAX_BODY_BYTES || 4 * 1024 * 1024);
+const MAX_NODE_BODY_BYTES = Number(process.env.JOURNAL_MAX_NODE_BODY_BYTES || 64 * 1024);
 const MAX_VAULT_FILE_BYTES = Number(process.env.JOURNAL_MAX_VAULT_FILE_BYTES || 3 * 1024 * 1024);
 const MAX_LISTED_VAULT_FILES = 500;
+const ADMIN_RATE_WINDOW_MS = Number(process.env.JOURNAL_ADMIN_RATE_WINDOW_MS || 10 * 60 * 1000);
+const ADMIN_RATE_MAX = Number(process.env.JOURNAL_ADMIN_RATE_MAX || 60);
+const adminRateBuckets = new Map();
+const ALLOWED_VAULT_EXTENSIONS = new Set([".md", ".txt", ".json", ".png", ".jpg", ".jpeg", ".webp", ".avif", ".gif", ".pdf"]);
 
 const MIME_TYPES = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".avif": "image/avif",
+  ".gif": "image/gif",
+  ".pdf": "application/pdf"
 };
 
 const LEAK_PATTERN = /(?:[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}|(?:\d{1,3}\.){3}\d{1,3}|BEGIN (?:RSA|OPENSSH|PRIVATE) KEY|api[_ -]?key|secret|password|token|C:\\|G:\\|\/home\/|\/Users\/|\/opt\/|\/var\/www|bilibili|space\.bilibili)/i;
@@ -40,19 +54,31 @@ let lastVaultSync = {
   at: null
 };
 
+function securityHeaders(headers = {}) {
+  return {
+    "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://images-api.nasa.gov https://images-assets.nasa.gov; img-src 'self' data: https:; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    ...headers
+  };
+}
+
 function sendJson(response, status, body) {
-  response.writeHead(status, {
+  response.writeHead(status, securityHeaders({
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store"
-  });
+  }));
   response.end(JSON.stringify(body));
 }
 
 function sendText(response, status, body) {
-  response.writeHead(status, {
+  response.writeHead(status, securityHeaders({
     "Content-Type": "text/plain; charset=utf-8",
     "Cache-Control": "no-store"
-  });
+  }));
   response.end(body);
 }
 
@@ -116,11 +142,15 @@ function normalizeVaultPath(value) {
   }
   const parts = raw.split("/").filter(Boolean);
   if (!parts.length) throw new Error("Vault file path is required.");
-  if (parts.some((part) => part === "." || part === ".." || part === ".git")) {
+  if (parts.some((part) => part === "." || part === ".." || part.startsWith("."))) {
     throw new Error("Vault file path contains an unsafe segment.");
   }
   const normalized = parts.join("/");
   if (normalized.length > 220) throw new Error("Vault file path is too long.");
+  const extension = path.extname(normalized).toLowerCase();
+  if (!ALLOWED_VAULT_EXTENSIONS.has(extension)) {
+    throw new Error("Vault file type is not allowed.");
+  }
   return normalized;
 }
 
@@ -136,6 +166,27 @@ function resolveVaultPath(value) {
 
 function vaultDisplayPath(target) {
   return path.relative(VAULT_PATH, target).split(path.sep).join("/");
+}
+
+function validateVaultBuffer(buffer, relativePath) {
+  const extension = path.extname(relativePath).toLowerCase();
+  const head = buffer.subarray(0, 16);
+  const startsWith = (bytes) => bytes.every((byte, index) => head[index] === byte);
+  if ([".md", ".txt", ".json"].includes(extension)) {
+    if (buffer.includes(0)) throw new Error("Text vault files may not contain NUL bytes.");
+    if (extension === ".json") JSON.parse(buffer.toString("utf8"));
+    return;
+  }
+  if (extension === ".png" && !startsWith([0x89, 0x50, 0x4e, 0x47])) throw new Error("PNG resource has an invalid file signature.");
+  if ((extension === ".jpg" || extension === ".jpeg") && !startsWith([0xff, 0xd8, 0xff])) throw new Error("JPEG resource has an invalid file signature.");
+  if (extension === ".gif" && !startsWith([0x47, 0x49, 0x46, 0x38])) throw new Error("GIF resource has an invalid file signature.");
+  if (extension === ".pdf" && !startsWith([0x25, 0x50, 0x44, 0x46])) throw new Error("PDF resource has an invalid file signature.");
+  if (extension === ".webp" && !(buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP")) {
+    throw new Error("WebP resource has an invalid file signature.");
+  }
+  if (extension === ".avif" && buffer.subarray(4, 12).toString("ascii").indexOf("ftyp") === -1) {
+    throw new Error("AVIF resource has an invalid file signature.");
+  }
 }
 
 async function listVaultFiles() {
@@ -176,6 +227,8 @@ async function listVaultFiles() {
 
 async function readVaultFile(pathname) {
   const { relativePath, target } = resolveVaultPath(pathname);
+  const extension = path.extname(relativePath).toLowerCase();
+  if (![".md", ".txt", ".json"].includes(extension)) throw new Error("Only text vault files can be loaded in the editor.");
   const stat = await fs.stat(target);
   if (!stat.isFile()) throw new Error("Vault path is not a file.");
   if (stat.size > MAX_VAULT_FILE_BYTES) throw new Error("Vault file is too large to load in the editor.");
@@ -188,13 +241,18 @@ async function readVaultFile(pathname) {
 }
 
 async function writeVaultFile(payload) {
+  assertAllowedKeys(payload, new Set(["path", "content", "encoding"]), "vault file");
   const { relativePath, target } = resolveVaultPath(payload.path);
   const encoding = payload.encoding === "base64" ? "base64" : "utf8";
+  if (encoding === "base64" && !/^[A-Za-z0-9+/]+={0,2}$/.test(String(payload.content || "").replace(/\s+/g, ""))) {
+    throw new Error("Vault resource content is not valid base64.");
+  }
   const buffer = encoding === "base64"
-    ? Buffer.from(String(payload.content || ""), "base64")
+    ? Buffer.from(String(payload.content || "").replace(/\s+/g, ""), "base64")
     : Buffer.from(String(payload.content ?? ""), "utf8");
   if (!buffer.length) throw new Error("Vault file content is required.");
   if (buffer.length > MAX_VAULT_FILE_BYTES) throw new Error("Vault file is too large.");
+  validateVaultBuffer(buffer, relativePath);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await fs.writeFile(target, buffer);
   const stat = await fs.stat(target);
@@ -339,12 +397,83 @@ function authorized(request) {
   return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
 }
 
-function readBody(request) {
+function clientIp(request) {
+  return request.socket && request.socket.remoteAddress ? request.socket.remoteAddress : "unknown";
+}
+
+function auditAdmin(request, action, status) {
+  console.warn(JSON.stringify({
+    at: new Date().toISOString(),
+    event: "journal-admin-api",
+    action,
+    status,
+    method: request.method,
+    path: new URL(request.url, "http://localhost").pathname,
+    ip: clientIp(request)
+  }));
+}
+
+function rateLimitAdmin(request) {
+  const now = Date.now();
+  const key = clientIp(request);
+  const bucket = adminRateBuckets.get(key) || { resetAt: now + ADMIN_RATE_WINDOW_MS, count: 0 };
+  if (bucket.resetAt <= now) {
+    bucket.resetAt = now + ADMIN_RATE_WINDOW_MS;
+    bucket.count = 0;
+  }
+  bucket.count += 1;
+  adminRateBuckets.set(key, bucket);
+  return bucket.count <= ADMIN_RATE_MAX;
+}
+
+function adminRequestAllowed(request, response, action) {
+  if (!rateLimitAdmin(request)) {
+    auditAdmin(request, action, "rate-limited");
+    sendJson(response, 429, { error: "Too many admin requests. Try again later." });
+    return false;
+  }
+  return true;
+}
+
+function sameOriginWriteAllowed(request) {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(request.method)) return true;
+  const origin = request.headers.origin || "";
+  const secFetchSite = request.headers["sec-fetch-site"] || "";
+  if (secFetchSite && !["same-origin", "same-site", "none"].includes(secFetchSite)) return false;
+  if (!origin) return true;
+  if (ADMIN_ALLOWED_ORIGIN && origin === ADMIN_ALLOWED_ORIGIN) return true;
+  const host = request.headers["x-forwarded-host"] || request.headers.host || "";
+  const proto = request.headers["x-forwarded-proto"] || "http";
+  return Boolean(host) && origin === proto + "://" + host;
+}
+
+function requireWriteGuards(request, response, action) {
+  if (!sameOriginWriteAllowed(request)) {
+    auditAdmin(request, action, "bad-origin");
+    sendJson(response, 403, { error: "Cross-site admin writes are not allowed." });
+    return false;
+  }
+  const contentType = request.headers["content-type"] || "";
+  if (["POST", "PUT", "PATCH"].includes(request.method) && !contentType.toLowerCase().includes("application/json")) {
+    auditAdmin(request, action, "bad-content-type");
+    sendJson(response, 415, { error: "Admin writes require application/json." });
+    return false;
+  }
+  return true;
+}
+
+function assertAllowedKeys(payload, allowed, label) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new Error(label + " payload must be an object.");
+  const unknown = Object.keys(payload).filter((key) => !allowed.has(key));
+  if (unknown.length) throw new Error(label + " payload contains unsupported fields: " + unknown.join(", "));
+}
+
+function readBody(request, maxBytes = MAX_BODY_BYTES) {
   return new Promise((resolve, reject) => {
     let body = "";
     request.on("data", (chunk) => {
       body += chunk;
-      if (Buffer.byteLength(body) > MAX_BODY_BYTES) {
+      if (Buffer.byteLength(body) > maxBytes) {
         reject(new Error("Request body is too large."));
         request.destroy();
       }
@@ -383,6 +512,7 @@ function slugify(value) {
 }
 
 function sanitizeNode(payload) {
+  assertAllowedKeys(payload, new Set(["id", "title", "category", "kind", "status", "summary", "body", "links", "source"]), "journal node");
   const title = cleanText(payload.title, "title", 80);
   const id = slugify(payload.id || title);
   if (!id) throw new Error("id is required.");
@@ -447,6 +577,54 @@ function mergeGraph(base, store) {
   };
 }
 
+function publicNode(node) {
+  const body = Array.isArray(node.body)
+    ? node.body.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 8)
+    : typeof node.body === "string" && node.body.trim()
+      ? [node.body.trim()]
+      : [];
+  return {
+    id: String(node.id || ""),
+    title: String(node.title || node.id || ""),
+    category: String(node.category || "public"),
+    kind: String(node.kind || "note"),
+    status: String(node.status || "public"),
+    summary: String(node.summary || ""),
+    body,
+    route: typeof node.route === "string" && !/^(?:[a-z]+:|\/\/)/i.test(node.route) ? node.route : ""
+  };
+}
+
+function publicLinks(links, nodeIds) {
+  const seen = new Set();
+  return (links || [])
+    .filter((link) => link && nodeIds.has(link.source) && nodeIds.has(link.target))
+    .map((link) => ({
+      source: String(link.source),
+      target: String(link.target),
+      kind: String(link.kind || "related")
+    }))
+    .filter((link) => {
+      const key = link.source + "->" + link.target + ":" + link.kind;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function publicGraph(graph) {
+  const nodes = (graph.nodes || [])
+    .map(publicNode)
+    .filter((node) => node.id && node.title && node.summary);
+  const ids = new Set(nodes.map((node) => node.id));
+  return {
+    generatedAt: graph.generatedAt || null,
+    categories: Array.isArray(graph.categories) ? graph.categories : [],
+    nodes,
+    links: publicLinks(graph.links || [], ids)
+  };
+}
+
 function orderedGraphNodes(nodes) {
   const priority = new Map([
     ["zephyrlabs-journal", 0],
@@ -482,13 +660,13 @@ async function writeStreamLine(response, payload) {
 }
 
 async function sendGraphStream(response) {
-  const graph = await currentGraph();
+  const graph = publicGraph(await currentGraph());
   const nodes = orderedGraphNodes(graph.nodes);
-  response.writeHead(200, {
+  response.writeHead(200, securityHeaders({
     "Content-Type": "application/x-ndjson; charset=utf-8",
     "Cache-Control": "no-store",
     "X-Content-Type-Options": "nosniff"
-  });
+  }));
 
   const alive = await writeStreamLine(response, {
     type: "meta",
@@ -507,7 +685,9 @@ async function sendGraphStream(response) {
 }
 
 async function handleVaultApi(request, response, url) {
+  if (!adminRequestAllowed(request, response, "vault")) return;
   if (!authorized(request)) {
+    auditAdmin(request, "vault", "unauthorized");
     sendJson(response, 401, { error: "Admin token is required for vault access." });
     return;
   }
@@ -541,17 +721,21 @@ async function handleVaultApi(request, response, url) {
   }
 
   if (url.pathname === "/api/journal/vault/file" && request.method === "POST") {
+    if (!requireWriteGuards(request, response, "vault:file")) return;
     try {
       const payload = JSON.parse(await readBody(request));
       const file = await writeVaultFile(payload);
       if (!VAULT_AUTO_SYNC) {
+        auditAdmin(request, "vault:file", "saved");
         sendJson(response, 200, { saved: true, file, sync: lastVaultSync });
         return;
       }
       try {
         const sync = await syncVault();
+        auditAdmin(request, "vault:file", "saved");
         sendJson(response, 200, { saved: true, file, sync });
       } catch (error) {
+        auditAdmin(request, "vault:file", "saved-sync-warning");
         sendJson(response, 202, { saved: true, file, sync: lastVaultSync, warning: error.message });
       }
     } catch (error) {
@@ -565,7 +749,9 @@ async function handleVaultApi(request, response, url) {
       sendJson(response, 405, { error: "Method not allowed." });
       return;
     }
+    if (!requireWriteGuards(request, response, "vault:sync")) return;
     try {
+      auditAdmin(request, "vault:sync", "requested");
       sendJson(response, 200, { sync: await syncVault() });
     } catch (error) {
       sendJson(response, 502, { error: error.message, sync: lastVaultSync });
@@ -593,10 +779,9 @@ async function handleApi(request, response, url) {
 
   if (url.pathname === "/api/journal/graph") {
     if (request.method === "GET") {
-      const graph = await currentGraph();
+      const graph = publicGraph(await currentGraph());
       sendJson(response, 200, {
-        graph,
-        overrides: await readStore()
+        graph
       });
       return;
     }
@@ -616,7 +801,9 @@ async function handleApi(request, response, url) {
   }
 
   if (request.method === "GET") {
-    sendJson(response, 200, await readStore());
+    const store = await readStore();
+    const publicStore = publicGraph({ nodes: store.nodes, links: store.links, categories: [] });
+    sendJson(response, 200, { nodes: publicStore.nodes, links: publicStore.links });
     return;
   }
 
@@ -625,13 +812,16 @@ async function handleApi(request, response, url) {
     return;
   }
 
+  if (!adminRequestAllowed(request, response, "journal:nodes")) return;
   if (!authorized(request)) {
+    auditAdmin(request, "journal:nodes", "unauthorized");
     sendJson(response, 401, { error: "Admin token is required." });
     return;
   }
+  if (!requireWriteGuards(request, response, "journal:nodes")) return;
 
   try {
-    const payload = JSON.parse(await readBody(request));
+    const payload = JSON.parse(await readBody(request, MAX_NODE_BODY_BYTES));
     const node = sanitizeNode(payload);
     const store = await readStore();
     const knownTargets = new Set([...store.nodes.map((item) => item.id), ...await readBaseNodeIds()]);
@@ -645,6 +835,7 @@ async function handleApi(request, response, url) {
     store.links = store.links.filter((link) => link.source !== node.id);
     store.links.push(...links);
     await writeStore(store);
+    auditAdmin(request, "journal:nodes", existingIndex === -1 ? "created" : "updated");
     sendJson(response, existingIndex === -1 ? 201 : 200, { node, links });
   } catch (error) {
     sendJson(response, error instanceof SyntaxError ? 400 : 422, { error: error.message });
@@ -654,6 +845,10 @@ async function handleApi(request, response, url) {
 async function serveStatic(response, url) {
   let pathname = decodeURIComponent(url.pathname);
   if (pathname === "/") pathname = "/index.html";
+  if (pathname === "/journal-admin.html" || pathname.startsWith("/journal-backend/") || pathname.startsWith("/docs/") || pathname.startsWith("/test/") || ["/README.md", "/package.json", "/package-lock.json"].includes(pathname)) {
+    sendText(response, 404, "Not found");
+    return;
+  }
   const requested = path.resolve(PUBLIC_ROOT, "." + pathname);
   if (!requested.startsWith(PUBLIC_ROOT)) {
     sendText(response, 403, "Forbidden");
@@ -663,14 +858,26 @@ async function serveStatic(response, url) {
     const stat = await fs.stat(requested);
     const filePath = stat.isDirectory() ? path.join(requested, "index.html") : requested;
     const ext = path.extname(filePath).toLowerCase();
-    response.writeHead(200, {
+    response.writeHead(200, securityHeaders({
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
       "Cache-Control": ext === ".html" ? "no-store" : "public, max-age=120"
-    });
+    }));
     response.end(await fs.readFile(filePath));
   } catch (error) {
     sendText(response, error.code === "ENOENT" ? 404 : 500, error.code === "ENOENT" ? "Not found" : "Server error");
   }
+}
+
+async function serveAdminUi(response) {
+  if (!ADMIN_UI_ENABLED) {
+    sendText(response, 404, "Not found");
+    return;
+  }
+  response.writeHead(200, securityHeaders({
+    "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-store"
+  }));
+  response.end(await fs.readFile(ADMIN_UI_PATH));
 }
 
 const server = http.createServer((request, response) => {
@@ -681,6 +888,10 @@ const server = http.createServer((request, response) => {
   }
   if (request.method !== "GET" && request.method !== "HEAD") {
     sendText(response, 405, "Method not allowed");
+    return;
+  }
+  if (url.pathname === "/admin/journal-admin.html") {
+    serveAdminUi(response).catch((error) => sendText(response, 500, error.message));
     return;
   }
   serveStatic(response, url).catch((error) => sendText(response, 500, error.message));

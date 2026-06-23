@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /journal-admin.html
+Disallow: /journal-backend/
+Disallow: /docs/
+Disallow: /test/
+
+Sitemap: https://zephyrlabs.cloud/sitemap.xml
