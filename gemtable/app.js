@@ -23,7 +23,6 @@
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
-  var AI_LEVEL_SIMULATIONS = { easy: 200, balanced: 5000, expert: 20000 };
   var DINOBOARD_BASE_GAME_ID = "splendor_2p";
   var DINOBOARD_EXPANSION_GAME_ID = "splendor_orient_stronghold_2p";
   var DINOBOARD_AI_REPLAY_SCHEMA = "zephyrlabs-gemtable-ai-replay-record-v1";
@@ -1819,10 +1818,6 @@ Object.assign(I18N.de, {
     document.documentElement.lang = currentLocale;
     document.querySelectorAll("[data-i18n]").forEach(function (node) {
       node.textContent = t(node.dataset.i18n, { n: node.dataset.i18nN || "" });
-    });
-    document.querySelectorAll("[data-ai-level-option]").forEach(function (node) {
-      var key = node.dataset.i18n || "aiLevelBalanced";
-      node.textContent = t(key) + " / " + aiSimulationLabel(node.dataset.aiLevelOption);
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (node) {
       node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder, { n: node.dataset.i18nN || "" }));
@@ -4192,8 +4187,7 @@ Object.assign(I18N.de, {
         var option = document.createElement("option");
         option.value = entry[0];
         option.dataset.i18n = entry[1];
-        option.dataset.aiLevelOption = entry[0];
-        option.textContent = t(entry[1]) + " / " + aiSimulationLabel(entry[0]);
+        option.textContent = t(entry[1]);
         if (entry[0] === "balanced") option.selected = true;
         levelSelect.append(option);
       });
@@ -6278,13 +6272,7 @@ Object.assign(I18N.de, {
       balanced: "aiLevelBalanced",
       expert: "aiLevelExpert"
     };
-    var normalized = normalizeAiLevel(level);
-    return t(keyByLevel[normalized] || "aiLevelBalanced") + " / " + aiSimulationLabel(normalized);
-  }
-
-  function aiSimulationLabel(level) {
-    var simulations = AI_LEVEL_SIMULATIONS[normalizeAiLevel(level)] || AI_LEVEL_SIMULATIONS.balanced;
-    return simulations >= 1000 ? (simulations / 1000) + "k sim" : simulations + " sim";
+    return t(keyByLevel[normalizeAiLevel(level)] || "aiLevelBalanced");
   }
 
   function aiLevelOptionsHtml(currentLevel) {
@@ -6295,7 +6283,7 @@ Object.assign(I18N.de, {
       expert: "aiLevelExpert"
     };
     return AI_LEVELS.map(function (level) {
-      return '<option value="' + level + '" data-i18n="' + labels[level] + '" data-ai-level-option="' + level + '" ' + (level === selectedLevel ? "selected" : "") + ">" + t(labels[level]) + " / " + aiSimulationLabel(level) + "</option>";
+      return '<option value="' + level + '" data-i18n="' + labels[level] + '" ' + (level === selectedLevel ? "selected" : "") + ">" + t(labels[level]) + "</option>";
     }).join("");
   }
 
@@ -8001,8 +7989,7 @@ Object.assign(I18N.de, {
         name: player.name,
         enabled: !!(player.ai && player.ai.enabled),
         provider: player.ai && player.ai.provider || "random",
-        level: normalizeAiLevel(player.ai && (player.ai.level || player.ai.mode)),
-        simulations: AI_LEVEL_SIMULATIONS[normalizeAiLevel(player.ai && (player.ai.level || player.ai.mode))]
+        level: normalizeAiLevel(player.ai && (player.ai.level || player.ai.mode))
       };
     });
     var payload = {
