@@ -23,6 +23,10 @@
   var COLORS = ["white", "blue", "green", "red", "black"];
   var ALL_TOKENS = COLORS.concat(["gold"]);
   var AI_LEVELS = ["easy", "balanced", "expert"];
+  var AI_LEVEL_SIMULATIONS = { easy: 200, balanced: 5000, expert: 20000 };
+  var DINOBOARD_BASE_GAME_ID = "splendor_2p";
+  var DINOBOARD_EXPANSION_GAME_ID = "splendor_orient_stronghold_2p";
+  var DINOBOARD_AI_REPLAY_SCHEMA = "zephyrlabs-gemtable-ai-replay-record-v1";
   var TURN_SWITCH_READY_MS = 3000;
   var HAND_DOCK_RETRACT_MS = 260;
   var HAND_DOCK_REENTER_MS = 360;
@@ -83,9 +87,9 @@
       smartAi: "Smart AI",
       aiTakeover: "AI takeover",
       aiLevel: "Intelligence level",
-      aiLevelEasy: "Casual",
+      aiLevelEasy: "Fast",
       aiLevelBalanced: "Balanced",
-      aiLevelExpert: "Expert",
+      aiLevelExpert: "Deep",
       aiBadgeFormat: "DinoBoard AI: {level}",
       randomAiBadgeFormat: "Random AI: {level}",
       rulesetModules: "Modules",
@@ -105,7 +109,7 @@
       move: "Move",
       aiPlayers: "AI players",
       aiUnavailableTitle: "DinoBoard AI",
-      aiUnavailableBody: "DinoBoard smart AI currently supports only 2-player base Splendor. Expansion tables use random legal AI for now.",
+      aiUnavailableBody: "DinoBoard smart AI supports 2-player base and Orient+Strongholds test tables. Other module mixes use random legal AI.",
       returnTokens: "Return tokens",
       returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
       chooseOneNoble: "Choose one noble",
@@ -1772,6 +1776,7 @@ Object.assign(I18N.de, {
   var pendingFlight = null;
   var aiTurnTimer = null;
   var dinoboardAi = null;
+  var uploadedAiReplayKeys = {};
   var aiTurnInProgress = false;
   var activeAiProvider = null;
   var aiSelectionSequence = 0;
@@ -1810,6 +1815,10 @@ Object.assign(I18N.de, {
     document.documentElement.lang = currentLocale;
     document.querySelectorAll("[data-i18n]").forEach(function (node) {
       node.textContent = t(node.dataset.i18n, { n: node.dataset.i18nN || "" });
+    });
+    document.querySelectorAll("[data-ai-level-option]").forEach(function (node) {
+      var key = node.dataset.i18n || "aiLevelBalanced";
+      node.textContent = t(key) + " / " + aiSimulationLabel(node.dataset.aiLevelOption);
     });
     document.querySelectorAll("[data-i18n-placeholder]").forEach(function (node) {
       node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder, { n: node.dataset.i18nN || "" }));
@@ -1924,8 +1933,24 @@ Object.assign(I18N.de, {
     return normalizeRuleset(ruleset).modules.strongholds === true;
   }
 
+  function dinoBoardRulesetMode(ruleset) {
+    var normalized = normalizeRuleset(ruleset);
+    var active = activeRulesetModules(normalized);
+    if (active.length === 0) return "base";
+    if (active.length === 2 && normalized.modules.orient && normalized.modules.strongholds) return "orientStrongholds";
+    return "";
+  }
+
   function dinoBoardSupportsRuleset(ruleset) {
-    return activeRulesetModules(ruleset).length === 0;
+    return dinoBoardRulesetMode(ruleset) !== "";
+  }
+
+  function dinoBoardGameIdForRuleset(ruleset) {
+    return dinoBoardRulesetMode(ruleset) === "orientStrongholds" ? DINOBOARD_EXPANSION_GAME_ID : DINOBOARD_BASE_GAME_ID;
+  }
+
+  function dinoBoardUsesExpansionRuleset(ruleset) {
+    return dinoBoardRulesetMode(ruleset) === "orientStrongholds";
   }
 
   function ensureStateRuleset(game) {
@@ -3656,7 +3681,7 @@ Object.assign(I18N.de, {
 
   function setDinoBoardUnavailable(message) {
     if (dinoboardAi) dinoboardAi.disabled = true;
-    else dinoboardAi = { apiBase: dinoboardApiBase(), aiSeat: -1, sessionId: "", pending: Promise.resolve(), observed: {}, disabled: true };
+    else dinoboardAi = { apiBase: dinoboardApiBase(), gameId: "", aiSeat: -1, sessionId: "", pending: Promise.resolve(), observed: {}, disabled: true };
     if (state && state.players) {
       state.players.forEach(function (player) {
         if (player.ai) player.ai.available = false;
@@ -3718,11 +3743,72 @@ Object.assign(I18N.de, {
     ["red", "black"]
   ];
 
-  function encodeDinoBoardAction(move, beforeState) {
+  function dinoBoardExpansionSlotIndex(marketId, tier, index) {
+    var normalizedMarketId = marketId === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    var normalizedTier = Math.max(1, Math.min(3, Number(tier) || 1));
+    var normalizedIndex = Math.max(0, Number(index) || 0);
+    if (normalizedMarketId === ORIENT_MARKET_ID) return 12 + (normalizedTier - 1) * ORIENT_MARKET_SLOT_COUNT + normalizedIndex;
+    return (normalizedTier - 1) * BASE_MARKET_SLOT_COUNT + normalizedIndex;
+  }
+
+  function dinoBoardExpansionSlotIndexFromSlotId(slotId) {
+    var match = /^(base|orient)-t([1-3])-s([1-4])$/.exec(String(slotId || ""));
+    if (!match) return -1;
+    var marketId = match[1] === ORIENT_MARKET_ID ? ORIENT_MARKET_ID : BASE_MARKET_ID;
+    return dinoBoardExpansionSlotIndex(marketId, Number(match[2]), Number(match[3]) - 1);
+  }
+
+  function dinoBoardExpansionSlotIndexFromArgs(args) {
+    var slotId = args && (args.market_slot_id || args.slot_id);
+    var fromSlot = dinoBoardExpansionSlotIndexFromSlotId(slotId);
+    if (fromSlot >= 0) return fromSlot;
+    return dinoBoardExpansionSlotIndex(args && args.market_id, args && args.tier, firstDefined(args && args.market_index, args && args.index, 0));
+  }
+
+  function dinoBoardExpansionSlotRef(slotIndex) {
+    var index = Math.max(0, Math.min(17, Number(slotIndex) || 0));
+    if (index >= 12) {
+      var orientIndex = index - 12;
+      return { marketId: ORIENT_MARKET_ID, tier: Math.floor(orientIndex / ORIENT_MARKET_SLOT_COUNT) + 1, index: orientIndex % ORIENT_MARKET_SLOT_COUNT };
+    }
+    return { marketId: BASE_MARKET_ID, tier: Math.floor(index / BASE_MARKET_SLOT_COUNT) + 1, index: index % BASE_MARKET_SLOT_COUNT };
+  }
+
+  function dinoBoardExpansionMarketValue(slotIndex) {
+    var ref = dinoBoardExpansionSlotRef(slotIndex);
+    return [ref.marketId, ref.tier, ref.index].join(":");
+  }
+
+  function dinoBoardTokenColorsFromArgs(args) {
+    if (Array.isArray(args && args.colors)) return args.colors.slice();
+    var colors = [];
+    var counts = args && (args.colors || args.tokens) || {};
+    Object.keys(counts || {}).forEach(function (color) {
+      var count = Math.max(0, Number(counts[color]) || 0);
+      for (var index = 0; index < count; index += 1) colors.push(color);
+    });
+    return colors;
+  }
+
+  function encodeDinoBoardPrimaryAction(move, beforeState) {
     var args = move.args || {};
-    if (move.type === "buyMarket") return Number(args.tier - 1) * 4 + Number(firstDefined(args.market_index, args.index, 0));
-    if (move.type === "reserveMarket") return 12 + Number(args.tier - 1) * 4 + Number(firstDefined(args.market_index, args.index, 0));
-    if (move.type === "reserveDeck") return 24 + Number(args.tier - 1);
+    var usesExpansion = dinoBoardUsesExpansionRuleset((beforeState && beforeState.ruleset) || (state && state.ruleset));
+    var marketId = args.market_id || BASE_MARKET_ID;
+    if (move.type === "buyMarket") {
+      if (usesExpansion && marketId === ORIENT_MARKET_ID) return 70 + (Number(args.tier) - 1) * ORIENT_MARKET_SLOT_COUNT + Number(firstDefined(args.market_index, args.index, 0));
+      return Number(args.tier - 1) * BASE_MARKET_SLOT_COUNT + Number(firstDefined(args.market_index, args.index, 0));
+    }
+    if (move.type === "strongholdConquest") {
+      if (usesExpansion) return 180 + dinoBoardExpansionSlotIndexFromArgs(args);
+    }
+    if (move.type === "reserveMarket") {
+      if (usesExpansion && marketId === ORIENT_MARKET_ID) return 76 + (Number(args.tier) - 1) * ORIENT_MARKET_SLOT_COUNT + Number(firstDefined(args.market_index, args.index, 0));
+      return 12 + Number(args.tier - 1) * BASE_MARKET_SLOT_COUNT + Number(firstDefined(args.market_index, args.index, 0));
+    }
+    if (move.type === "reserveDeck") {
+      if (usesExpansion && marketId === ORIENT_MARKET_ID) return 82 + Number(args.tier - 1);
+      return 24 + Number(args.tier - 1);
+    }
     if (move.type === "buyReserved") return 27 + Number(firstDefined(args.reserved_index, args.index, 0));
     if (move.type === "discardToken") return 63 + ALL_TOKENS.indexOf(args.color);
     if (move.type === "chooseNoble") {
@@ -3736,7 +3822,7 @@ Object.assign(I18N.de, {
     }
     if (move.type === "takeTokens") {
       var counts = emptyCounts(false);
-      (args.colors || []).forEach(function (color) {
+      dinoBoardTokenColorsFromArgs(args).forEach(function (color) {
         if (COLORS.indexOf(color) >= 0) counts[color] += 1;
       });
       var colors = COLORS.filter(function (color) { return counts[color] > 0; });
@@ -3747,6 +3833,35 @@ Object.assign(I18N.de, {
     }
     if (move.type === "pass") return 69;
     throw new Error("Unsupported action for DinoBoard observe: " + move.type);
+  }
+
+  function encodeDinoBoardActions(move, beforeState) {
+    var actions = [encodeDinoBoardPrimaryAction(move, beforeState)];
+    var args = move.args || {};
+    if (!dinoBoardUsesExpansionRuleset((beforeState && beforeState.ruleset) || (state && state.ruleset))) return actions;
+    (args.orient_effects || []).forEach(function (effect) {
+      if (effect.type === "free_card") {
+        var freeSlot = dinoBoardExpansionSlotIndexFromArgs(effect);
+        if (freeSlot >= 0) actions.push(85 + freeSlot);
+      }
+      if (effect.type === "copy_bonus") {
+        var colorIndex = COLORS.indexOf(effect.color);
+        if (colorIndex >= 0) actions.push(103 + colorIndex);
+      }
+    });
+    (args.stronghold_effects || []).forEach(function (effect) {
+      var slot = dinoBoardExpansionSlotIndexFromSlotId(effect.slot_id);
+      if (effect.type === "place" && slot >= 0) actions.push(108 + slot);
+      if (effect.type === "move") {
+        var sourceSlot = dinoBoardExpansionSlotIndexFromSlotId(effect.from_slot_id);
+        if (sourceSlot >= 0) actions.push(126 + sourceSlot);
+        if (slot >= 0) actions.push(144 + slot);
+      }
+      if (effect.type === "remove" && slot >= 0) actions.push(162 + slot);
+    });
+    return actions.filter(function (action) {
+      return Number.isFinite(action) && action >= 0;
+    });
   }
 
   function dinoBoardEvents(beforeState, afterState, move, aiSeat) {
@@ -3782,15 +3897,23 @@ Object.assign(I18N.de, {
     if (!dinoboardAi || dinoboardAi.disabled || !move || !afterState) return Promise.resolve();
     var moveKey = String(move.move_id);
     if (dinoboardAi.observed[moveKey]) return Promise.resolve();
-    var payload = {
-      action_id: encodeDinoBoardAction(move, beforeState),
-      events: dinoBoardEvents(beforeState, afterState, move, dinoboardAi.aiSeat),
-      public_snapshot: buildDinoBoardPublicSnapshot(afterState, dinoboardAi.aiSeat)
-    };
-    return dinoFetchJson("/ai/sessions/" + encodeURIComponent(dinoboardAi.sessionId) + "/observe", {
-      method: "POST",
-      body: JSON.stringify(payload)
-    }).then(function () {
+    var actionIds = encodeDinoBoardActions(move, beforeState);
+    var events = dinoBoardEvents(beforeState, afterState, move, dinoboardAi.aiSeat);
+    var snapshot = buildDinoBoardPublicSnapshot(afterState, dinoboardAi.aiSeat);
+    var chain = Promise.resolve();
+    actionIds.forEach(function (actionId, index) {
+      chain = chain.then(function () {
+        return dinoFetchJson("/ai/sessions/" + encodeURIComponent(dinoboardAi.sessionId) + "/observe", {
+          method: "POST",
+          body: JSON.stringify({
+            action_id: actionId,
+            events: index === 0 ? events : [],
+            public_snapshot: snapshot
+          })
+        });
+      });
+    });
+    return chain.then(function () {
       dinoboardAi.observed[moveKey] = true;
     });
   }
@@ -3818,8 +3941,10 @@ Object.assign(I18N.de, {
       return Promise.resolve();
     }
     var baseState = state.initial_gamedatas && (state.initial_gamedatas.source_state || state.initial_gamedatas) || compactSourceState(state);
+    var gameId = dinoBoardGameIdForRuleset(state.ruleset);
     dinoboardAi = {
       apiBase: dinoboardApiBase(),
+      gameId: gameId,
       aiSeat: aiSeat,
       sessionId: "",
       pending: Promise.resolve(),
@@ -3831,7 +3956,7 @@ Object.assign(I18N.de, {
     var creation = dinoFetchJson("/ai/sessions", {
       method: "POST",
       body: JSON.stringify({
-        game_id: "splendor_2p",
+        game_id: gameId,
         my_seat: aiSeat,
         strength: normalizeAiLevel(aiPlayer && aiPlayer.ai && (aiPlayer.ai.level || aiPlayer.ai.mode)),
         initial_observation: dinoBoardInitialObservation(baseState, aiSeat)
@@ -4063,7 +4188,8 @@ Object.assign(I18N.de, {
         var option = document.createElement("option");
         option.value = entry[0];
         option.dataset.i18n = entry[1];
-        option.textContent = t(entry[1]);
+        option.dataset.aiLevelOption = entry[0];
+        option.textContent = t(entry[1]) + " / " + aiSimulationLabel(entry[0]);
         if (entry[0] === "balanced") option.selected = true;
         levelSelect.append(option);
       });
@@ -6142,7 +6268,13 @@ Object.assign(I18N.de, {
       balanced: "aiLevelBalanced",
       expert: "aiLevelExpert"
     };
-    return t(keyByLevel[normalizeAiLevel(level)] || "aiLevelBalanced");
+    var normalized = normalizeAiLevel(level);
+    return t(keyByLevel[normalized] || "aiLevelBalanced") + " / " + aiSimulationLabel(normalized);
+  }
+
+  function aiSimulationLabel(level) {
+    var simulations = AI_LEVEL_SIMULATIONS[normalizeAiLevel(level)] || AI_LEVEL_SIMULATIONS.balanced;
+    return simulations >= 1000 ? (simulations / 1000) + "k sim" : simulations + " sim";
   }
 
   function aiLevelOptionsHtml(currentLevel) {
@@ -6153,7 +6285,7 @@ Object.assign(I18N.de, {
       expert: "aiLevelExpert"
     };
     return AI_LEVELS.map(function (level) {
-      return '<option value="' + level + '" data-i18n="' + labels[level] + '" ' + (level === selectedLevel ? "selected" : "") + ">" + t(labels[level]) + "</option>";
+      return '<option value="' + level + '" data-i18n="' + labels[level] + '" data-ai-level-option="' + level + '" ' + (level === selectedLevel ? "selected" : "") + ">" + t(labels[level]) + " / " + aiSimulationLabel(level) + "</option>";
     }).join("");
   }
 
@@ -7044,6 +7176,29 @@ Object.assign(I18N.de, {
     return true;
   }
 
+  function runRandomOrientAction() {
+    if (!state || !state.awaitingOrientAction) return;
+    var task = orientCurrentTask();
+    var player = activePlayer();
+    if (!task || !player) return;
+    if (task.type === "free_card") {
+      var freeRefs = marketRefsForStrongholds(state).filter(function (ref) {
+        return ref.tier === task.tier && strongholdAccessStatus(ref.slotId, state.current).ok;
+      });
+      if (freeRefs.length) {
+        var freeRef = randomChoice(freeRefs);
+        resolveOrientFreeCard([freeRef.marketId, freeRef.tier, freeRef.index].join(":"));
+      }
+      return;
+    }
+    if (task.type === "copy_bonus") {
+      var copySources = (player.purchased || []).filter(function (card) {
+        return card && card.id !== task.card_id && cardPrimaryBonusColor(card);
+      });
+      if (copySources.length) resolveOrientCopy(randomChoice(copySources).id);
+    }
+  }
+
   function runRandomStrongholdAction() {
     if (!state || !state.awaitingStrongholdAction) return;
     var playerIndex = state.current;
@@ -7409,6 +7564,7 @@ Object.assign(I18N.de, {
       var result = winnersText();
       logEntry(result);
       showMessage(result, "ok");
+      recordAiReplayIfNeeded(state);
       return;
     }
 
@@ -7804,6 +7960,62 @@ Object.assign(I18N.de, {
       gamedatas: compactGamedatasForExport(game.initial_gamedatas) || compactGamedatasForExport(toGamedatas(game, { includeSourceState: true })),
       moves: compactMovesForExport(game.moves)
     };
+  }
+
+  function gameHasAiParticipation(game) {
+    if (!game) return false;
+    if ((game.players || []).some(function (player) { return player.ai && player.ai.enabled; })) return true;
+    return (game.moves || []).some(function (move) {
+      return !!(move && move.args && (move.args.ai || move.args.ai_provider));
+    });
+  }
+
+  function aiReplayUploadKey(game) {
+    return [
+      game && game.created_at || "",
+      game && game.next_move_id || 0,
+      game && game.moves && game.moves.length || 0,
+      game && game.ruleset && game.ruleset.id || ""
+    ].join("|");
+  }
+
+  function recordAiReplayIfNeeded(game) {
+    if (!game || !game.gameOver || game.mode === "replay" || !gameHasAiParticipation(game)) return;
+    var key = aiReplayUploadKey(game);
+    if (uploadedAiReplayKeys[key]) return;
+    uploadedAiReplayKeys[key] = true;
+    var aiPlayers = (game.players || []).map(function (player, index) {
+      return {
+        index: index,
+        id: player.id,
+        name: player.name,
+        enabled: !!(player.ai && player.ai.enabled),
+        provider: player.ai && player.ai.provider || "random",
+        level: normalizeAiLevel(player.ai && (player.ai.level || player.ai.mode)),
+        simulations: AI_LEVEL_SIMULATIONS[normalizeAiLevel(player.ai && (player.ai.level || player.ai.mode))]
+      };
+    });
+    var payload = {
+      schema: DINOBOARD_AI_REPLAY_SCHEMA,
+      recorded_at: new Date().toISOString(),
+      metadata: {
+        ruleset: game.ruleset && game.ruleset.id || "",
+        move_count: game.moves && game.moves.length || 0,
+        ai_players: aiPlayers
+      },
+      replay: buildReplayExportPayload(game)
+    };
+    try {
+      fetch(dinoboardApiBase() + "/gemtable/replays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }).catch(function (error) {
+        console.warn("Gem Table AI replay upload failed", error);
+      });
+    } catch (error) {
+      console.warn("Gem Table AI replay upload failed", error);
+    }
   }
 
   function stateFromGamedatas(gamedatas) {
@@ -9604,12 +9816,12 @@ Object.assign(I18N.de, {
 
   function decodeDinoBoardAction(actionId) {
     var id = Number(actionId);
-    if (id >= 0 && id <= 11) return { type: "buyMarket", tier: Math.floor(id / 4) + 1, index: id % 4 };
+    if (id >= 0 && id <= 11) return { type: "buyMarket", marketId: BASE_MARKET_ID, tier: Math.floor(id / 4) + 1, index: id % 4 };
     if (id >= 12 && id <= 23) {
       var reserveOffset = id - 12;
-      return { type: "reserveMarket", tier: Math.floor(reserveOffset / 4) + 1, index: reserveOffset % 4 };
+      return { type: "reserveMarket", marketId: BASE_MARKET_ID, tier: Math.floor(reserveOffset / 4) + 1, index: reserveOffset % 4 };
     }
-    if (id >= 24 && id <= 26) return { type: "reserveDeck", tier: id - 23 };
+    if (id >= 24 && id <= 26) return { type: "reserveDeck", marketId: BASE_MARKET_ID, tier: id - 23 };
     if (id >= 27 && id <= 29) return { type: "buyReserved", index: id - 27 };
     if (id >= 30 && id <= 39) return { type: "takeTokens", colors: DINO_TAKE_THREE[id - 30].slice() };
     if (id >= 40 && id <= 49) return { type: "takeTokens", colors: DINO_TAKE_TWO[id - 40].slice() };
@@ -9618,7 +9830,52 @@ Object.assign(I18N.de, {
     if (id >= 60 && id <= 62) return { type: "chooseNoble", index: id - 60 };
     if (id >= 63 && id <= 68) return { type: "discardToken", color: ALL_TOKENS[id - 63] };
     if (id === 69) return { type: "pass" };
+    if (id >= 70 && id <= 75) {
+      var orientBuyOffset = id - 70;
+      return { type: "buyMarket", marketId: ORIENT_MARKET_ID, tier: Math.floor(orientBuyOffset / ORIENT_MARKET_SLOT_COUNT) + 1, index: orientBuyOffset % ORIENT_MARKET_SLOT_COUNT };
+    }
+    if (id >= 76 && id <= 81) {
+      var orientReserveOffset = id - 76;
+      return { type: "reserveMarket", marketId: ORIENT_MARKET_ID, tier: Math.floor(orientReserveOffset / ORIENT_MARKET_SLOT_COUNT) + 1, index: orientReserveOffset % ORIENT_MARKET_SLOT_COUNT };
+    }
+    if (id >= 82 && id <= 84) return { type: "reserveDeck", marketId: ORIENT_MARKET_ID, tier: id - 81 };
+    if (id >= 85 && id <= 102) return { type: "orientFreeCard", slotIndex: id - 85 };
+    if (id >= 103 && id <= 107) return { type: "orientCopyColor", color: COLORS[id - 103] };
+    if (id >= 108 && id <= 125) return { type: "strongholdPlace", slotIndex: id - 108 };
+    if (id >= 126 && id <= 143) return { type: "strongholdMoveSource", slotIndex: id - 126 };
+    if (id >= 144 && id <= 161) return { type: "strongholdMoveTarget", slotIndex: id - 144 };
+    if (id >= 162 && id <= 179) return { type: "strongholdRemove", slotIndex: id - 162 };
+    if (id >= 180 && id <= 197) return { type: "strongholdConquestBuy", slotIndex: id - 180 };
+    if (id === 198) return { type: "strongholdConquestSkip" };
     throw new Error("Unsupported DinoBoard action " + actionId);
+  }
+
+  function dinoBoardPurchasedCardByColor(player, color) {
+    return (player && player.purchased || []).find(function (card) {
+      return card && cardPrimaryBonusColor(card) === color;
+    });
+  }
+
+  function executeDinoBoardConquestBuy(action, player) {
+    var conquest = state && state.awaitingStrongholdConquest;
+    if (!conquest) throw new Error("AI selected stronghold conquest outside a conquest window.");
+    syncCurrentForStrongholdConquest(conquest);
+    var ref = dinoBoardExpansionSlotRef(action.slotIndex);
+    var card = marketCardAt(state, ref);
+    var slotId = marketSlotId(state, ref.marketId, ref.tier, ref.index);
+    if (!card || !strongholdConquestSlotEligible(state, slotId, state.current)) throw new Error("AI selected an unavailable stronghold conquest target.");
+    var payment = autoPaymentPlan(player, card);
+    if (!paymentIsLegal(player, card, payment)) throw new Error("AI selected an unaffordable stronghold conquest card.");
+    state.awaitingStrongholdConquest = null;
+    completePurchase({
+      type: "strongholdConquest",
+      parent: clone(conquest),
+      player: player,
+      card: card,
+      tier: ref.tier,
+      index: ref.index,
+      market_id: ref.marketId
+    }, payment, null, { ai: true });
   }
 
   function executeDinoBoardAction(actionId) {
@@ -9636,13 +9893,62 @@ Object.assign(I18N.de, {
       chooseNoble(nobleId);
       return;
     }
+    if (action.type === "orientFreeCard") {
+      if (!state.awaitingOrientAction) throw new Error("AI selected an Orient free-card action outside an Orient window.");
+      resolveOrientFreeCard(dinoBoardExpansionMarketValue(action.slotIndex));
+      return;
+    }
+    if (action.type === "orientCopyColor") {
+      if (!state.awaitingOrientAction) throw new Error("AI selected an Orient copy action outside an Orient window.");
+      var copySource = dinoBoardPurchasedCardByColor(player, action.color);
+      if (!copySource) throw new Error("AI selected an Orient copy color without a matching source card.");
+      resolveOrientCopy(copySource.id);
+      return;
+    }
+    if (action.type === "strongholdPlace") {
+      if (!state.awaitingStrongholdAction) throw new Error("AI selected a stronghold placement outside a stronghold window.");
+      resolveStrongholdPlace(dinoBoardExpansionMarketValue(action.slotIndex));
+      return;
+    }
+    if (action.type === "strongholdMoveSource") {
+      if (!state.awaitingStrongholdAction) throw new Error("AI selected a stronghold move source outside a stronghold window.");
+      var sourceRef = dinoBoardExpansionSlotRef(action.slotIndex);
+      var sourceSlot = marketSlotId(state, sourceRef.marketId, sourceRef.tier, sourceRef.index);
+      if (strongholdsAtSlot(state, sourceSlot).indexOf(state.current) < 0) throw new Error("AI selected a stronghold source it does not occupy.");
+      state.awaitingStrongholdAction.selected_source_slot_id = sourceSlot;
+      showMessage(t("strongholdSelectTarget"), "ok");
+      saveState();
+      render();
+      return;
+    }
+    if (action.type === "strongholdMoveTarget") {
+      if (!state.awaitingStrongholdAction) throw new Error("AI selected a stronghold move target outside a stronghold window.");
+      resolveStrongholdMove(dinoBoardExpansionMarketValue(action.slotIndex));
+      return;
+    }
+    if (action.type === "strongholdRemove") {
+      if (!state.awaitingStrongholdAction) throw new Error("AI selected stronghold remove outside a stronghold window.");
+      resolveStrongholdRemove(dinoBoardExpansionMarketValue(action.slotIndex));
+      return;
+    }
+    if (action.type === "strongholdConquestSkip") {
+      skipStrongholdConquest();
+      return;
+    }
+    if (action.type === "strongholdConquestBuy") {
+      executeDinoBoardConquestBuy(action, player);
+      return;
+    }
     if (!canAct({ allowAi: true })) throw new Error("AI attempted to act while the table is locked.");
     if (action.type === "buyMarket") {
-      var marketCard = state.market[action.tier] && state.market[action.tier][action.index];
+      var marketId = action.marketId || BASE_MARKET_ID;
+      var marketCard = marketCardAt(state, { marketId: marketId, tier: action.tier, index: action.index });
       if (!marketCard) throw new Error("AI selected an empty market slot.");
-      var marketContext = { type: "buyMarket", player: player, card: marketCard, tier: action.tier, index: action.index };
+      var slotId = marketSlotId(state, marketId, action.tier, action.index);
+      var strongholdAccess = strongholdAccessStatus(slotId, state.current);
+      if (!strongholdAccess.ok) throw new Error(strongholdAccess.reason || "AI selected a stronghold-blocked card.");
+      var marketContext = { type: "buyMarket", player: player, card: marketCard, tier: action.tier, index: action.index, market_id: marketId };
       var marketPayment = autoPaymentPlan(player, marketCard);
-      if (!orientAbilityBuyStatus(marketCard).ok) throw new Error("AI selected an Orient card with a pending ability choice.");
       if (!paymentIsLegal(player, marketCard, marketPayment)) throw new Error("AI selected an unaffordable market card.");
       completePurchase(marketContext, marketPayment, null, { ai: true });
       return;
@@ -9652,17 +9958,16 @@ Object.assign(I18N.de, {
       if (!reservedCard) throw new Error("AI selected an empty reserved slot.");
       var reservedContext = { type: "buyReserved", player: player, card: reservedCard, index: action.index };
       var reservedPayment = autoPaymentPlan(player, reservedCard);
-      if (!orientAbilityBuyStatus(reservedCard).ok) throw new Error("AI selected an Orient card with a pending ability choice.");
       if (!paymentIsLegal(player, reservedCard, reservedPayment)) throw new Error("AI selected an unaffordable reserved card.");
       completePurchase(reservedContext, reservedPayment, null, { ai: true });
       return;
     }
     if (action.type === "reserveMarket") {
-      reserveMarket(action.tier + ":" + action.index);
+      reserveMarket([action.marketId || BASE_MARKET_ID, action.tier, action.index].join(":"));
       return;
     }
     if (action.type === "reserveDeck") {
-      reserveDeck(action.tier);
+      reserveDeck([action.marketId || BASE_MARKET_ID, action.tier].join(":"));
       return;
     }
     if (action.type === "takeTokens") {
@@ -9706,16 +10011,22 @@ Object.assign(I18N.de, {
       aiDisplayCurrentOverride = null;
       saveState();
       render();
+      scheduleAiTurn();
     });
   }
 
   function scheduleDinoBoardAiTurn() {
     if (aiTurnTimer || aiTurnInProgress) return;
-    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment || state.awaitingOrientAction) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
+    var canResolveExpansionWindow = dinoBoardUsesExpansionRuleset(state.ruleset);
+    if (state.awaitingOrientAction && !canResolveExpansionWindow) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
-    if (dinoboardAi && dinoboardAi.disabled) return;
-    if (state.awaitingStrongholdAction || state.awaitingStrongholdConquest) {
+    if (dinoboardAi && dinoboardAi.disabled) {
+      scheduleRandomAiTurn();
+      return;
+    }
+    if ((state.awaitingStrongholdAction || state.awaitingStrongholdConquest) && !canResolveExpansionWindow) {
       scheduleRandomAiTurn();
       return;
     }
@@ -9762,6 +10073,10 @@ Object.assign(I18N.de, {
         if (choices.length) chooseNoble(randomChoice(choices));
         return;
       }
+      if (state.awaitingOrientAction) {
+        runRandomOrientAction();
+        return;
+      }
       if (state.awaitingStrongholdAction) {
         runRandomStrongholdAction();
         return;
@@ -9794,7 +10109,7 @@ Object.assign(I18N.de, {
 
   function scheduleRandomAiTurn() {
     if (aiTurnTimer) return;
-    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment || state.awaitingOrientAction) return;
+    if (!state || state.mode === "replay" || state.gameOver || state.turnTransition || pendingPayment) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
     if (!state.aiThinking) {
