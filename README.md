@@ -9,6 +9,7 @@ Static personal homepage for ZephyrLabs projects.
 - `journal-data.json`: public-safe knowledge graph data distilled from the vault.
 - `journal-backend/`: no-dependency same-origin API for adding public graph nodes without exposing credentials in browser code. Its admin UI template is not part of the public static site.
 - `gemtable/`: Gem Table, an unofficial Splendor-style local table with its own HTML, CSS, app script, and rules module.
+- `scripts/build-site.js`: production build pipeline for publishing a hardened `dist/` site instead of the editable source tree.
 - `styles.css`: homepage styles, including the former targeted fixes.
 - `shared/effects.js`: reusable liquid background, sticky-card behavior, card focus dimming, footer reveal, and canvas helpers.
 - `homepage-effects.js`: homepage-only visuals for the logo, AI chip, market globe, and Journal graph.
@@ -16,7 +17,7 @@ Static personal homepage for ZephyrLabs projects.
 
 ## Local Preview
 
-Open `index.html` directly in a browser. No build step, package install, or Node runtime is required for the static page.
+For source-level preview, open `index.html` directly in a browser. No package install is required for the static source page.
 
 For an HTTP preview, run:
 
@@ -25,6 +26,28 @@ python -m http.server 8000
 ```
 
 Then visit `http://localhost:8000`.
+
+## Production Build
+
+Do not serve the repository root in production if the goal is to make direct copying harder. Build and publish only `dist/`:
+
+```sh
+npm run build
+```
+
+The build is dependency-free and writes a production-only static site to `dist/`:
+
+- homepage scripts are bundled into `dist/assets/home-<hash>.js`
+- Journal scripts are bundled into `dist/assets/journal-<hash>.js`
+- Gem Table rules, config loader, and app code are bundled into `dist/gemtable/assets/gemtable-<hash>.js`
+- CSS files are minified and hash-named
+- source maps are not emitted
+- Gem Table's `window.__gemTableDebug` test hook is stripped from the production bundle
+- `docs/`, `test/`, `journal-backend/`, `scripts/`, README, package files, debug logs, and local connection notes are not copied
+
+Point Caddy, nginx, or any static host at `dist/`, not this repository root. If the server uses an auto-sync script, run `npm run build` after pulling and keep the web root set to the generated `dist/` directory.
+
+This raises the effort required to copy the frontend implementation, but it is not DRM. Browser-delivered JavaScript, WebGL shaders, images, and canvas logic can still be downloaded by a determined visitor. Keep private algorithms, credentials, model weights, trading logic, and note sources on a backend.
 
 ## Local-Only Site Config
 
