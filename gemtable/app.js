@@ -91,6 +91,7 @@
       aiLevelBalanced: "Balanced",
       aiLevelExpert: "Deep",
       aiBadgeFormat: "DinoBoard AI: {level}",
+      geminusAiBadgeFormat: "Geminus AI: {level}",
       randomAiBadgeFormat: "Random AI: {level}",
       rulesetModules: "Modules",
       rulesetModulesHint: "Base game starts with every module off.",
@@ -353,6 +354,7 @@
       msgReplayStepAnimating: "Replaying move {move} ({seconds}s).",
       msgRandomAiEnabled: "DinoBoard smart AI supports 2-player tables; unsupported AI seats use random legal AI.",
       msgDinoBoardAiEnabled: "DinoBoard AI connected for {player}.",
+      msgGeminusAiEnabled: "Geminus AI connected for {player}.",
       msgDinoBoardUnavailable: "DinoBoard AI unavailable: {message}",
       msgCannotDisableActiveAi: "AI takeover cannot be disabled during that AI player's turn.",
       msgNoValidSavedTable: "No valid saved table found.",
@@ -1005,6 +1007,7 @@
     aiLevelBalanced: "均衡",
     aiLevelExpert: "高阶",
     aiBadgeFormat: "DinoBoard AI\uff1a{level}",
+    geminusAiBadgeFormat: "Geminus AI\uff1a{level}",
     randomAiBadgeFormat: "\u968f\u673a AI\uff1a{level}",
     aiUnavailableTitle: "DinoBoard AI",
     aiUnavailableBody: "DinoBoard \u667a\u80fd AI \u76ee\u524d\u53ea\u652f\u6301 2 \u4eba\u57fa\u7840\u7248\u7480\u74a8\u5b9d\u77f3\uff1b\u6269\u5c55\u5c40\u6682\u65f6\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
@@ -1142,6 +1145,7 @@
     aiLevelBalanced: "均衡",
     aiLevelExpert: "高階",
     aiBadgeFormat: "DinoBoard AI\uff1a{level}",
+    geminusAiBadgeFormat: "Geminus AI\uff1a{level}",
     randomAiBadgeFormat: "\u96a8\u6a5f AI\uff1a{level}",
     round: "回合",
     state: "狀態",
@@ -3978,7 +3982,7 @@ Object.assign(I18N.de, {
       return chain;
     }).then(function () {
       var player = state && state.players && state.players[aiSeat];
-      if (player) showMessage(t("msgDinoBoardAiEnabled", { player: player.name }), "ok");
+      if (player) showMessage(t(dinoBoardUsesExpansionRuleset(state.ruleset) ? "msgGeminusAiEnabled" : "msgDinoBoardAiEnabled", { player: player.name }), "ok");
     }).catch(function (error) {
       setDinoBoardUnavailable(error.message);
       throw error;
@@ -5151,12 +5155,18 @@ Object.assign(I18N.de, {
     }).join("");
   }
 
+  function aiBadgeKeyForPlayer(player) {
+    if (!(player && player.ai && player.ai.enabled)) return "";
+    if (player.ai.provider !== "dinoboard") return "randomAiBadgeFormat";
+    return dinoBoardUsesExpansionRuleset(state && state.ruleset) ? "geminusAiBadgeFormat" : "aiBadgeFormat";
+  }
+
   function renderPlayers() {
     syncDinoBoardAiAvailability(state);
     var visibleIndex = displayCurrentIndex();
     el.players.innerHTML = state.players.map(function (player, playerIndex) {
       var reservedCards = renderReservedSummary(player);
-      var aiBadgeKey = player.ai && player.ai.provider === "dinoboard" ? "aiBadgeFormat" : "randomAiBadgeFormat";
+      var aiBadgeKey = aiBadgeKeyForPlayer(player);
       var aiBadge = player.ai && player.ai.enabled ? '<span class="ai-badge">' + escapeHtml(t(aiBadgeKey, { level: aiLevelLabel(player.ai.level || player.ai.mode) })) + "</span>" : "";
       return [
         '<article class="player-card ' + (playerIndex === visibleIndex ? "active" : "") + '" data-player-index="' + playerIndex + '">',
