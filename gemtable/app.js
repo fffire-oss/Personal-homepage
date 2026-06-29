@@ -3689,6 +3689,16 @@ Object.assign(I18N.de, {
     if (message) showMessage(t("msgDinoBoardUnavailable", { message: message }));
   }
 
+  function parseDinoJsonResponse(text, response) {
+    var trimmed = String(text || "").trim();
+    if (!trimmed) return {};
+    if (trimmed[0] === "{" || trimmed[0] === "[") return JSON.parse(trimmed);
+    if (!response.ok) {
+      return { detail: trimmed };
+    }
+    throw new Error("DinoBoard AI returned a non-JSON response.");
+  }
+
   function dinoFetchJson(path, options) {
     var ai = dinoboardAi;
     if (!ai) return Promise.reject(new Error("DinoBoard AI is not configured."));
@@ -3697,7 +3707,7 @@ Object.assign(I18N.de, {
       headers: { "Content-Type": "application/json" }
     }, options || {})).then(function (response) {
       return response.text().then(function (text) {
-        var body = text ? JSON.parse(text) : {};
+        var body = parseDinoJsonResponse(text, response);
         if (!response.ok) {
           throw new Error(body && body.detail || response.status + " " + response.statusText);
         }
