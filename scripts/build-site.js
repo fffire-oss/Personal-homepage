@@ -17,9 +17,20 @@ const PUBLIC_FILES = [
 ];
 
 const PUBLIC_DIRS = [
-  "assets",
   ".well-known"
 ];
+
+const PUBLIC_ASSET_EXTENSIONS = new Set([
+  ".avif",
+  ".gif",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".svg",
+  ".webp"
+]);
+
+const ASSET_REFERENCE_PATTERN = /((?:\.\.\/|\/)?assets\/[^"'`)<>\s]+\.(?:avif|gif|jpe?g|png|svg|webp))(?:\?[^"'`)<>\s]*)?/gi;
 
 const ENTRIES = [
   {
@@ -155,6 +166,54 @@ async function copyDirectoryToDist(relativePath) {
   }
 
   await walk(source, fromDist(relativePath));
+}
+
+function normalizeAssetReference(reference) {
+  let clean = String(reference || "").split(/[?#]/)[0].replace(/\\/g, "/");
+  if (clean.charAt(0) === "/") clean = clean.slice(1);
+  while (clean.indexOf("../") === 0) clean = clean.slice(3);
+
+  const normalized = path.posix.normalize(clean);
+  if (normalized.indexOf("..") !== -1 || normalized.indexOf("assets/") !== 0) return "";
+  return normalized;
+}
+
+function assetReferenceSources() {
+  const sources = new Set(PUBLIC_FILES.concat(["splendor-table.html"]));
+
+  for (const entry of ENTRIES) {
+    sources.add(entry.source);
+    for (const style of entry.styles) sources.add(style.source);
+    for (const script of entry.scripts) sources.add(script.source);
+  }
+
+  return Array.from(sources).sort();
+}
+
+async function collectReferencedAssets() {
+  const assets = new Set();
+
+  for (const sourcePath of assetReferenceSources()) {
+    if (!(await pathExists(fromRoot(sourcePath)))) continue;
+
+    const source = await readUtf8(sourcePath);
+    ASSET_REFERENCE_PATTERN.lastIndex = 0;
+    let match;
+    while ((match = ASSET_REFERENCE_PATTERN.exec(source))) {
+      const asset = normalizeAssetReference(match[1]);
+      if (asset) assets.add(asset);
+    }
+  }
+
+  return assets;
+}
+
+async function copyReferencedAssets(referencedAssets) {
+  for (const asset of Array.from(referencedAssets).sort()) {
+    const extension = path.extname(asset).toLowerCase();
+    if (!PUBLIC_ASSET_EXTENSIONS.has(extension)) continue;
+    await copyFileToDist(asset);
+  }
 }
 
 function hashContent(data, length) {
@@ -412,6 +471,35 @@ async function copyPublicAssets() {
   }
 }
 
+async function assertNoUnreferencedPublicArt(referencedAssets) {
+  const assetsRoot = fromDist("assets");
+  if (!(await pathExists(assetsRoot))) return;
+
+  const leaked = [];
+  async function walk(directory) {
+    const entries = await fsp.readdir(directory, { withFileTypes: true });
+    for (const entry of entries) {
+      const target = path.join(directory, entry.name);
+      if (entry.isDirectory()) {
+        await walk(target);
+        continue;
+      }
+
+      if (!entry.isFile()) continue;
+      const relativePath = toWebPath(path.relative(DIST, target));
+      const extension = path.extname(relativePath).toLowerCase();
+      if (PUBLIC_ASSET_EXTENSIONS.has(extension) && !referencedAssets.has(relativePath)) {
+        leaked.push(relativePath);
+      }
+    }
+  }
+
+  await walk(assetsRoot);
+  if (leaked.length) {
+    throw new Error("Production dist includes unreferenced public art assets: " + leaked.join(", "));
+  }
+}
+
 async function assertNoBlockedOutputs() {
   const blocked = [
     "debug.log",
@@ -438,7 +526,9 @@ async function assertNoBlockedOutputs() {
 async function main() {
   await removePath(DIST);
   await ensureDir(DIST);
+  const referencedAssets = await collectReferencedAssets();
   await copyPublicAssets();
+  await copyReferencedAssets(referencedAssets);
 
   const sharedStyles = new Map();
   for (const entry of ENTRIES) {
@@ -446,6 +536,7 @@ async function main() {
   }
   await buildRedirectPage();
   await assertNoBlockedOutputs();
+  await assertNoUnreferencedPublicArt(referencedAssets);
 
   console.log("Built production site in " + path.relative(ROOT, DIST));
 }

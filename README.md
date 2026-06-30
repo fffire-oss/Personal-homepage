@@ -41,6 +41,7 @@ The build is dependency-free and writes a production-only static site to `dist/`
 - Journal scripts are bundled into `dist/assets/journal-<hash>.js`
 - Gem Table rules, config loader, and app code are bundled into `dist/gemtable/assets/gemtable-<hash>.js`
 - CSS files are minified and hash-named
+- only art assets referenced by the public entry HTML/CSS/JS are copied; unused files in `assets/` are excluded
 - source maps are not emitted
 - Gem Table's `window.__gemTableDebug` test hook is stripped from the production bundle
 - `docs/`, `test/`, `journal-backend/`, `scripts/`, README, package files, debug logs, and local connection notes are not copied
