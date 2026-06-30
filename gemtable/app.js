@@ -2427,6 +2427,12 @@ Object.assign(I18N.de, {
           return card && card.reserved_public !== false && card.reserved_from !== "deck" ? 1 : 0;
         });
       }),
+      reserved_tier: players.map(function (player) {
+        return [0, 1, 2].map(function (index) {
+          var card = (player.reserved || [])[index];
+          return card ? Math.max(0, Number(card.tier) - 1) : -1;
+        });
+      }),
       reserved: players.map(function (player) {
         return [0, 1, 2].map(function (index) { return gemTableCardToDinoId((player.reserved || [])[index]); });
       })
@@ -2435,7 +2441,7 @@ Object.assign(I18N.de, {
 
   var DINOBOARD_SCALARS = ["current_player", "first_player", "plies", "final_round_remaining", "stage", "pending_returns", "pending_nobles_size", "winner", "terminal", "shared_victory", "nobles_size"];
   var DINOBOARD_VECTORS = { pending_noble_slots: 3, scores: 2, bank: 6, player_points: 2, player_cards_count: 2, player_nobles_count: 2, reserved_size: 2, tableau_size: 3, deck_sizes: 3, nobles: 3 };
-  var DINOBOARD_MATRICES = { player_gems: [2, 6], player_bonuses: [2, 5], tableau: [3, 4], reserved_visible: [2, 3], reserved: [2, 3] };
+  var DINOBOARD_MATRICES = { player_gems: [2, 6], player_bonuses: [2, 5], tableau: [3, 4], reserved_visible: [2, 3], reserved_tier: [2, 3], reserved: [2, 3] };
 
   function addDinoScalar(snapshot, name, value) {
     snapshot[name] = [[], value];
