@@ -108,8 +108,8 @@
       state: "State",
       move: "Move",
       aiPlayers: "AI players",
-      aiUnavailableTitle: "DinoBoard AI",
-      aiUnavailableBody: "DinoBoard smart AI supports 2-player base and Orient+Strongholds test tables. Other module mixes use random legal AI.",
+      aiUnavailableTitle: "AI players",
+      aiUnavailableBody: "Smart AI uses DinoBoard for 2-player base tables and Geminus AI for Orient+Strongholds. Other module mixes use random legal AI.",
       returnTokens: "Return tokens",
       returnTokensBody: "The active player must return tokens until they hold 10 or fewer before nobles or the next turn resolve.",
       chooseOneNoble: "Choose one noble",
@@ -196,6 +196,7 @@
       logPayment: "Payment",
       logRandomAi: "Random AI",
       logDinoBoardAi: "DinoBoard AI",
+      logGeminusAi: "Geminus AI",
       logBlindReserve: "Blind reserve",
       logFaceUpReserve: "Face-up reserve",
       handoffAction: "Action",
@@ -355,6 +356,7 @@
       msgDinoBoardAiEnabled: "DinoBoard AI connected for {player}.",
       msgGeminusAiEnabled: "Geminus AI connected for {player}.",
       msgDinoBoardUnavailable: "DinoBoard AI unavailable: {message}",
+      msgGeminusUnavailable: "Geminus AI unavailable: {message}",
       msgCannotDisableActiveAi: "AI takeover cannot be disabled during that AI player's turn.",
       msgNoValidSavedTable: "No valid saved table found.",
       msgSavedResumed: "Saved table resumed.",
@@ -1744,6 +1746,20 @@ Object.assign(I18N.de, {
     orientPaymentDiscard: "Descartar"
   });
 
+  Object.assign(I18N["zh-Hans"], {
+    aiUnavailableTitle: "AI \u73a9\u5bb6",
+    aiUnavailableBody: "\u57fa\u7840 2 \u4eba\u5c40\u4f7f\u7528 DinoBoard AI\uff0cOrient+Strongholds \u4f7f\u7528 Geminus AI\uff1b\u5176\u4ed6\u6a21\u5757\u7ec4\u5408\u4f7f\u7528\u968f\u673a\u5408\u6cd5 AI\u3002",
+    logGeminusAi: "Geminus AI",
+    msgGeminusUnavailable: "Geminus AI \u4e0d\u53ef\u7528\uff1a{message}"
+  });
+
+  Object.assign(I18N["zh-Hant"], {
+    aiUnavailableTitle: "AI \u73a9\u5bb6",
+    aiUnavailableBody: "\u57fa\u790e 2 \u4eba\u5c40\u4f7f\u7528 DinoBoard AI\uff0cOrient+Strongholds \u4f7f\u7528 Geminus AI\uff1b\u5176\u4ed6\u6a21\u7d44\u7d44\u5408\u4f7f\u7528\u96a8\u6a5f\u5408\u6cd5 AI\u3002",
+    logGeminusAi: "Geminus AI",
+    msgGeminusUnavailable: "Geminus AI \u4e0d\u53ef\u7528\uff1a{message}"
+  });
+
   var NOBLE_POOL = [
     { id: "noble-01", req: { white: 4, blue: 4 } },
     { id: "noble-02", req: { blue: 4, green: 4 } },
@@ -2477,6 +2493,12 @@ Object.assign(I18N.de, {
   }
 
   function dinoBoardInitialObservation(game, perspective) {
+    if (dinoBoardUsesExpansionRuleset(game && game.ruleset)) {
+      return {
+        public_snapshot: {},
+        tracker_init: {}
+      };
+    }
     return {
       public_snapshot: buildDinoBoardPublicSnapshot(game, perspective),
       tracker_init: {}
@@ -3638,10 +3660,29 @@ Object.assign(I18N.de, {
     return seats[0];
   }
 
+  function smartAiProviderForGame(game) {
+    if (!game || !dinoBoardSupportsRuleset(game.ruleset)) return "";
+    return dinoBoardUsesExpansionRuleset(game.ruleset) ? "geminus" : "dinoboard";
+  }
+
+  function isSmartAiProvider(provider) {
+    return provider === "dinoboard" || provider === "geminus";
+  }
+
+  function smartAiUnavailableMessageKey() {
+    return state && dinoBoardUsesExpansionRuleset(state.ruleset) ? "msgGeminusUnavailable" : "msgDinoBoardUnavailable";
+  }
+
+  function aiLogLabelKey(provider) {
+    if (provider === "geminus") return "logGeminusAi";
+    if (provider === "dinoboard") return "logDinoBoardAi";
+    return "logRandomAi";
+  }
+
   function aiProviderForPlayer(game, playerIndex) {
     var player = game && game.players && game.players[playerIndex];
     if (!player || !player.ai || !player.ai.enabled) return "";
-    return dinoBoardAiSeatFor(game) === playerIndex ? "dinoboard" : "random";
+    return dinoBoardAiSeatFor(game) === playerIndex ? smartAiProviderForGame(game) : "random";
   }
 
   function activeAiProviderName() {
@@ -3658,10 +3699,11 @@ Object.assign(I18N.de, {
 
   function syncDinoBoardAiAvailability(game) {
     var aiSeat = dinoBoardAiSeatFor(game);
+    var smartProvider = smartAiProviderForGame(game);
     (game && game.players || []).forEach(function (player, index) {
       if (!player.ai) return;
       if (player.ai.enabled && !player.ai.selected_order) player.ai.selected_order = aiSelectionOrder(player, index);
-      player.ai.provider = player.ai.enabled ? (index === aiSeat ? "dinoboard" : "random") : "random";
+      player.ai.provider = player.ai.enabled ? (index === aiSeat ? smartProvider : "random") : "random";
       player.ai.available = player.ai.enabled && index === aiSeat;
     });
     return aiSeat;
@@ -3686,7 +3728,7 @@ Object.assign(I18N.de, {
         if (player.ai) player.ai.available = false;
       });
     }
-    if (message) showMessage(t("msgDinoBoardUnavailable", { message: message }));
+    if (message) showMessage(t(smartAiUnavailableMessageKey(), { message: message }));
   }
 
   function parseDinoJsonResponse(text, response) {
@@ -3907,8 +3949,9 @@ Object.assign(I18N.de, {
     var moveKey = String(move.move_id);
     if (dinoboardAi.observed[moveKey]) return Promise.resolve();
     var actionIds = encodeDinoBoardActions(move, beforeState);
-    var events = dinoBoardEvents(beforeState, afterState, move, dinoboardAi.aiSeat);
-    var snapshot = buildDinoBoardPublicSnapshot(afterState, dinoboardAi.aiSeat);
+    var actionStreamOnly = dinoBoardUsesExpansionRuleset((afterState && afterState.ruleset) || (beforeState && beforeState.ruleset) || (state && state.ruleset));
+    var events = actionStreamOnly ? [] : dinoBoardEvents(beforeState, afterState, move, dinoboardAi.aiSeat);
+    var snapshot = actionStreamOnly ? {} : buildDinoBoardPublicSnapshot(afterState, dinoboardAi.aiSeat);
     var chain = Promise.resolve();
     actionIds.forEach(function (actionId, index) {
       chain = chain.then(function () {
@@ -3998,7 +4041,7 @@ Object.assign(I18N.de, {
 
   function ensureDinoBoardSession() {
     if (!state || dinoBoardAiSeatFor(state) < 0) return Promise.reject(new Error("DinoBoard AI requires a 2-player table; unsupported AI seats use random AI."));
-    if (dinoboardAi && dinoboardAi.disabled) return Promise.reject(new Error("DinoBoard AI is unavailable."));
+    if (dinoboardAi && dinoboardAi.disabled) return Promise.reject(new Error("service is unavailable."));
     if (dinoboardAi && dinoboardAi.sessionId && !dinoboardAi.disabled) return Promise.resolve();
     if (dinoboardAi && dinoboardAi.pending) return dinoboardAi.pending;
     return createDinoBoardSession();
@@ -5161,8 +5204,9 @@ Object.assign(I18N.de, {
 
   function aiBadgeKeyForPlayer(player) {
     if (!(player && player.ai && player.ai.enabled)) return "";
-    if (player.ai.provider !== "dinoboard") return "randomAiBadgeFormat";
-    return dinoBoardUsesExpansionRuleset(state && state.ruleset) ? "geminusAiBadgeFormat" : "aiBadgeFormat";
+    if (player.ai.provider === "geminus") return "geminusAiBadgeFormat";
+    if (player.ai.provider === "dinoboard") return "aiBadgeFormat";
+    return "randomAiBadgeFormat";
   }
 
   function renderPlayers() {
@@ -5860,7 +5904,7 @@ Object.assign(I18N.de, {
   function renderLogMove(move) {
     var moveArgs = move.notification && move.notification.args || {};
     var aiLabel = "";
-    if (moveArgs.ai) aiLabel = t(moveArgs.ai_provider === "dinoboard" ? "logDinoBoardAi" : "logRandomAi");
+    if (moveArgs.ai) aiLabel = t(aiLogLabelKey(moveArgs.ai_provider));
     return [
       '<li><article class="log-entry">',
       '<div class="log-entry-head">',
@@ -9994,14 +10038,15 @@ Object.assign(I18N.de, {
     if (!state || state.mode === "replay" || state.gameOver) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
-    if (activeAiProviderName() !== "dinoboard") {
+    var provider = activeAiProviderName();
+    if (!isSmartAiProvider(provider)) {
       scheduleRandomAiTurn();
       return;
     }
     aiDisplayCurrentOverride = state.aiThinking && typeof state.aiThinking.display_current === "number"
       ? state.aiThinking.display_current
       : fallbackVisiblePlayerIndex();
-    activeAiProvider = "dinoboard";
+    activeAiProvider = provider;
     aiTurnInProgress = true;
     ensureDinoBoardSession().then(function () {
       return dinoboardAi.pending;
@@ -10029,7 +10074,16 @@ Object.assign(I18N.de, {
     if (state.awaitingOrientAction && !canResolveExpansionWindow) return;
     var player = activePlayer();
     if (!player || !player.ai || !player.ai.enabled) return;
+    var provider = activeAiProviderName();
     if (dinoboardAi && dinoboardAi.disabled) {
+      if (isSmartAiProvider(provider)) {
+        if (state.aiThinking) {
+          state.aiThinking = null;
+          saveState();
+          render();
+        }
+        return;
+      }
       scheduleRandomAiTurn();
       return;
     }
@@ -10037,7 +10091,7 @@ Object.assign(I18N.de, {
       scheduleRandomAiTurn();
       return;
     }
-    if (activeAiProviderName() !== "dinoboard") {
+    if (!isSmartAiProvider(provider)) {
       scheduleRandomAiTurn();
       return;
     }
@@ -10136,7 +10190,7 @@ Object.assign(I18N.de, {
 
   function scheduleAiTurn() {
     if (!state || !isAiPlayer(activePlayer())) return;
-    if (activeAiProviderName() === "dinoboard") scheduleDinoBoardAiTurn();
+    if (isSmartAiProvider(activeAiProviderName())) scheduleDinoBoardAiTurn();
     else scheduleRandomAiTurn();
   }
 
